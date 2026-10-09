@@ -2,10 +2,12 @@
 
 File này là điểm bắt đầu cho bất kỳ AI/người làm việc tiếp trên dự án. Cập nhật sau mỗi lượt làm việc có thay đổi thực tế. Ghi sự thật đã kiểm tra; không đánh dấu “xong” khi chưa kiểm chứng.
 
+**Quy tắc bất biến cho AI:** Mọi file `*.md` trong `docs/` là chỉ đọc, trừ `docs/worklog.md`. Không sửa, ghi đè, tạo lại, đổi tên, di chuyển hoặc xóa các file Markdown còn lại. Ghi mọi đề xuất chỉnh đặc tả vào worklog và kiểm tra diff trước khi kết thúc lượt làm việc. Quy tắc chung cho agent nằm tại [`../AGENTS.md`](../AGENTS.md).
+
 ## Trạng thái hiện tại
 
 - Cập nhật: 2026-10-09, múi giờ Asia/Ho_Chi_Minh.
-- Giai đoạn: **đã hoàn thành bộ đặc tả V1**; chưa có mã ứng dụng, database, môi trường Supabase hay deployment.
+- Giai đoạn: **Phase 0 hoàn tất**; đã có hai Supabase project tách biệt theo thông tin chủ dự án cung cấp. Chưa có mã ứng dụng, migration, dữ liệu nghiệp vụ hay deployment.
 - Đã tạo đủ: `01-business-analysis.md`, `02-database-design.md`, `03-workflow.md`, `04-system-architecture.md`, `05-testing-strategy.md`, `06-deployment-vercel-supabase.md`, `07-ui-design-system.md`.
 - Kiểm tra đã chạy: đủ 7 tên file và `worklog.md`, tất cả đọc được UTF-8, không có liên kết Markdown nội bộ bị thiếu. Đã rà và thống nhất quy tắc duyệt yêu cầu cá nhân của admin.
 - Nguồn tham khảo: `MOTAHETHONG.docx` thuộc công ty khác, chỉ dùng để học các nguyên tắc chấm công. Logo Marixa được người dùng gửi trong cuộc trò chuyện; hiện chưa có file logo gốc trong thư mục.
@@ -18,39 +20,94 @@ File này là điểm bắt đầu cho bất kỳ AI/người làm việc tiếp
 - Chốt trường hợp admin cũng có hồ sơ nhân viên: HR duyệt đơn/yêu cầu cá nhân của admin; admin không tự duyệt.
 - Bổ sung luồng mật khẩu tạm và đổi mật khẩu bắt buộc để không phụ thuộc SMTP mặc định trên Free; thêm snapshot bán kính văn phòng để lịch sử vị trí ổn định.
 - Chốt **không dùng Docker** theo yêu cầu mới nhất; cập nhật kiến trúc, kiểm thử và triển khai sang Node.js + Supabase hosted thử nghiệm + PostgreSQL client cài trực tiếp. Bỏ `supabase db dump` vì lệnh đó cần container.
+- 2026-10-09: Lập lộ trình triển khai V1 theo phase đến khi kiểm chứng bản deploy Vercel Hobby + Supabase Free; thêm quy tắc bảo vệ các file Markdown đặc tả.
+- 2026-10-09: Chủ dự án chốt ngoài văn phòng tính công bình thường; ảnh/GPS tùy chọn; offline không giới hạn ngày đồng bộ và dữ liệu đến sau khóa kỳ được điều chỉnh ở kỳ mở sau; tính từng phút; Chủ nhật/ngày nghỉ tự động tính tăng ca từ giờ chấm, không cần đơn được duyệt. Tạo `../plan.md` làm checklist triển khai chi tiết.
 
 ## Các quyết định không được tự đổi
 
 - Phạm vi chỉ có nhân viên văn phòng Marixa, dưới 15 người; không có công trường, công nhân hoặc điểm danh đội.
 - Ba role: `employee`, `hr`, `admin`; có nhiều nhân viên/HR và đúng một admin hoạt động. HR tự chấm công, xem dữ liệu toàn khối; admin toàn quyền.
 - Email + mật khẩu. Chấm vào/ra một lần mỗi ngày, thứ 2–thứ 7, 08:00–17:00, nghỉ 12:00–13:00.
-- Ảnh và GPS bắt buộc mỗi lượt; ngoài văn phòng vẫn nhận và gắn cờ. Offline lưu trên thiết bị, đồng bộ sau, chống trùng.
+- Ảnh và GPS là bằng chứng **tùy chọn**; thiếu một hoặc cả hai vẫn chấm và tính công. Ngoài văn phòng tính công bình thường, cờ vị trí nếu có GPS chỉ để tham khảo. Offline không giới hạn ngày đồng bộ; chống trùng; nếu kỳ gốc đã khóa thì giữ snapshot và ghi điều chỉnh ở kỳ mở tiếp theo.
+- Tính công chính xác theo phút, không làm tròn theo block. Chủ nhật/ngày nghỉ tự động tính tăng ca từ giờ chấm thực tế; ngày làm việc bình thường vẫn cần duyệt tăng ca cho giờ ngoài lịch.
 - HR duyệt đơn và yêu cầu của nhân viên; admin duyệt hồ sơ của HR. HR kiểm tra bảng công; admin khóa kỳ.
-- V1 có hồ sơ, đơn nghỉ, phép năm theo sổ giao dịch, tăng ca có duyệt, yêu cầu sửa công, Excel bảng công, PDF đơn nghỉ.
+- V1 có hồ sơ, đơn nghỉ, phép năm theo sổ giao dịch, yêu cầu sửa công, Excel bảng công, PDF đơn nghỉ; đơn tăng ca có duyệt áp cho ngày làm việc bình thường.
 - Công nghệ: React/Next.js, Supabase, Vercel. Người dùng yêu cầu dùng gói Free kể cả bản chính thức; tài liệu phải ghi rõ rủi ro điều kiện sử dụng Hobby của Vercel, không tuyên bố là phù hợp.
 - Không dùng Docker/Docker Desktop, Dockerfile, docker-compose hoặc Supabase local stack. Phát triển bằng Node.js và Supabase hosted; migration/backup bằng PostgreSQL client cài trực tiếp.
 - Giao diện theo logo Marixa xanh lam/cyan, điểm nhấn vàng, dùng hướng dẫn `ui-ux-pro-max`.
 
 ## Việc tiếp theo theo thứ tự
 
-1. Khi người dùng yêu cầu xây ứng dụng: khởi tạo Next.js/React TypeScript và cấu trúc route/API đúng `04-system-architecture.md`; chưa tự tạo code hoặc tài khoản cloud khi chưa có yêu cầu mới.
-2. Tạo migration SQL, RLS, Storage private và test quyền trên Supabase project thử nghiệm hosted theo `02-database-design.md` và `05-testing-strategy.md`; không chạy local stack Docker.
-3. Xây Auth/hồ sơ, chấm công online/offline, đơn từ, timesheet, báo cáo và UI theo thứ tự phụ thuộc trong bảy tài liệu.
-4. Trước khi đưa vào dùng thật: nhận file logo gốc; admin nhập tọa độ văn phòng, ngày nghỉ, số phép và thời hạn lưu ảnh; kiểm thử trên thiết bị thật, backup/restore và smoke test.
-5. Sau mọi thay đổi nghiệp vụ hoặc code, cập nhật tài liệu liên quan và file worklog này ngay trong cùng lượt làm việc.
+1. Bắt đầu Phase 1 trong [`../plan.md`](../plan.md): tạo ứng dụng Next.js, route và nền giao diện; chỉ nối project **test** khi đến Phase 2. Hai project ref/region đã ghi ở Phase 0 bên dưới.
+2. Khi triển khai, ưu tiên năm quyết định nghiệp vụ mới ở trên nếu đặc tả `01`–`07` mâu thuẫn; đặc biệt sửa mô hình ảnh/GPS thành tùy chọn, thiết kế điều chỉnh kỳ sau và test tăng ca ngày nghỉ tự động.
+3. Sau mọi thay đổi nghiệp vụ hoặc code, chỉ cập nhật `docs/worklog.md` trong nhóm Markdown của `docs/`; ghi khác biệt cần quyết định vào worklog, không sửa các file đặc tả.
 
 ## Vấn đề/bug/rủi ro đang mở
 
 - **Chưa phát hiện bug trong tài liệu** sau kiểm tra cấu trúc và liên kết; chưa có ứng dụng nên chưa có bug runtime.
-- **Tài sản thiếu:** chưa có file logo gốc trong workspace; màu ở `07-ui-design-system.md` được chọn từ ảnh xem trước và cần đối chiếu khi có asset thật.
-- **Cấu hình chưa có:** tọa độ/bán kính văn phòng, lịch ngày nghỉ/làm bù, số phép từng người và thời hạn lưu ảnh phải được admin nhập trước vận hành.
+- **Tài sản đã xác nhận:** chủ dự án xác nhận `logo.png` là logo chính thức; màu ở `07-ui-design-system.md` sẽ đối chiếu khi phát triển UI.
+- **Cấu hình cần admin nhập trước vận hành:** lịch ngày nghỉ/làm bù, tọa độ/bán kính văn phòng để hiện nhãn vị trí và số dư phép lịch sử nếu có. Đã chốt lưu ảnh 3 tháng và phép năm 12 ngày, cộng 1 ngày vào ngày 1 mỗi tháng từ tháng vào làm. Thiếu ảnh/GPS hoặc tọa độ không được chặn chấm công.
 - **Giới hạn Free:** Supabase có hạn mức database/Storage và Free không có backup tự động; cần theo dõi dung lượng, dọn ảnh, backup thủ công và thử restore.
 - **Khôi phục không Docker chưa được thử:** `pg_dump` nghiệp vụ không chứa Auth managed schema hoặc object Storage. Trước khi dùng thật, phải hoàn thiện và chạy thử runbook tái cấp tài khoản/ghép hồ sơ, khôi phục ảnh và dữ liệu công/phép trên project thử nghiệm.
 - **Điều kiện Vercel:** Hobby chỉ dành cho mục đích cá nhân phi thương mại theo tài liệu nhà cung cấp; yêu cầu dùng Hobby cho hệ thống công ty là rủi ro điều kiện sử dụng chưa giải quyết. Xem `06-deployment-vercel-supabase.md`.
 - **Email Auth:** dịch vụ SMTP mặc định của Supabase không nên làm nền cho cấp/khôi phục tài khoản production; V1 đặc tả admin cấp/reset mật khẩu an toàn, chỉ bật email tự phục vụ nếu có SMTP được kiểm thử.
+- **Tài liệu cũ khác quyết định mới:** `01`, `02`, `03`, `04`, `05`, `06`, `07` vẫn có yêu cầu ảnh/GPS bắt buộc và một số cổng kiểm thử/triển khai liên quan. AI không sửa các file này; dùng mục “Quyết định nghiệp vụ đang có hiệu lực” trong `../plan.md` làm chuẩn và ghi phát hiện khác biệt tại đây.
+
+## Phase 0 — kiểm tra ngày 09/10/2026
+
+**Tiến độ:** 0.1–0.6 đều đã kiểm chứng theo phạm vi Phase 0. Chủ dự án xác nhận tự quản trị Git, Vercel, Supabase và cung cấp hai project ref khác nhau, cùng region Singapore. Đã phân biệt test/production; chưa áp migration hoặc nhập dữ liệu. Hướng dẫn thao tác từ đầu đến cuối nằm ở [`../SETUP_CLOUD.md`](../SETUP_CLOUD.md). Trong `../plan.md` chỉ đánh dấu các bước đã có bằng chứng.
+
+### 0.1. Bảng thay thế đặc tả cũ
+
+Đã đọc đủ `01`–`07`. Khi triển khai, áp dụng mục 2 của `../plan.md` theo quyết định mới ngày 09/10/2026. Các file đặc tả dưới đây chỉ đọc, không sửa.
+
+| Chủ đề | Nội dung cũ cần bỏ qua | Quy tắc hiện hành và kiểm chứng cần có |
+| --- | --- | --- |
+| Ảnh/GPS | `01` §1, §3, §6; `02` §3–4; `03` §1, §7; `04` §4–5; `05` §2, §5; `06` §3, §6; `07` §4–5 yêu cầu đủ ảnh/GPS hoặc chặn khi từ chối quyền. | Hai dữ liệu **tùy chọn, độc lập**. Test bốn tổ hợp: cả hai, chỉ ảnh, chỉ GPS, không có; từ chối camera/GPS vẫn ghi event và tính công. Ảnh có thì private; upload ảnh lỗi không xóa event; thiếu ảnh không là ngoại lệ bắt buộc. GPS và ảnh nullable trong schema/API/queue; không đặt retention ảnh làm điều kiện chấm nếu không chọn lưu ảnh. UI báo thiếu bằng chứng như thông tin. |
+| Ngoài văn phòng | `01` §5, `03` §2, §7, `05` §2, `07` §4–5 đặt cờ vào luồng HR kiểm tra; `06` §3, §6 coi tọa độ là cấu hình bắt buộc. | Nếu có GPS và tọa độ tham chiếu thì gắn nhãn để xem; **vẫn tính công bình thường**, không cần HR duyệt mới được tính. Test GPS ngoài bán kính và không có cấu hình văn phòng: cả hai đều không chặn công; trường hợp sau không suy ra ngoài văn phòng. |
+| Offline sau khóa kỳ | `02` §4, `03` §3, §6–7, `05` §2, `06` §6 yêu cầu mở lại kỳ gốc để áp thay đổi sau khóa. | Không giới hạn ngày retry khi queue còn trên thiết bị. Event đến muộn giữ `work_date` gốc, `received_at` thực tế, idempotency; snapshot kỳ gốc giữ nguyên. HR đối soát và ghi điều chỉnh có audit vào **kỳ mở tiếp theo**; nếu kỳ đích đóng thì chuyển sang kỳ mở sau. Test retry lặp, đến muộn nhiều ngày, kỳ gốc/đích cùng khóa và Excel hai kỳ không cộng đôi. Mở lại kỳ chỉ là thao tác có audit riêng, không là điều kiện mặc định để nhận event. |
+| Tăng ca ngày nghỉ | `01` §3–4, `02` §3, `03` §5, `05` §2 chỉ tính tăng ca khi có đơn duyệt. | Chủ nhật/ngày nghỉ: phần làm thực tế đã đủ chấm vào/ra tự thành tăng ca, trừ giao với 12:00–13:00 theo quyết định 0.6; không cần đơn. Ngày làm bù do admin đánh dấu áp quy tắc ngày làm việc. Test Chủ nhật, lễ, làm bù, thiếu mốc, giao giờ trưa và ngày thường ra muộn không có đơn. |
+| Độ chính xác phút | `01`–`07` chưa chốt cách quy đổi giây sang phút nguyên. | Giữ timestamp đầy đủ, không làm tròn theo block. Cộng số giây theo từng loại công rồi lấy phút nguyên một lần ở kết quả ngày theo quyết định 0.6. Test biên 59/60/61 giây và nhiều khoảng lẻ cộng lại. |
+| Phép năm | `01` §4, `02` §3 và `03` §4 mô tả cấp phép bằng giao dịch admin/HR nhưng chưa có lịch cộng tự động hằng tháng. | Chủ dự án chốt 12 ngày/năm, cộng 1 ngày vào ngày 1 mỗi tháng từ tháng nhân viên vào làm. Sổ phép cần giao dịch tháng idempotent; test tháng đầu, tháng tiếp theo, retry job và giới hạn 12 ngày trong năm theo chính sách. Số dư lịch sử nếu có do admin nhập có lý do. |
+
+### 0.2–0.3. Đầu vào và người chịu trách nhiệm
+
+| Đầu vào | Đã kiểm tra | Người cần xác nhận/cung cấp và tác động |
+| --- | --- | --- |
+| Git, Vercel, Supabase | `git remote -v` cho thấy remote `origin` là repository GitHub `KhangDepZai1802/Marixa_Workforce`. | Chủ dự án xác nhận **tự quản trị cả ba dịch vụ**. Không ghi email cá nhân hoặc secret vào đây. |
+| Project thử nghiệm và production | Chủ dự án cung cấp `marixa-attendance-test`: ref `pkpwcpatuslfjyoivbuf`; `marixa-attendance-prod`: ref `vmpsfwwfgoeritayfnvv`. Chủ dự án xác nhận **cả hai ở Singapore**; hai ref khác nhau. | 0.2 hoàn tất theo thông tin chủ dự án; chỉ dùng test cho dữ liệu giả. Không ghi publishable key, connection string hay mật khẩu vào worklog. Region ghi theo tên người dùng xác nhận, chưa suy ra mã AWS cụ thể. Chưa kiểm tra kết nối/RLS, thuộc Phase 2. |
+| Logo | `logo.png` có sẵn (213.778 byte, SHA-256 `9D1E9D9AD57B7B5C3674E7AEF626F480C63D74A7B891AF953698D19529F7E081`); ảnh chữ M xanh lam/cyan và sao vàng khớp mô tả `07`. | Chủ dự án xác nhận đây là asset **chính thức được phép dùng**; đối chiếu màu khi làm UI. |
+| Lịch nghỉ/làm bù và phép | Admin sẽ tự nhập lịch nghỉ/làm bù trước vận hành. Chủ dự án chốt **12 ngày phép/năm, cộng 1 ngày vào ngày 1 mỗi tháng từ tháng nhân viên vào làm**. | Admin nhập lịch và số dư lịch sử nếu có ở Phase 7; thiếu lịch sẽ phân loại sai ngày nghỉ/tăng ca. Giao dịch cộng tháng cần chống lặp; không cấp sẵn 12 ngày. |
+| Nhãn vị trí và ảnh | Chủ dự án chọn bật lưu ảnh và nhãn vị trí, ảnh giữ **3 tháng**; admin sẽ nhập tọa độ/bán kính sau. | Thiếu tọa độ thì chưa tính được nhãn, nhưng vẫn chấm công. Ảnh có thì lưu private; thiếu ảnh/GPS không chặn. Admin kiểm tra kích thước/chất lượng ảnh trước vận hành. |
+
+### 0.4. Môi trường local
+
+Lệnh kiểm tra: `node --version`, `npm.cmd --version`, `git --version`, `psql --version`, `pg_dump --version`, `pg_restore --version`. Kết quả: Node.js `v22.20.0`, npm `10.9.3`, Git `2.48.1.windows.1`, ba PostgreSQL client đều `18.4`. [Next.js hiện yêu cầu Node >= 20.9](https://nextjs.org/docs/app/getting-started/installation), nên phiên bản Node đáp ứng. PowerShell chặn `npm.ps1` theo Execution Policy hiện tại; dùng `npm.cmd` được, đã lấy đúng version. Không cài/chạy Docker.
+
+### 0.5. Kiểm tra gói Free trên trang chính thức
+
+Kiểm tra ngày 09/10/2026: [Supabase Free](https://supabase.com/docs/guides/platform/billing-on-supabase) cho **hai project Free** trên phạm vi các organization mà tài khoản là Owner/Administrator, database **500 MB/project**, Storage **1 GB**, egress **5 GB**, Auth **50.000 MAU**. [Vượt 500 MB database có thể làm project thành read-only](https://supabase.com/docs/guides/platform/database-size). [Project Free ít hoạt động trong khoảng 7 ngày có thể bị tạm dừng](https://supabase.com/docs/guides/platform/free-project-pausing); người quản trị phải theo dõi cảnh báo và chuẩn bị tiếp tục dịch vụ. [Free không có backup hằng ngày tự động](https://supabase.com/docs/guides/platform/backups); bản dump nghiệp vụ cũng không chứa file Storage, nên cần backup ảnh riêng và thử restore.
+
+[Vercel Hobby](https://vercel.com/docs/plans/hobby) có hạn mức tài nguyên và [cron tối đa một lần/ngày, sai số có thể tới trong cùng giờ](https://vercel.com/docs/cron-jobs/usage-and-pricing). [Điều khoản Vercel](https://vercel.com/legal/terms) và [Fair Use Guidelines](https://vercel.com/docs/limits/fair-use-guidelines) giới hạn Hobby cho mục đích cá nhân, phi thương mại; dự án công ty, đặc biệt có người được trả công phát triển/vận hành, có rủi ro không phù hợp. **Deploy kỹ thuật trên Hobby không chứng minh được quyền vận hành hệ thống công ty.** Chủ dự án phải quyết định phương án phù hợp trước sử dụng thật; Phase 0 chỉ ghi nhận rủi ro, không thay đổi yêu cầu gói Free.
+
+[Tài liệu API keys hiện hành của Supabase](https://supabase.com/docs/guides/getting-started/api-keys) dùng `sb_publishable_...` ở client và `sb_secret_...` ở server; key legacy `anon`/`service_role` đang được loại dần vào cuối 2026. `06-deployment-vercel-supabase.md` còn tên biến `SUPABASE_SERVICE_ROLE_KEY`; khi làm Phase 1–2 nên dùng `SUPABASE_SECRET_KEY` với SDK hiện hành, chỉ ở server, và kiểm tra lại khả năng tương thích. Đây là đề xuất cập nhật đặc tả, không sửa file được bảo vệ.
+
+### 0.6. Quy tắc đã được chủ dự án xác nhận
+
+Chủ dự án **đồng ý cả ba**: (1) ngày nghỉ trừ phần giao với nghỉ trưa 12:00–13:00; (2) ngày làm bù do admin đánh dấu áp giờ làm và quy tắc tăng ca của ngày làm việc; (3) cộng thời gian thực tế theo giây trong từng loại công rồi lấy số phút nguyên một lần ở kết quả ngày. Đã cập nhật mục 2 `../plan.md`; dùng quy tắc này cho service tính công và test biên.
+
+### Bổ sung kết nối ngày 09/10/2026
+
+Chủ dự án cung cấp Session pooler cho test và production, cùng host `aws-0-ap-southeast-1.pooler.supabase.com`, cổng `5432`, user lần lượt `postgres.pkpwcpatuslfjyoivbuf` và `postgres.vmpsfwwfgoeritayfnvv`. Đã lưu **chỉ host/port/user/database** và lệnh kiểm tra test chỉ đọc trong [`../SETUP_CLOUD.md`](../SETUP_CLOUD.md). Mật khẩu chưa được cung cấp và không ghi URI vào repository. `git check-ignore -v .env.local .env.production.local` xác nhận cả hai mẫu file bị `.gitignore` bỏ qua. Chưa thử kết nối database hoặc chạy migration; việc này thuộc Phase 2 trên test.
+
+**Kiểm tra thay đổi:** trong lượt này cập nhật `../plan.md`, `worklog.md` và tạo hướng dẫn `../SETUP_CLOUD.md`; kiểm tra `git diff` trước khi kết thúc để xác nhận không sửa Markdown được bảo vệ. Các thay đổi Git có sẵn ở cây dự án cũ được giữ nguyên.
 
 ## Quy tắc cập nhật worklog
 
 - Mỗi lượt: ghi ngày, thay đổi thực tế, kiểm tra đã chạy và kết quả; chuyển việc xong khỏi “Việc tiếp theo”.
 - Bug ghi triệu chứng, bước tái hiện, mức ảnh hưởng, tình trạng xử lý. Khi hết lỗi thì ghi cách sửa và ngày đóng.
-- Không dùng worklog thay thế bảy tài liệu đặc tả; nếu quyết định nghiệp vụ đổi, cập nhật tài liệu nguồn liên quan và ghi tóm tắt ở đây.
+- Bảy tài liệu đặc tả trong `docs/` là nguồn tham chiếu chỉ đọc cho AI. Nếu quyết định nghiệp vụ đổi, ghi quyết định và ảnh hưởng vào worklog để người sở hữu tài liệu xử lý; AI không sửa các file đó.
+
+## Kế hoạch triển khai
+
+Checklist thực thi chi tiết, cách làm và điều kiện đánh dấu từng bước nằm trong [`../plan.md`](../plan.md). File này lưu quyết định nghiệp vụ mới, tiến độ thực tế và bằng chứng kiểm chứng; hiện chưa có phase triển khai nào hoàn tất.
