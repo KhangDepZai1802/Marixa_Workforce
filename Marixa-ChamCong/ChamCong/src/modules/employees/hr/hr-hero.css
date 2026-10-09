@@ -1,0 +1,309 @@
+/* ============================================================
+   HR HERO — thiết kế chung cho các trang quản trị nhân sự
+   (phong cách block-accounts): banner tối + KPI chip + bảng sạch
+   ============================================================ */
+
+/* ===== Banner tối ===== */
+.hr-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 22px 24px;
+    border-radius: 16px;
+    background: linear-gradient(120deg, #1a2332 0%, #0e1a26 100%);
+    border: 1px solid #26364a;
+    margin-bottom: 16px;
+    box-shadow: 0 6px 18px rgba(14, 26, 38, 0.15);
+}
+.hr-hero-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+.hr-hero-ico {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex: 0 0 auto;
+}
+.hr-hero-left h2 {
+    margin: 0;
+    font: 800 18px "Montserrat", "Be Vietnam Pro", sans-serif;
+    color: #fff;
+    line-height: 1.2;
+}
+.hr-hero-left p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #b9c7d6;
+    line-height: 1.5;
+    max-width: 52ch;
+}
+
+/* ===== Dải KPI ===== */
+.hr-kpi-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    flex: 1 1 100%;
+}
+.hr-kpi {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.hr-kpi > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.hr-kpi-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #b9c7d6;
+    font-weight: 600;
+}
+.hr-kpi strong {
+    font: 800 22px "Montserrat", "Be Vietnam Pro", sans-serif;
+    color: #fff;
+    line-height: 1;
+}
+.hr-kpi-sub {
+    font-size: 11px;
+    color: #9fb0c4;
+}
+.hr-kpi-ico {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex: 0 0 auto;
+}
+.hr-kpi--blue   .hr-kpi-ico { background: rgba(64, 156, 255, 0.22); }
+.hr-kpi--green  .hr-kpi-ico { background: rgba(76, 201, 124, 0.22); }
+.hr-kpi--red    .hr-kpi-ico { background: rgba(255, 107, 107, 0.22); }
+.hr-kpi--warn   .hr-kpi-ico { background: rgba(255, 180, 40, 0.22); }
+.hr-kpi--ok     .hr-kpi-ico { background: rgba(76, 201, 124, 0.22); }
+.hr-kpi--gray   .hr-kpi-ico { background: rgba(148, 163, 184, 0.22); }
+
+/* ===== Thẻ (card) gọn ===== */
+.hr-card {
+    padding: 18px 20px;
+    border: 1px solid #e6edf5;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(14, 26, 38, 0.04);
+    margin-bottom: 16px;
+}
+
+/* ===== Thanh toolbar: tìm kiếm trái + filter phải ===== */
+.hr-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.hr-toolbar .hr-search {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+.hr-toolbar .hr-search input[type="search"] {
+    width: 100%;
+}
+/* Nhóm điều khiển (filter, select, nút) tụt về phải */
+.hr-toolbar .hr-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+/* ===== Lọc dạng pill (giống block-accounts) ===== */
+.hr-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.hr-filter {
+    padding: 7px 14px;
+    border: 1px solid #dbe4ee;
+    border-radius: 999px;
+    background: #fff;
+    color: #38506a;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.14s ease;
+    white-space: nowrap;
+}
+.hr-filter:hover {
+    border-color: #8bbcf1;
+    background: #f5f9ff;
+}
+.hr-filter.active {
+    border-color: #005b94;
+    background: #005b94;
+    color: #fff;
+}
+.hr-filter strong {
+    font-weight: 700;
+    opacity: 0.85;
+    margin-left: 4px;
+}
+
+/* ===== Nút hành động trong toolbar ===== */
+.hr-act {
+    padding: 8px 14px;
+    border: 1px solid #dbe4ee;
+    border-radius: 8px;
+    background: #fff;
+    color: #2c4258;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.14s ease;
+    white-space: nowrap;
+}
+.hr-act:hover {
+    border-color: #8bbcf1;
+    background: #f5f9ff;
+}
+.hr-act--primary {
+    background: #005b94;
+    border-color: #005b94;
+    color: #fff;
+}
+.hr-act--primary:hover {
+    background: #004a7a;
+}
+
+/* ===== Bảng ===== */
+.hr-table th,
+.hr-table td {
+    padding: 11px 12px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f2f5f8;
+}
+.hr-table thead th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #71859a;
+    font-weight: 700;
+    background: #f7fafc;
+    text-align: left;
+}
+.hr-table tbody tr {
+    transition: background 0.1s;
+}
+.hr-table tbody tr:hover {
+    background: #f8fbfd;
+}
+
+/* ===== Ô nhân viên (avatar) ===== */
+.hr-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+.hr-user strong {
+    color: #172b42;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+.hr-user small {
+    color: #71859a;
+    font-size: 11px;
+    font-family: "Consolas", "SF Mono", monospace;
+}
+.hr-ava {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+/* ===== Cột thao tác ===== */
+.hr-th-act {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* ===== Responsive: mobile ===== */
+@media (max-width: 768px) {
+    .hr-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 18px;
+        gap: 14px;
+    }
+    .hr-kpi-row {
+        flex-wrap: wrap;
+    }
+    .hr-kpi {
+        flex: 1 1 calc(50% - 5px);
+        padding: 10px 12px;
+    }
+    .hr-kpi strong { font-size: 18px; }
+    .hr-kpi-ico { width: 30px; height: 30px; font-size: 14px; }
+    .hr-card { padding: 14px; }
+    .hr-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .hr-toolbar .hr-search { flex-basis: 100%; }
+    .hr-toolbar .hr-toolbar-right {
+        margin-left: 0;
+        flex-wrap: wrap;
+    }
+    .hr-filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+    .hr-filters::-webkit-scrollbar { display: none; }
+    .hr-filter { flex: 0 0 auto; }
+    .hr-table { min-width: 680px; }
+}
+@media (max-width: 420px) {
+    .hr-kpi { flex: 1 1 calc(50% - 4px); }
+    .hr-kpi strong { font-size: 16px; }
+    .hr-kpi-label { font-size: 9px; }
+}

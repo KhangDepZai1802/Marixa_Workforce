@@ -1,0 +1,206 @@
+/* Trang 403 - Không có quyền (theo chuẩn giao diện MARIXA) */
+.unauth-page {
+    display: flex;
+    min-height: 100vh;
+    background: #f6f7f9;
+    font-family: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+    color: #1c2530;
+}
+
+/* ===== Cột thương hiệu bên trái ===== */
+.unauth-brand {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 45%;
+    padding: 48px;
+    overflow: hidden;
+    background: radial-gradient(1200px 600px at 15% 20%, rgba(88, 195, 231, 0.18), transparent 60%),
+        radial-gradient(800px 500px at 90% 85%, rgba(0, 114, 185, 0.25), transparent 60%),
+        #0e1a26;
+    color: #fff;
+}
+
+.unauth-brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 40px;
+}
+
+.unauth-brand-logo img {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+}
+
+.unauth-brand-logo span {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    opacity: 0.85;
+}
+
+.unauth-brand h2 {
+    margin: 0 0 12px;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.unauth-brand p {
+    margin: 0;
+    max-width: 400px;
+    font-size: 15px;
+    line-height: 1.65;
+    opacity: 0.72;
+}
+
+.unauth-brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 28px;
+    padding: 7px 14px;
+    border: 1px solid rgba(88, 195, 231, 0.35);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #9fdcf5;
+    width: fit-content;
+}
+
+.unauth-brand-badge .badge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #58c3e7;
+}
+
+/* ===== Cột thông báo 403 bên phải ===== */
+.unauth-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+}
+
+.unauth-card {
+    width: 100%;
+    max-width: 460px;
+    background: #fff;
+    border: 1px solid #e6e9ee;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(16, 34, 51, 0.08);
+    padding: 44px 40px;
+}
+
+.unauth-code {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #fef3f2;
+    border: 1px solid #f5d5d0;
+    color: #c0392b;
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 18px;
+}
+
+.unauth-card h1 {
+    margin: 0 0 10px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #14212e;
+}
+
+.unauth-desc {
+    margin: 0 0 26px;
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: #5a6675;
+}
+
+.unauth-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.unauth-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 16px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+/* Nút liên hệ (ghost - viền nhạt) */
+.unauth-btn--ghost {
+    background: #fff;
+    border-color: #d7dde5;
+    color: #445060;
+}
+
+.unauth-btn--ghost:hover {
+    background: #f5f7fa;
+    border-color: #b9c2ce;
+}
+
+/* Nút chính (accent xanh MARIXA) */
+.unauth-btn--primary {
+    background: #005b94;
+    color: #fff;
+}
+
+.unauth-btn--primary:hover {
+    background: #004c7d;
+}
+
+/* Nút phụ (đỏ nhạt cho Đăng xuất) */
+.unauth-btn--danger {
+    background: #fff;
+    border-color: #f0c9c4;
+    color: #c0392b;
+}
+
+.unauth-btn--danger:hover {
+    background: #fef3f2;
+}
+
+/* ===== Responsive: màn nhỏ xếp chồng ===== */
+@media (max-width: 900px) {
+    .unauth-page {
+        flex-direction: column;
+    }
+
+    .unauth-brand {
+        width: 100%;
+        padding: 36px 24px;
+    }
+
+    .unauth-brand p {
+        max-width: none;
+    }
+
+    .unauth-content {
+        padding: 24px 16px 48px;
+    }
+
+    .unauth-card {
+        padding: 32px 24px;
+    }
+}

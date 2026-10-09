@@ -1,0 +1,16 @@
+Select-String : Cannot find path 'D:\Monica\M-ChamCong\M.Repositories\DatabaseContext.cs' because it does not exist.
+At line:1 char:51
++ ... /Work ==='; Select-String -Path 'D:\Monica\M-ChamCong\M.Repositories\ ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (D:\Monica\M-Cha...abaseContext.cs:String) [Select-String], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SelectStringCommand
+ 
+Select-String : Cannot find path 'D:\Monica\M-ChamCong\M.Repositories\DatabaseContext.cs' because it does not exist.
+At line:1 char:1
++ Select-String -Path D:\Monica\M-ChamCong\M.Repositories\DatabaseConte ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (D:\Monica\M-Cha...abaseContext.cs:String) [Select-String], ItemNotFound 
+   Exception
+    + FullyQualifiedErrorId : PathNotFound,Microsoft.PowerShell.Commands.SelectStringCommand
+ 

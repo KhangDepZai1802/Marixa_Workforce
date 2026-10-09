@@ -1,0 +1,50 @@
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace M.Repositories.Migrations
+{
+    /// <inheritdoc />
+    public partial class AddAttendanceCheckInTimes : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<string>(
+                name: "ChangeSummary",
+                table: "Attendances",
+                type: "nvarchar(500)",
+                maxLength: 500,
+                nullable: true);
+
+            migrationBuilder.AddColumn<DateTimeOffset>(
+                name: "CheckInTime",
+                table: "Attendances",
+                type: "datetimeoffset",
+                nullable: true);
+
+            migrationBuilder.AddColumn<DateTimeOffset>(
+                name: "CheckOutTime",
+                table: "Attendances",
+                type: "datetimeoffset",
+                nullable: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "ChangeSummary",
+                table: "Attendances");
+
+            migrationBuilder.DropColumn(
+                name: "CheckInTime",
+                table: "Attendances");
+
+            migrationBuilder.DropColumn(
+                name: "CheckOutTime",
+                table: "Attendances");
+        }
+    }
+}

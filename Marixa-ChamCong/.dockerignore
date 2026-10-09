@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+**/.gitignore
+ChamCong/node_modules/
+ChamCong/dist/
+figma-mocks/
+monica
+SampleData.sql
+.agnes/
+.agneshints
+AGENTS.md

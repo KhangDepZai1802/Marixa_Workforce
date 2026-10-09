@@ -1,0 +1,57 @@
+# Render Blueprint — M-ChamCong
+# Tạo cả 3 service bằng 1 nút: PostgreSQL + API (Docker) + Web (static).
+# Render dashboard -> New -> Blueprint -> chọn repo -> Apply
+databases:
+  - name: m-chamcon-db
+    plan: free
+    databaseName: m_chamcon
+
+services:
+  - name: m-chamcon-api
+    type: web
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: singapore
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Database__Provider
+        value: PostgreSQL
+      - key: ConnectionStrings__MyCnn
+        fromDatabase:
+          name: m-chamcon-db
+          property: connectionString
+      - key: JwtSettings__Key
+        value: "CHANGE-ME-TO-A-LONG-RANDOM-SECRET-MIN-32-CHARS"
+      - key: JwtSettings__Issuer
+        value: "API"
+      - key: JwtSettings__Audience
+        value: "APIUser"
+      # .NET map "__" -> ":", và 0 là index mảng
+      - key: "Cors__AllowedOrigins__0"
+# Tạo cả 3 service bằng 1 nút: PostgreSQL + API (Docker) + Web (static).
+      - key: "Cors__AllowedOrigins__1"
+        value: "https://m-chamcong.onrender.com"
+      - key: "Cors__AllowedOrigins__2"
+        value: "https://m-chamcon-api.onrender.com"
+    healthCheckPath: /swagger/v1/swagger.json
+
+  - name: m-chamcon-web
+    type: web
+    runtime: static
+    staticPublishPath: ./ChamCong/dist
+    buildCommand: cd ChamCong && npm install --no-audit --no-fund && npm run build
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: "https://m-chamcon-api.onrender.com/api"
+    # SPA rewrite: mọi route client-side ( /employees, /home ... ) đều
+    # trả về index.html để React Router xử lý -> hết lỗi 404 khi refresh.
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
+    # Lưu ý: API Free KHÔNG gắn được Persistent Disk (Render chỉ cho paid),
+    # nên ảnh chấm công mất khi redeploy. Nâng API lên 0.5c-512mb để Attach
+    # Disk mount /app/wwwroot/uploads (tab Disks) muốn giữ ảnh lâu dài.
