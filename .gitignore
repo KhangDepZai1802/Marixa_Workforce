@@ -1,0 +1,14 @@
+# Tài liệu tham khảo của công ty khác, không đưa lên repository Marixa.
+MOTAHETHONG.docx
+
+# Ứng dụng Next.js khi bắt đầu triển khai.
+node_modules/
+.next/
+.vercel/
+.env
+.env.*
+!.env.example
+
+# File tạm của Supabase CLI nếu được dùng cho quản lý project hosted.
+supabase/.branches/
+supabase/.temp/
