@@ -5,6 +5,8 @@ MOTAHETHONG.docx
 node_modules/
 .next/
 .vercel/
+.test-build/
+*.tsbuildinfo
 .env
 .env.*
 !.env.example

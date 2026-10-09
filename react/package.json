@@ -1,0 +1,40 @@
+{
+  "name": "marixa-cham-cong",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "lint": "eslint src",
+    "start": "next start",
+    "test": "tsc --module commonjs --moduleResolution node --target ES2022 --skipLibCheck --outDir .test-build src/lib/domain/timesheet.ts src/lib/domain/timesheet.test.ts && node --test .test-build/timesheet.test.js",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@fontsource/be-vietnam-pro": "^5.3.0",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.57.0",
+    "exceljs": "^4.4.0",
+    "next": "16.4.0",
+    "pdfkit": "^0.20.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.25.0",
+    "eslint-config-next": "16.4.0",
+    "@types/node": "^22.18.0",
+    "@types/pdfkit": "^0.17.6",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.9.0"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}
