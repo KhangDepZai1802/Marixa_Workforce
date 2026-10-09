@@ -128,3 +128,23 @@ Chủ dự án đã vào Dashboard Vercel của tài khoản `KhangDeploy`, gói
 ## Kế hoạch triển khai
 
 Checklist thực thi chi tiết, cách làm và điều kiện đánh dấu từng bước nằm trong [`../plan.md`](../plan.md). File này lưu quyết định nghiệp vụ mới, tiến độ thực tế và bằng chứng kiểm chứng; hiện chưa có phase triển khai nào hoàn tất.
+
+## Đánh giá nhanh backend Marixa-ChamCong — 09/10/2026
+
+### Tiêu chí và phát hiện
+
+Dùng các quyết định đang hiệu lực trong `docs/plan.md` làm chuẩn khi chúng khác các đặc tả `docs/01`–`07`. Trước khi sửa, backend bắt buộc GPS khi tạo event; function SQL cũng chặn chấm nếu chưa cấu hình văn phòng và retention ảnh. Service tính công bỏ qua ngày nghỉ, cắt giây trước khi quy đổi phút, và coi thiếu ảnh hoặc event online chưa được HR đánh dấu là ngoại lệ chặn khóa kỳ. Chưa có giao dịch phép năm cộng tự động, điều chỉnh kỳ sau cho event offline đến sau khóa kỳ, UI nghiệp vụ hoặc queue IndexedDB.
+
+### Thay đổi đã làm
+
+- API và migration `202610090012_optional_evidence_and_leave_accrual.sql`: GPS nullable theo nhóm đầy đủ hoặc không gửi; thiếu GPS/ảnh không chặn event; `not_provided` không bị xem là lỗi; hỗ trợ PNG cùng JPEG/WebP; thiếu văn phòng không suy ra ngoài văn phòng.
+- Service tính công giữ thời gian theo giây, cho ngày nghỉ/lễ tính giờ thực tế thành tăng ca sau khi trừ giờ trưa, và không sinh ngoại lệ vắng mặt vào ngày nghỉ. Cờ ngoài văn phòng, GPS thiếu/độ chính xác thấp và ảnh hết hạn không tự chặn khóa kỳ.
+- Thêm cấp 1 ngày phép theo tháng, có khóa idempotent theo nhân viên/tháng; cron hiện tại chạy cùng dọn ảnh.
+- Event offline vào kỳ đã khóa được lưu mà không sửa snapshot gốc; tạo khoản điều chỉnh chờ HR ở kỳ mở. Thêm endpoint HR duyệt/từ chối, buộc tính lại snapshot sau khi duyệt và xuất riêng phần điều chỉnh kỳ trước trong Excel.
+- Cập nhật server secret thành `SUPABASE_SECRET_KEY`; loại bỏ `tsconfig.tsbuildinfo` sinh tự động khỏi repository; cập nhật README/kiến trúc trong project con.
+
+### Kiểm tra và phần còn mở
+
+`npm test` đạt 6/6 kiểm thử đơn vị; `npm run build` đạt trên Next.js 16.4.0 (build đã chạy kiểm tra TypeScript). Migration mới chưa được áp hoặc chạy thử trên PostgreSQL/Supabase test; chưa có kiểm thử RLS, Storage, API tích hợp, luồng trên điện thoại hoặc restore. Không có `.env.local`/kết nối test được cung cấp trong repository.
+
+Vẫn chưa đáp ứng đủ bộ tài liệu để đưa cho người dùng: chưa có UI đăng nhập/chấm công/HR/admin, queue IndexedDB, kiểm thử tích hợp/e2e, lint, cấu hình và xác nhận test Supabase, backup/restore hoặc deploy. Các phase chưa được đánh dấu trong checklist. `docs/plan.md` và tài liệu đặc tả không bị sửa theo quy tắc `AGENTS.md`; đường dẫn app hiện tại là `Marixa-ChamCong/web`, nên phần cấu hình root directory trong `docs/SETUP_CLOUD.md` cũng cần người quản lý tài liệu rà soát.

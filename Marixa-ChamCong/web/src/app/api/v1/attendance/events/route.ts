@@ -8,10 +8,14 @@ const bodySchema = z.object({
   device_occurred_at: z.string().datetime({ offset: true }).nullable().optional(),
   source: z.enum(["online", "offline"]).default("online"),
   idempotency_key: z.string().uuid(),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-  accuracy_m: z.number().positive().max(10000),
-}).strict();
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
+  accuracy_m: z.number().positive().max(10000).nullable().optional(),
+  photo_expected: z.boolean().default(false),
+}).strict().refine((value) => {
+  const locationFields = [value.latitude, value.longitude, value.accuracy_m];
+  return locationFields.every((field) => field == null) || locationFields.every((field) => field != null);
+}, { path: ["location"], message: "Gửi đủ latitude, longitude, accuracy_m hoặc bỏ trống cả ba." });
 
 export async function GET(request: Request) {
   const requestId = randomUUID();
@@ -53,8 +57,9 @@ export async function POST(request: Request) {
   }
   const { data, error } = await supabase.rpc("create_attendance_event", {
     p_kind: parsed.data.kind, p_source: parsed.data.source, p_device_occurred_at: parsed.data.device_occurred_at ?? null,
-    p_idempotency_key: parsed.data.idempotency_key, p_latitude: parsed.data.latitude,
-    p_longitude: parsed.data.longitude, p_accuracy_m: parsed.data.accuracy_m,
+    p_idempotency_key: parsed.data.idempotency_key, p_latitude: parsed.data.latitude ?? null,
+    p_longitude: parsed.data.longitude ?? null, p_accuracy_m: parsed.data.accuracy_m ?? null,
+    p_photo_expected: parsed.data.photo_expected,
   });
   if (error?.code === "23505") return jsonError(409, "ATTENDANCE_ALREADY_EXISTS", "Đã có lượt chấm cùng loại trong ngày. Hãy gửi yêu cầu sửa công nếu cần.", requestId);
   if (error || !data) return jsonError(500, "ATTENDANCE_CREATE_FAILED", "Không thể ghi nhận lượt chấm. Vui lòng thử lại.", requestId);

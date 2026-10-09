@@ -12,21 +12,24 @@
 
 Migration SQL được quản lý theo thứ tự trong `supabase/migrations/` và áp dụng bằng `psql` trực tiếp đến Supabase hosted. Thời điểm lưu UTC; `work_date` và giờ nghiệp vụ tính theo `Asia/Ho_Chi_Minh`. Event chấm công gốc bất biến; ảnh và kết quả kiểm tra lưu metadata riêng. Chỉnh công và phép dùng record/giao dịch riêng. Snapshot kỳ công có phiên bản, chỉ HR đánh dấu đã kiểm tra sau khi ghi chú hết ngoại lệ; admin khóa và mở lại có lý do.
 
-Mọi request nghiệp vụ có quyền ở cả API và database. Route không tin role từ client. RLS chặn đọc/sửa trái phép kể cả khi client dùng publishable key. Các hàm `SECURITY DEFINER` kiểm tra `auth.uid()`, vai trò, trạng thái tài khoản, quyền tự duyệt và khóa hàng liên quan trước khi thay đổi.
+Mọi request nghiệp vụ có quyền ở cả API và database. Route không tin role từ client. RLS chặn đọc/sửa trái phép kể cả khi client dùng publishable key. Các hàm `SECURITY DEFINER` kiểm tra `auth.uid()`, vai trò, trạng thái tài khoản, quyền tự duyệt và khóa hàng liên quan trước khi thay đổi. Timestamp và lượt chấm gốc không bị sửa; metadata ảnh/trạng thái kiểm tra có thể đổi theo luồng được kiểm soát.
 
 ## Phạm vi đã dựng
 
 - Auth server session, hồ sơ hiện tại, đổi mật khẩu tạm.
-- Chấm công online/offline idempotent có GPS, vị trí văn phòng, ảnh private và signed URL.
+- API chấm công online/offline idempotent; GPS và ảnh riêng tư đều tùy chọn, hỗ trợ PNG/JPEG/WebP khi có ảnh.
 - Tạo/yêu cầu/duyệt/hủy nghỉ, phép năm, tăng ca và sửa công.
 - Nhân viên, cấp/khóa tài khoản, reset mật khẩu, cấu hình văn phòng/giờ/lịch nghỉ/loại nghỉ.
 - Dashboard HR, danh sách chấm công và yêu cầu chờ.
-- Tính snapshot ngày công, ghi chú ngoại lệ, đối soát HR, khóa/mở lại admin, Excel và PDF.
-- Dọn ảnh hết hạn.
+- Tính snapshot ngày công theo giây, tăng ca tự động ngày nghỉ, ghi chú ngoại lệ, khóa/mở lại admin, Excel và PDF.
+- Cấp phép năm hằng tháng idempotent; chấm offline tới sau kỳ khóa đi vào điều chỉnh riêng ở kỳ mở sau, có HR review và cột riêng trong Excel.
+- Dọn ảnh hết hạn trong cùng tác vụ cron hằng ngày.
+
+Phần UI nghiệp vụ, IndexedDB queue và kiểm thử tích hợp/e2e chưa được xây dựng; các API/backend chưa đủ để mở cho người dùng thật.
 
 ## Triển khai
 
-Vercel phục vụ ứng dụng Next.js; Supabase cung cấp Auth, Postgres và Storage. Dùng project Supabase hosted riêng cho thử nghiệm, không dùng Docker hoặc local Supabase stack. Cấu hình `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_APP_URL` và `CRON_SECRET` ở môi trường server phù hợp; service role không bao giờ có tiền tố `NEXT_PUBLIC_`.
+Vercel phục vụ ứng dụng Next.js từ `Marixa-ChamCong/web`; Supabase cung cấp Auth, Postgres và Storage. Dùng project Supabase hosted riêng cho thử nghiệm, không dùng Docker hoặc local Supabase stack. Cấu hình `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_APP_URL` và `CRON_SECRET` ở môi trường server phù hợp; secret key không bao giờ có tiền tố `NEXT_PUBLIC_`.
 
 Chính sách giờ, văn phòng, ngày nghỉ, số phép và thời hạn lưu ảnh phải được admin nhập trước khi mở chấm công. Backup database và object Storage là quy trình riêng; cần hoàn tất và thử restore trước khi dùng dữ liệu nhân viên thật. Xem `README.md` để biết giới hạn triển khai còn lại và rủi ro gói Vercel Hobby trong tài liệu đặc tả.
 

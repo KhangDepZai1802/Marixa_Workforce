@@ -291,6 +291,8 @@ FakesAssemblies/
 .ntvs_analysis.dat
 node_modules/
 web/.next/
+web/tsconfig.tsbuildinfo
+web/.test-build/
 web/.env.local
 web/.env.*.local
 

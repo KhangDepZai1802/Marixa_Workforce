@@ -10,6 +10,7 @@ export async function POST(request: Request, context: RouteContext) {
   const requestId = randomUUID();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
+  if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
   if (!actor.employeeId) return jsonError(403, "EMPLOYEE_PROFILE_REQUIRED", "Tài khoản chưa có hồ sơ nhân viên.", requestId);
   const { id } = await context.params;
   const supabase = await createSupabaseServerClient();
@@ -23,15 +24,16 @@ export async function POST(request: Request, context: RouteContext) {
   try { form = await request.formData(); } catch { return jsonError(400, "INVALID_MULTIPART", "Tệp ảnh không hợp lệ.", requestId); }
   const file = form.get("photo");
   if (!(file instanceof File)) return jsonError(422, "PHOTO_REQUIRED", "Cần tải ảnh chấm công lên.", requestId);
-  if (!new Set(["image/webp", "image/jpeg"]).has(file.type) || file.size <= 0 || file.size > MAX_BYTES)
-    return jsonError(422, "PHOTO_INVALID", "Ảnh phải là WebP/JPEG và không vượt quá 200 KB.", requestId);
+  if (!new Set(["image/webp", "image/jpeg", "image/png"]).has(file.type) || file.size <= 0 || file.size > MAX_BYTES)
+    return jsonError(422, "PHOTO_INVALID", "Ảnh phải là WebP, JPEG hoặc PNG và không vượt quá 200 KB.", requestId);
   const bytes = new Uint8Array(await file.arrayBuffer());
   const isWebp = bytes.length >= 12 && String.fromCharCode(...bytes.subarray(0, 4)) === "RIFF" && String.fromCharCode(...bytes.subarray(8, 12)) === "WEBP";
   const isJpeg = bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-  if ((file.type === "image/webp" && !isWebp) || (file.type === "image/jpeg" && !isJpeg))
+  const isPng = bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 && bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a;
+  if ((file.type === "image/webp" && !isWebp) || (file.type === "image/jpeg" && !isJpeg) || (file.type === "image/png" && !isPng))
     return jsonError(422, "PHOTO_CONTENT_MISMATCH", "Nội dung tệp không khớp định dạng ảnh.", requestId);
   const [year, month] = event.work_date.split("-");
-  const extension = file.type === "image/webp" ? "webp" : "jpg";
+  const extension = file.type === "image/webp" ? "webp" : file.type === "image/png" ? "png" : "jpg";
   const path = `${actor.employeeId}/${year}/${month}/${event.work_date}/${id}.${extension}`;
   const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, bytes, { contentType: file.type, upsert: true, cacheControl: "3600" });
   if (uploadError) return jsonError(503, "PHOTO_UPLOAD_FAILED", "Giờ chấm đã được ghi nhận. Ảnh chưa tải lên; hãy thử lại khi có mạng.", requestId);
@@ -49,6 +51,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const requestId = randomUUID();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
+  if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
   const { id } = await context.params;
   const supabase = await createSupabaseServerClient();
   const { data: event } = await supabase.from("attendance_events").select("id, employee_id, evidence_status").eq("id", id).maybeSingle();
