@@ -27,13 +27,52 @@ const normalizeEmployeeSearch = (value) =>
         .replace(/đ/gi, "d")
         .toLocaleLowerCase("vi-VN");
 
+// Giờ Việt Nam (UTC+7) dạng HH:mm cho ô time, khớp formatVnTime trên bảng và cách
+// backend lưu (UTC). Không dùng toTimeString() (múi giờ máy browser) -> tránh sai giờ.
+const toVnTimeString = (iso) =>
+    iso
+        ? new Date(iso).toLocaleTimeString("vi-VN", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+              timeZone: "Asia/Ho_Chi_Minh",
+          })
+        : "";
+
+// Cửa sổ nghỉ trưa + phút nghỉ (khớp ca hành chính 12:00–13:00, 60' trong
+// AttendanceTimeCalculator) để tính "Giờ thực" (net) như backend.
+const LUNCH_START_MIN = 12 * 60;
+const LUNCH_MINUTES = 60;
+
+const toMin = (t) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+};
+
+// Tính "Giờ thực" (net, tròn số giờ) từ hai ô HH:mm, mirror AttendanceTimeCalculator:
+// giờ trần (ra - vào) trừ phần trùng cửa sổ nghỉ trưa. VD 08:00 -> 17:00 = 8h.
+const calcNetHours = (inTime, outTime) => {
+    if (!inTime || !outTime) return "";
+    const inMin = toMin(inTime);
+    const outMin = toMin(outTime);
+    let elapsed = outMin - inMin;
+    if (elapsed < 0) elapsed += 24 * 60; // ca qua nửa đêm
+    if (elapsed <= 0) return "0";
+    const lunchEnd = LUNCH_START_MIN + LUNCH_MINUTES;
+    const overlapStart = Math.max(inMin, LUNCH_START_MIN);
+    const overlapEnd = Math.min(outMin, lunchEnd);
+    const lunch = overlapEnd > overlapStart ? Math.min(LUNCH_MINUTES, overlapEnd - overlapStart) : 0;
+    const net = Math.max(0, elapsed - lunch);
+    return String(Math.round(net / 60));
+};
+
 const buildDraft = (row) =>
     row
         ? {
               employeeId: row.employeeId,
               attendanceDate: (row.attendanceDate || "").slice(0, 10),
-              checkInTime: row.checkInTime ? new Date(row.checkInTime).toTimeString().slice(0, 5) : "",
-              checkOutTime: row.checkOutTime ? new Date(row.checkOutTime).toTimeString().slice(0, 5) : "",
+              checkInTime: row.checkInTime ? toVnTimeString(row.checkInTime) : "",
+              checkOutTime: row.checkOutTime ? toVnTimeString(row.checkOutTime) : "",
               status: row.status ?? "",
               actualHours: row.actualHours ?? "",
               approvalStatus: row.approvalStatus ?? 0,
@@ -77,11 +116,11 @@ const AttendanceFormModal = ({ open, row, employees, onClose, onSubmit }) => {
     const setTime = (key) => (event) => {
         const next = { ...form, [key]: event.target.value };
         if (next.checkInTime && next.checkOutTime) {
-            const [inHour, inMinute] = next.checkInTime.split(":").map(Number);
-            const [outHour, outMinute] = next.checkOutTime.split(":").map(Number);
-            let minutes = outHour * 60 + outMinute - (inHour * 60 + inMinute);
-            if (minutes < 0) minutes += 24 * 60;
-            next.actualHours = String(Math.round(minutes / 60));
+            next.actualHours = calcNetHours(next.checkInTime, next.checkOutTime);
+
+
+
+
         }
         setForm(next);
     };
