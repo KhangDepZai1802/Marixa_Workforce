@@ -9,6 +9,12 @@ alter table public.attendance_events drop constraint if exists attendance_events
 alter table public.attendance_events drop constraint if exists attendance_events_accuracy_m_check;
 alter table public.attendance_events drop constraint if exists attendance_events_evidence_status_check;
 alter table public.attendance_events
+  drop constraint if exists attendance_events_latitude_range,
+  drop constraint if exists attendance_events_longitude_range,
+  drop constraint if exists attendance_events_accuracy_range,
+  drop constraint if exists attendance_events_location_all_or_none,
+  drop constraint if exists attendance_events_evidence_status_check;
+alter table public.attendance_events
   add constraint attendance_events_latitude_range check (latitude is null or latitude between -90 and 90),
   add constraint attendance_events_longitude_range check (longitude is null or longitude between -180 and 180),
   add constraint attendance_events_accuracy_range check (accuracy_m is null or accuracy_m between 0 and 10000),
@@ -258,7 +264,9 @@ begin
          and new.occurred_at is not distinct from old.occurred_at
          and new.device_occurred_at is not distinct from old.device_occurred_at
          and new.source is not distinct from old.source
-         and new.idempotency_key is not distinct from old.idempotency_key then return new;
+         and new.idempotency_key is not distinct from old.idempotency_key then
+        return new;
+      end if;
       raise exception using errcode='55000',message='attendance period is locked';
     end if;
     if v_period.status='hr_reviewed' then

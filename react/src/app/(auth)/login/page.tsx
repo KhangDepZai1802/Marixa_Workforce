@@ -10,7 +10,7 @@ type LoginResult = { data: { role: "employee" | "hr" | "admin"; must_change_pass
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -20,7 +20,7 @@ export default function LoginPage() {
     setBusy(true);
     setError("");
     try {
-      const result = await apiRequest<LoginResult>("/api/v1/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+      const result = await apiRequest<LoginResult>("/api/v1/auth/login", { method: "POST", body: JSON.stringify({ phone, password }) });
       router.replace(result.data.must_change_password ? "/change-password" : "/today");
       router.refresh();
     } catch (cause) {
@@ -35,7 +35,7 @@ export default function LoginPage() {
       <div className="login-brand"><Image src="/logo.png" width={78} height={78} alt="Logo Marixa" priority /><h1 id="login-title">Đăng nhập Marixa</h1><p>Hệ thống chấm công và nhân sự</p></div>
       {error && <Notice kind="error">{error}</Notice>}
       <form className="login-form" onSubmit={submit}>
-        <Field label="Email công việc"><input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></Field>
+        <Field label="Số điện thoại"><input type="tel" name="phone" autoComplete="tel" inputMode="tel" required value={phone} onChange={(event) => setPhone(event.target.value)} /></Field>
         <Field label="Mật khẩu"><input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></Field>
         <Button type="submit" className="button-large" disabled={busy}>{busy ? "Đang đăng nhập…" : "Đăng nhập"}</Button>
       </form>

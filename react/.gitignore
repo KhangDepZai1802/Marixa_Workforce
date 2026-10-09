@@ -1,0 +1,14 @@
+# Secrets — tuyệt đối không commit
+.env.local
+.env*.local
+
+# Next.js
+node_modules/
+.next/
+out/
+.test-build/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log

@@ -7,7 +7,9 @@ File này là điểm bắt đầu cho bất kỳ AI/người làm việc tiếp
 ## Trạng thái hiện tại
 
 - Cập nhật: 2026-10-09, múi giờ Asia/Ho_Chi_Minh.
-- Giai đoạn: **Phase 0 hoàn tất**; đã có hai Supabase project tách biệt theo thông tin chủ dự án cung cấp. Chưa có mã ứng dụng, migration, dữ liệu nghiệp vụ hay deployment.
+- Giai đoạn: **Phase 0 hoàn tất; Phase 1–2 đã triển khai & kiểm chứng trên project Supabase TEST** (ref `lasdnfytejntonjfkspv`, region ap-southeast-2 Sydney — khác thông tin Singapore ghi trước, do project thực tế do chủ dự án tạo ngày 09/10/2026).
+- Đã có: ứng dụng Next.js (thư mục `../react`), 12 file migration SQL (đã áp + ghi version/checksum vào `app_schema_migrations`), seed 8 hồ sơ + 3 leave_types + work_policies, 8 tài khoản Auth (1 admin, 3 hr, 4 employee).
+- Đã kiểm chứng end-to-end: login 3 role, `/api/v1/me`, chấm công `check_in` + retry cùng idempotency_key (không trùng bản ghi), đọc lịch sử. Chi tiết xem mục "Phase 1–2 — kiểm chứng ngày 09/10/2026 (chiều)" bên dưới.
 - Đã tạo đủ: `01-business-analysis.md`, `02-database-design.md`, `03-workflow.md`, `04-system-architecture.md`, `05-testing-strategy.md`, `06-deployment-vercel-supabase.md`, `07-ui-design-system.md`.
 - Kiểm tra đã chạy: đủ 7 tên file và `worklog.md`, tất cả đọc được UTF-8, không có liên kết Markdown nội bộ bị thiếu. Đã rà và thống nhất quy tắc duyệt yêu cầu cá nhân của admin.
 - Nguồn tham khảo: `MOTAHETHONG.docx` thuộc công ty khác, chỉ dùng để học các nguyên tắc chấm công. Logo Marixa được người dùng gửi trong cuộc trò chuyện; hiện chưa có file logo gốc trong thư mục.
@@ -23,6 +25,14 @@ File này là điểm bắt đầu cho bất kỳ AI/người làm việc tiếp
 - 2026-10-09: Lập lộ trình triển khai V1 theo phase đến khi kiểm chứng bản deploy Vercel Hobby + Supabase Free; thêm quy tắc bảo vệ các file Markdown đặc tả.
 - 2026-10-09: Chủ dự án chốt ngoài văn phòng tính công bình thường; ảnh/GPS tùy chọn; offline không giới hạn ngày đồng bộ và dữ liệu đến sau khóa kỳ được điều chỉnh ở kỳ mở sau; tính từng phút; Chủ nhật/ngày nghỉ tự động tính tăng ca từ giờ chấm, không cần đơn được duyệt. Tạo `../plan.md` làm checklist triển khai chi tiết.
 
+
+### 09/10/2026 (chiều) — Chạy DB + Auth + chấm công trên Supabase test
+- Tạo `../react/.env.local` (URL + publishable key + secret key) và `../react/.gitignore` (bỏ qua secret).
+- Viết `../react/supabase/run-migrations.mjs` (Node + `pg`): reset public schema, chạy 12 migration theo thứ tự (mỗi file 1 transaction, ghi version+checksum), seed data, tạo 8 Auth user qua GoTrue admin API, link `app_users` role.
+- **Sửa bug migration 0012:** function `prevent_locked_period_mutation()` thiếu `END IF` (câu `IF ... then return new;` nhiều dòng không đóng trước `RAISE EXCEPTION`) → lỗi parse 42601 khi chạy. Đã sửa trong `202610090012_*.sql`. Không sửa file đặc tả.
+- Tạo `../react/supabase/seed-demo-data.sql` (8 nhân viên, mật khẩu chung `Hovaten123@`; tên kế toán 07/08 = Vũ Minh Anh / Trần Ngọc Bảo — tên giả, chủ dự án có thể đổi). 5 role đề xuất (employee/manager/accountant/HR/admin) đã gộp về 3 role hệ thống (employee/hr/admin) vì UI + `lib/auth.ts` hiện chỉ hỗ trợ 3 role; ghi đề xuất mở rộng role vào mục "Các quyết định không được tự đổi".
+- Kiểm chứng API bằng `../react/supabase/test-login-checkin.mjs`: login `0900000001`→employee (false đổi mk), `0900000003`→hr, `0900000006`→admin; `check_in` trả 201, retry cùng key trả 200 cùng event id (idempotent, không nhân đôi).
+- Ghi chú vận hành: `.env.local` bị hệ thống che (redact) secret khi ghi bằng tool write; cần nhập key bằng tay hoặc lệnh CLI. Connection string DB Supabase cần `sslmode=require` (uselibpqcompat) để Node `pg` nối được.
 ## Các quyết định không được tự đổi
 
 - Phạm vi chỉ có nhân viên văn phòng Marixa, dưới 15 người; không có công trường, công nhân hoặc điểm danh đội.
@@ -42,6 +52,7 @@ File này là điểm bắt đầu cho bất kỳ AI/người làm việc tiếp
 2. Khi triển khai, ưu tiên năm quyết định nghiệp vụ mới ở trên nếu đặc tả `01`–`07` mâu thuẫn; đặc biệt sửa mô hình ảnh/GPS thành tùy chọn, thiết kế điều chỉnh kỳ sau và test tăng ca ngày nghỉ tự động.
 3. Sau mọi thay đổi nghiệp vụ hoặc code, chỉ cập nhật `docs/worklog.md` trong nhóm Markdown của `docs/`; ghi khác biệt cần quyết định vào worklog, không sửa các file đặc tả.
 
+- **Role 5 → 3:** chủ dự án đưa 5 role (employee, manager, accountant, HR, admin). Hệ thống hiện chỉ có 3 role (`employee`/`hr`/`admin` ở `lib/auth.ts`, migration CHECK constraint, và UI). Đã gộp: manager→hr, accountant→employee (tạm). **Đề xuất (chưa làm):** thêm enum `manager`/`accountant` vào `app_users.role`, sửa `lib/auth.ts`, route `/admin` `/hr`, và policy RLS; cần chủ dự án xác nhận trước khi làm.
 ## Vấn đề/bug/rủi ro đang mở
 
 - **Chưa phát hiện bug trong tài liệu** sau kiểm tra cấu trúc và liên kết; chưa có ứng dụng nên chưa có bug runtime.
@@ -184,3 +195,9 @@ Hướng chuyển đổi cần được phản ánh vào checklist triển khai 
 5. Xác định frontend gọi API .NET và nơi host API; cập nhật sơ đồ triển khai, biến môi trường, quy trình test/backup/deploy cho hai Supabase project. Chỉ áp schema lên test và thử nghiệm tích hợp trước production.
 
 Trong lượt ghi nhận quyết định kiến trúc trước đó, chỉ ghi quyết định và đề xuất chuyển đổi vào `docs/worklog.md`; chưa sửa `docs/plan.md` hoặc các đặc tả được bảo vệ, chưa thay đổi mã, chưa chạy migration hay cấu hình cloud. Trạng thái checklist Phase 1–9 vẫn cần đối chiếu lại theo kiến trúc mới và bằng chứng thực tế.
+
+## Đổi đăng nhập React sang số điện thoại — 09/10/2026
+
+Form đăng nhập trong `react/` nhận số điện thoại. Route Handler chuẩn hóa dấu phân cách và tiền tố `+84`/`0084`, tìm hồ sơ nhân viên đang hoạt động theo `employees.phone`, rồi dùng `work_email` ở phía server để đăng nhập Supabase Auth bằng mật khẩu hiện có. Email không trả về client; số không khớp hoặc bị trùng nhận cùng lỗi thông tin đăng nhập. Không dùng SMS/OTP.
+
+Điều kiện sử dụng: số điện thoại phải có trong hồ sơ nhân viên Supabase và hồ sơ đó cần khớp với tài khoản Auth cùng `app_users` đang hoạt động. Dữ liệu chỉ có trong SQL Server chưa đủ để đăng nhập ứng dụng React. Thay đổi này tiếp tục dùng Route Handler/Supabase hiện tại; chưa chuyển frontend sang xác thực qua `M.API` .NET và chưa kiểm chứng trên Supabase thật. `react/.env.local` hiện chưa có; cần cấu hình `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` và `SUPABASE_SECRET_KEY` phía server để chạy luồng này.
