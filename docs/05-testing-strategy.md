@@ -6,9 +6,14 @@
 
 ## 2. Ma trận kịch bản bắt buộc
 
+Các ví dụ 08:00–17:00 dưới đây dùng **ca chung mặc định khi khởi tạo**, không phải mốc cố định trong code. Chạy lại phép tính với ca do admin đổi và ngày hiệu lực khác nhau; mọi nhân viên cùng nhận một ca đang có hiệu lực.
+
 | Nhóm | Kịch bản | Kết quả mong đợi |
 | --- | --- | --- |
 | Chấm công | Chấm vào 08:00, ra 17:00 ngày thứ 2–thứ 7 | 8 giờ thường, nghỉ trưa 1 giờ; đủ hai ảnh/GPS. |
+| Cấu hình ca chung | Admin tạo phiên bản từ ngày kế tiếp: thứ 2–thứ 6, 09:00–18:00, nghỉ 12:30–13:30, miễn trừ đi trễ 10 phút | Toàn bộ nhân viên dùng ca mới từ ngày hiệu lực; ngày trước đó vẫn theo ca cũ. Chấm 09:00–18:00 được 480 phút thường; chấm 09:05 không bị tính phút đi trễ, chấm 09:11 bị tính theo quy tắc miễn trừ. |
+| Ngày nghỉ với ca đã đổi | Chấm 09:00–18:00 trong ngày nghỉ sau khi ca mới có hiệu lực | 480 phút tăng ca tự động; trừ nghỉ 12:30–13:30 theo ca mới, không dùng cứng 12:00–13:00. |
+| Quyền và lịch sử ca | HR/employee thử chỉnh ca; admin chọn ngày hiệu lực chồng lấn hoặc đổi ca sau khi khóa kỳ | Chỉ admin lưu được phiên bản hợp lệ; từ chối khoảng hiệu lực chồng lấn; có audit và snapshot kỳ đã khóa không đổi. |
 | Giờ công | Vào 08:30, ra 17:00 | 7 giờ 30 phút thường, 30 phút đi trễ nếu không có nghỉ/điều chỉnh. |
 | Giờ công | Vào 08:00, ra 12:00 | 4 giờ thường, về sớm; không trừ thêm giờ trưa. |
 | Giờ công | Vào 08:00, ra 18:00, chưa có đơn tăng ca duyệt | 8 giờ thường, 0 giờ tăng ca; khoảng ngoài giờ chỉ là dữ kiện. |

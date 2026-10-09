@@ -27,7 +27,7 @@ File này là điểm bắt đầu cho bất kỳ AI/người làm việc tiếp
 
 - Phạm vi chỉ có nhân viên văn phòng Marixa, dưới 15 người; không có công trường, công nhân hoặc điểm danh đội.
 - Ba role: `employee`, `hr`, `admin`; có nhiều nhân viên/HR và đúng một admin hoạt động. HR tự chấm công, xem dữ liệu toàn khối; admin toàn quyền.
-- Email + mật khẩu. Chấm vào/ra một lần mỗi ngày, thứ 2–thứ 7, 08:00–17:00, nghỉ 12:00–13:00.
+- Email + mật khẩu. Chấm vào/ra một lần mỗi ngày. Admin quản lý **một ca chung cho toàn bộ nhân viên** với ngày làm, giờ vào/ra, nghỉ trưa, miễn trừ đi trễ và ngày hiệu lực; thứ 2–thứ 7, 08:00–17:00, nghỉ 12:00–13:00, miễn trừ 0 phút chỉ là giá trị khởi tạo.
 - Ảnh và GPS là bằng chứng **tùy chọn**; thiếu một hoặc cả hai vẫn chấm và tính công. Ngoài văn phòng tính công bình thường, cờ vị trí nếu có GPS chỉ để tham khảo. Offline không giới hạn ngày đồng bộ; chống trùng; nếu kỳ gốc đã khóa thì giữ snapshot và ghi điều chỉnh ở kỳ mở tiếp theo.
 - Tính công chính xác theo phút, không làm tròn theo block. Chủ nhật/ngày nghỉ tự động tính tăng ca từ giờ chấm thực tế; ngày làm việc bình thường vẫn cần duyệt tăng ca cho giờ ngoài lịch.
 - HR duyệt đơn và yêu cầu của nhân viên; admin duyệt hồ sơ của HR. HR kiểm tra bảng công; admin khóa kỳ.
@@ -66,7 +66,7 @@ File này là điểm bắt đầu cho bất kỳ AI/người làm việc tiếp
 | Ảnh/GPS | `01` §1, §3, §6; `02` §3–4; `03` §1, §7; `04` §4–5; `05` §2, §5; `06` §3, §6; `07` §4–5 yêu cầu đủ ảnh/GPS hoặc chặn khi từ chối quyền. | Hai dữ liệu **tùy chọn, độc lập**. Test bốn tổ hợp: cả hai, chỉ ảnh, chỉ GPS, không có; từ chối camera/GPS vẫn ghi event và tính công. Ảnh có thì private; upload ảnh lỗi không xóa event; thiếu ảnh không là ngoại lệ bắt buộc. GPS và ảnh nullable trong schema/API/queue; không đặt retention ảnh làm điều kiện chấm nếu không chọn lưu ảnh. UI báo thiếu bằng chứng như thông tin. |
 | Ngoài văn phòng | `01` §5, `03` §2, §7, `05` §2, `07` §4–5 đặt cờ vào luồng HR kiểm tra; `06` §3, §6 coi tọa độ là cấu hình bắt buộc. | Nếu có GPS và tọa độ tham chiếu thì gắn nhãn để xem; **vẫn tính công bình thường**, không cần HR duyệt mới được tính. Test GPS ngoài bán kính và không có cấu hình văn phòng: cả hai đều không chặn công; trường hợp sau không suy ra ngoài văn phòng. |
 | Offline sau khóa kỳ | `02` §4, `03` §3, §6–7, `05` §2, `06` §6 yêu cầu mở lại kỳ gốc để áp thay đổi sau khóa. | Không giới hạn ngày retry khi queue còn trên thiết bị. Event đến muộn giữ `work_date` gốc, `received_at` thực tế, idempotency; snapshot kỳ gốc giữ nguyên. HR đối soát và ghi điều chỉnh có audit vào **kỳ mở tiếp theo**; nếu kỳ đích đóng thì chuyển sang kỳ mở sau. Test retry lặp, đến muộn nhiều ngày, kỳ gốc/đích cùng khóa và Excel hai kỳ không cộng đôi. Mở lại kỳ chỉ là thao tác có audit riêng, không là điều kiện mặc định để nhận event. |
-| Tăng ca ngày nghỉ | `01` §3–4, `02` §3, `03` §5, `05` §2 chỉ tính tăng ca khi có đơn duyệt. | Chủ nhật/ngày nghỉ: phần làm thực tế đã đủ chấm vào/ra tự thành tăng ca, trừ giao với 12:00–13:00 theo quyết định 0.6; không cần đơn. Ngày làm bù do admin đánh dấu áp quy tắc ngày làm việc. Test Chủ nhật, lễ, làm bù, thiếu mốc, giao giờ trưa và ngày thường ra muộn không có đơn. |
+| Tăng ca ngày nghỉ | `01` §3–4, `02` §3, `03` §5, `05` §2 chỉ tính tăng ca khi có đơn duyệt. | Chủ nhật/ngày nghỉ: phần làm thực tế đã đủ chấm vào/ra tự thành tăng ca, trừ giao với khoảng nghỉ trưa của ca chung có hiệu lực (khởi tạo 12:00–13:00); không cần đơn. Ngày làm bù do admin đánh dấu áp quy tắc ngày làm việc. Test Chủ nhật, lễ, làm bù, thiếu mốc, giao giờ trưa của ca đã đổi và ngày thường ra muộn không có đơn. |
 | Độ chính xác phút | `01`–`07` chưa chốt cách quy đổi giây sang phút nguyên. | Giữ timestamp đầy đủ, không làm tròn theo block. Cộng số giây theo từng loại công rồi lấy phút nguyên một lần ở kết quả ngày theo quyết định 0.6. Test biên 59/60/61 giây và nhiều khoảng lẻ cộng lại. |
 | Phép năm | `01` §4, `02` §3 và `03` §4 mô tả cấp phép bằng giao dịch admin/HR nhưng chưa có lịch cộng tự động hằng tháng. | Chủ dự án chốt 12 ngày/năm, cộng 1 ngày vào ngày 1 mỗi tháng từ tháng nhân viên vào làm. Sổ phép cần giao dịch tháng idempotent; test tháng đầu, tháng tiếp theo, retry job và giới hạn 12 ngày trong năm theo chính sách. Số dư lịch sử nếu có do admin nhập có lý do. |
 
@@ -94,7 +94,7 @@ Kiểm tra ngày 09/10/2026: [Supabase Free](https://supabase.com/docs/guides/pl
 
 ### 0.6. Quy tắc đã được chủ dự án xác nhận
 
-Chủ dự án **đồng ý cả ba**: (1) ngày nghỉ trừ phần giao với nghỉ trưa 12:00–13:00; (2) ngày làm bù do admin đánh dấu áp giờ làm và quy tắc tăng ca của ngày làm việc; (3) cộng thời gian thực tế theo giây trong từng loại công rồi lấy số phút nguyên một lần ở kết quả ngày. Đã cập nhật mục 2 `../plan.md`; dùng quy tắc này cho service tính công và test biên.
+Chủ dự án **đồng ý cả ba**: (1) ngày nghỉ trừ phần giao với nghỉ trưa của ca chung có hiệu lực, mặc định khởi tạo là 12:00–13:00 theo quyết định làm rõ bên dưới; (2) ngày làm bù do admin đánh dấu áp giờ làm và quy tắc tăng ca của ngày làm việc; (3) cộng thời gian thực tế theo giây trong từng loại công rồi lấy số phút nguyên một lần ở kết quả ngày. Đã cập nhật mục 2 `../plan.md`; dùng quy tắc này cho service tính công và test biên.
 
 ### Bổ sung kết nối ngày 09/10/2026
 
@@ -148,3 +148,27 @@ Dùng các quyết định đang hiệu lực trong `docs/plan.md` làm chuẩn 
 `npm test` đạt 6/6 kiểm thử đơn vị; `npm run build` đạt trên Next.js 16.4.0 (build đã chạy kiểm tra TypeScript). Migration mới chưa được áp hoặc chạy thử trên PostgreSQL/Supabase test; chưa có kiểm thử RLS, Storage, API tích hợp, luồng trên điện thoại hoặc restore. Không có `.env.local`/kết nối test được cung cấp trong repository.
 
 Vẫn chưa đáp ứng đủ bộ tài liệu để đưa cho người dùng: chưa có UI đăng nhập/chấm công/HR/admin, queue IndexedDB, kiểm thử tích hợp/e2e, lint, cấu hình và xác nhận test Supabase, backup/restore hoặc deploy. Các phase chưa được đánh dấu trong checklist. `docs/plan.md` và tài liệu đặc tả không bị sửa theo quy tắc `AGENTS.md`; đường dẫn app hiện tại là `Marixa-ChamCong/web`, nên phần cấu hình root directory trong `docs/SETUP_CLOUD.md` cũng cần người quản lý tài liệu rà soát.
+
+## Làm rõ ca làm chung do admin quản lý — 09/10/2026
+
+Chủ dự án sửa cách hiểu trước đây: các mốc thứ 2–thứ 7, 08:00–17:00, nghỉ 12:00–13:00 và miễn trừ đi trễ 0 phút là **giá trị mặc định**, không phải quy tắc cố định. Chủ dự án xác nhận V1 dùng **một ca chung cho toàn bộ nhân viên**; admin có chức năng chỉnh ngày làm, giờ bắt đầu/kết thúc, nghỉ trưa, phút miễn trừ đi trễ và ngày hiệu lực. Mỗi thay đổi phải có phiên bản/audit; ngày công chọn phiên bản có hiệu lực, ngày nghỉ trừ khoảng nghỉ trưa của phiên bản đó; snapshot kỳ đã khóa giữ nguyên. Không gán ca riêng theo nhân viên trong V1.
+
+Theo cho phép trực tiếp của chủ dự án trong lượt này, đã cập nhật các file Markdown liên quan: `docs/plan.md`, `docs/01-business-analysis.md`, `docs/02-database-design.md`, `docs/03-workflow.md`, `docs/04-system-architecture.md`, `docs/05-testing-strategy.md`, `docs/06-deployment-vercel-supabase.md`, `docs/07-ui-design-system.md` và worklog. Đây là ngoại lệ có phạm vi cho quyết định ca làm so với quy tắc chỉ đọc mặc định của `AGENTS.md`; không sửa mã ứng dụng hoặc đánh dấu checklist hoàn thành.
+
+**Đối chiếu mã hiện tại:** bảng `work_policies` và API `POST /api/v1/admin/settings/work-policies` đã có trường giờ, ngày làm, miễn trừ và ngày hiệu lực; chưa có màn hình admin để quản lý ca. Trong `web/src/lib/domain/timesheet.ts`, nhánh ngày nghỉ vẫn dùng cứng 12:00–13:00, cần thay bằng khoảng nghỉ của policy có hiệu lực và thêm test ca đổi/ngày hiệu lực trước khi coi chức năng hoàn thành. Cần kiểm tra ràng buộc các khoảng hiệu lực không chồng lấn và lịch sử/audit trên Supabase test; chưa có bằng chứng chạy migration/test tích hợp cho ca chung.
+
+## Chốt kiến trúc .NET API + Supabase — 09/10/2026
+
+Chủ dự án xác nhận **.NET là API chính; Supabase cung cấp PostgreSQL, Auth và Storage**. Đây là quyết định kiến trúc mới, ưu tiên hơn các phần của `docs/plan.md` và đặc tả cũ mô tả Next.js Route Handlers là backend chính. Chưa có quyết định thay đổi công nghệ giao diện hoặc nhà cung cấp host API .NET; không mặc định rằng Vercel sẽ chạy API .NET. Hai Supabase project test/production đã được chủ dự án tạo riêng; không ghi key, mật khẩu hay connection string chứa secret vào Git.
+
+Đối chiếu mã vừa pull (`60402a8`): `M.API` có cấu hình Npgsql/EF Core cho PostgreSQL nhưng mặc định chọn SQL Server; đăng nhập/phân quyền dùng ASP.NET Identity và JWT riêng; ảnh chấm công ghi vào `wwwroot/uploads` và phục vụ qua `/uploads`. Khi chọn PostgreSQL, `Program.cs` gọi `EnsureCreatedAsync` và `PostgresSchemaSync.EnsureColumnsAsync` lúc khởi động. Migration EF mới và 12 migration SQL Supabase/Next.js là hai thiết kế schema khác nhau; chưa có bằng chứng chúng tương thích hoặc migration nào đã chạy trên project test. Phần `web/` hiện có API Supabase riêng, chưa thấy tích hợp gọi `M.API`.
+
+Hướng chuyển đổi cần được phản ánh vào checklist triển khai trước khi đánh dấu phase hoàn thành:
+
+1. Chọn một schema và lịch sử migration chuẩn cho PostgreSQL Supabase; đối chiếu model EF với bảng/RLS SQL hiện có trên môi trường test. Không chạy đồng thời hai bộ migration hoặc tự đồng bộ schema trên project production khi chưa có thiết kế và kiểm thử.
+2. Chuyển nguồn danh tính sang Supabase Auth: API .NET xác minh access token Supabase, liên kết `auth.users.id` với hồ sơ/role nghiệp vụ, rồi kiểm tra quyền cho từng endpoint và truy vấn. Không coi JWT do .NET tự phát hành hay bảng Identity hiện có là tài khoản Supabase Auth. Kiểm thử quyền employee A/B, HR, admin ở API và DB/RLS.
+3. Chuyển ảnh chấm công sang Supabase Storage bucket private, kiểm tra MIME/kích thước, quyền đọc/ghi và dọn ảnh sau 3 tháng; không phục vụ ảnh nhân viên công khai từ `/uploads`.
+4. Giữ các quyết định nghiệp vụ đã chốt: một ca chung do admin chỉnh với ngày hiệu lực, ảnh/GPS tùy chọn, ngày nghỉ tự tính tăng ca sau khi trừ giờ nghỉ của ca có hiệu lực, phép cộng theo tháng, offline và điều chỉnh kỳ đã khóa. Rà soát API/service .NET theo từng quy tắc trước khi coi là hoàn thành.
+5. Xác định frontend gọi API .NET và nơi host API; cập nhật sơ đồ triển khai, biến môi trường, quy trình test/backup/deploy cho hai Supabase project. Chỉ áp schema lên test và thử nghiệm tích hợp trước production.
+
+Theo `AGENTS.md`, lượt này chỉ ghi quyết định và đề xuất chuyển đổi vào `docs/worklog.md`; chưa sửa `docs/plan.md` hoặc các đặc tả được bảo vệ, chưa thay đổi mã, chưa chạy migration hay cấu hình cloud. Trạng thái checklist Phase 1–9 vẫn cần đối chiếu lại theo kiến trúc mới và bằng chứng thực tế.

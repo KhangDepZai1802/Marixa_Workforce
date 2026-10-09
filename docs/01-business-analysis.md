@@ -22,10 +22,10 @@ Mỗi tài khoản chỉ có một trong ba role: `employee`, `hr`, `admin`. Có
 
 ## 3. Quy tắc công chuẩn
 
-- Tuần làm việc chuẩn: thứ 2 đến thứ 7; chủ nhật nghỉ. Giờ làm 08:00–17:00, nghỉ trưa 12:00–13:00; ngày chuẩn có 8 giờ làm.
+- V1 có **một ca làm chung cho toàn bộ nhân viên** do admin quản lý. Giá trị khởi tạo là thứ 2–thứ 7, 08:00–17:00, nghỉ 12:00–13:00 và 0 phút miễn trừ đi trễ; đây là mặc định có thể chỉnh, không phải giờ cố định. Admin đặt ngày làm việc, giờ vào/ra, khoảng nghỉ trưa, phút miễn trừ đi trễ và ngày hiệu lực; mỗi lần đổi lưu phiên bản và audit. V1 không gán ca riêng cho từng nhân viên.
 - Một ngày có tối đa một lượt chấm vào và một lượt chấm ra hợp lệ cho mỗi người. Chấm sớm hoặc ra muộn được ghi nhận, nhưng không tự phát sinh giờ tăng ca được trả/tính.
-- Phút làm thường = phần giao của khoảng chấm vào–ra với `08:00–12:00` và `13:00–17:00`, sau khi áp dụng đơn nghỉ được duyệt và điều chỉnh được duyệt. Giờ ngoài hai khoảng này chỉ được ghi vào tăng ca khi yêu cầu tăng ca tương ứng đã được duyệt.
-- Vào sau 08:00 là đi trễ; ra trước 17:00 là về sớm, trừ phần thời gian có đơn nghỉ hoặc điều chỉnh được duyệt. Ngưỡng miễn trừ nếu Marixa muốn áp dụng về sau là cấu hình admin, mặc định 0 phút.
+- Phút làm thường = phần giao của khoảng chấm vào–ra với các khoảng làm việc trước/sau nghỉ trưa của **ca chung có hiệu lực tại ngày công**, sau khi áp dụng đơn nghỉ và điều chỉnh được duyệt. Giờ ngoài ca chỉ được ghi vào tăng ca khi yêu cầu tăng ca tương ứng đã được duyệt.
+- Vào sau giờ bắt đầu ca là đi trễ theo số phút miễn trừ do admin cấu hình; ra trước giờ kết thúc ca là về sớm, trừ phần có đơn nghỉ hoặc điều chỉnh được duyệt. Mặc định miễn trừ đi trễ 0 phút.
 - Thiếu chấm vào hoặc ra là **công chưa hoàn chỉnh**; hệ thống không tự suy ra mốc còn thiếu. Nhân viên gửi yêu cầu sửa công, HR duyệt, riêng yêu cầu của HR do admin duyệt.
 - Ngày lễ/ngày nghỉ đặc biệt được admin nhập vào lịch trước khi tính công. Không tự giả định chính sách ngày lễ hay mức trả lương.
 - Mỗi lượt chấm cần ảnh camera và tọa độ GPS. Nếu người dùng từ chối quyền hoặc thiết bị không lấy được một trong hai, không gửi lượt chấm thiếu bằng chứng; màn hình hướng dẫn cấp quyền hoặc gửi yêu cầu sửa công.
