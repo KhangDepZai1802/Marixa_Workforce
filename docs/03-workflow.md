@@ -51,7 +51,7 @@ Người dùng có hồ sơ nhân viên tạo nháp, chọn loại nghỉ, ngày
 
 ## 5. Yêu cầu tăng ca
 
-Người dùng nhập ngày, khoảng giờ dự kiến và lý do. HR duyệt cho nhân viên/admin, admin duyệt cho HR; không ai duyệt yêu cầu của chính mình. Sau phê duyệt, bảng công chỉ tính phần giao giữa thời gian tăng ca được duyệt và thời gian chấm thực tế ngoài giờ thường. Nếu thiếu chấm ra, tăng ca chưa được chốt cho đến khi sửa công được duyệt. Không tự tính tăng ca chỉ vì chấm ra sau 17:00.
+Người dùng nhập ngày, khoảng giờ dự kiến và lý do. HR duyệt cho nhân viên/admin, admin duyệt cho HR; không ai duyệt yêu cầu của chính mình. Sau phê duyệt, bảng công chỉ tính phần giao giữa thời gian tăng ca được duyệt và thời gian chấm thực tế ngoài giờ thường của ca chung có hiệu lực trong ngày. Nếu thiếu chấm ra, tăng ca chưa được chốt cho đến khi sửa công được duyệt. Không tự tính tăng ca chỉ vì chấm ra sau giờ kết thúc ca.
 
 ## 6. Chốt kỳ tháng
 

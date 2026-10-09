@@ -28,7 +28,7 @@ Lựa chọn tích hợp Auth là client Supabase hỗ trợ SSR/cookie theo tà
 | Leave & overtime | Đơn, duyệt đúng người, sổ phép, PDF đơn nghỉ, tăng ca được duyệt. |
 | Timesheet | Tính công/nghỉ/tăng ca theo ngày, đối soát ngoại lệ, snapshot và khóa kỳ. |
 | Reports | Dashboard theo quyền, Excel bảng công, link ảnh qua trang kiểm tra session. |
-| Admin settings & audit | Giờ làm, ngày nghỉ, địa điểm, retention, role, nhật ký thay đổi. |
+| Admin settings & audit | Quản lý một ca chung có ngày hiệu lực (giờ làm, nghỉ trưa, ngày làm, miễn trừ đi trễ), ngày nghỉ, địa điểm, retention, role và nhật ký thay đổi. |
 
 Tính công nằm trong một service/domain duy nhất để UI, Excel và dashboard không cho ra ba kết quả khác nhau. Hàm tính nhận chính sách có hiệu lực vào ngày công, sự kiện chấm, nghỉ đã duyệt, tăng ca đã duyệt và điều chỉnh; trả kết quả ngày cùng danh sách ngoại lệ. Kỳ đã khóa lấy snapshot thay vì tính lại từ dữ liệu sống.
 
@@ -42,7 +42,7 @@ Tính công nằm trong một service/domain duy nhất để UI, Excel và dash
 | `/my-attendance`, `/my-requests`, `/my-profile` | Nhân viên, HR, admin có hồ sơ | Lịch sử công, đơn/nghỉ/tăng ca/sửa công, hồ sơ cá nhân. |
 | `/hr/dashboard`, `/hr/employees`, `/hr/attendance` | HR, admin | Tổng quan, hồ sơ, đối soát công và ảnh. |
 | `/hr/requests`, `/hr/timesheets`, `/hr/reports` | HR, admin | Duyệt, kỳ công và báo cáo/Excel. HR không thấy nút duyệt yêu cầu của mình. |
-| `/admin/settings`, `/admin/accounts`, `/admin/audit` | Admin | Cấu hình, tài khoản/role, nhật ký. |
+| `/admin/settings`, `/admin/settings/shifts`, `/admin/accounts`, `/admin/audit` | Admin | Cấu hình; màn hình riêng xem và chỉnh ca chung theo ngày hiệu lực; tài khoản/role; nhật ký. |
 
 Các bộ lọc quan trọng ở trang HR nằm trong query string; trang chi tiết dùng URL riêng. Phân quyền route kiểm tra ở server và API; ẩn menu chỉ là hỗ trợ giao diện.
 

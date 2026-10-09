@@ -46,7 +46,8 @@ Sidebar gồm Tổng quan, Nhân viên, Chấm công, Đơn/yêu cầu, Bảng c
 | HR tổng quan | Việc cần xử lý, số người đã/chưa chấm, đơn chờ, kỳ công | Loading, không có ngoại lệ, lỗi tải, cảnh báo storage. |
 | HR chấm công | Bảng có lọc, chi tiết event, ảnh lightbox, GPS dễ hiểu, ghi kết quả kiểm tra | Ngoài văn phòng, đồng bộ trễ, ảnh chờ/lỗi, thiếu mốc. |
 | Bảng công | Kỳ tháng, ngoại lệ, xem từng ngày, đánh dấu kiểm tra, xuất Excel | Mở, HR đã kiểm tra, admin đã khóa, bản tạm. |
-| Admin cấu hình | Giờ, ngày nghỉ, vị trí, loại nghỉ, phép, retention, tài khoản | Cấu hình chưa đủ, thay đổi có hiệu lực, lỗi lưu, nhật ký. |
+| Admin cấu hình ca chung | Danh sách phiên bản, ca đang áp dụng, ngày làm trong tuần, giờ vào/ra, nghỉ trưa, phút miễn trừ đi trễ, ngày hiệu lực; nút lưu phiên bản mới | Kiểm tra thứ tự giờ/khoảng hiệu lực, xem trước ca sau đổi, xác nhận lưu, lỗi lưu, lịch sử và audit. Không có thao tác gán ca riêng theo nhân viên trong V1. |
+| Admin cấu hình khác | Ngày nghỉ/làm bù, vị trí, loại nghỉ, phép, retention, tài khoản | Cấu hình chưa đủ, thay đổi có hiệu lực, lỗi lưu, nhật ký. |
 
 Không hiện tọa độ thô trên danh sách HR; dùng “Trong văn phòng”, “Ngoài văn phòng — cần kiểm tra”, “Không đủ độ chính xác” và chi tiết khoảng cách khi mở record. Ảnh chấm công chỉ tải khi người có quyền mở chi tiết; lightbox có tên, ngày giờ, trạng thái và nút đóng/điều hướng bằng bàn phím. Nếu ảnh đã hết hạn, hiển thị “Ảnh đã hết thời hạn lưu” và vẫn giữ thông tin event.
 
