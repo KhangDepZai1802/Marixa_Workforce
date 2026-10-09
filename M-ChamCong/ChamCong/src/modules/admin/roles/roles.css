@@ -1,0 +1,402 @@
+/* ============================================================
+   PHÂN QUYỀN (Admin Roles) — giao diện BẢNG (matrix + role table)
+   ============================================================ */
+
+/* ===== Section (card wrapper cho từng bảng) ===== */
+.roles-section {
+    padding: 18px 20px;
+    border: 1px solid #e6edf5;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(14, 26, 38, 0.04);
+}
+.roles-section + .roles-section {
+    margin-top: 16px;
+}
+.roles-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.roles-section-head h3 {
+    margin: 0;
+    font: 700 15px "Montserrat", "Be Vietnam Pro", sans-serif;
+    color: #172b42;
+}
+
+/* ===== Form thêm role mới ===== */
+.roles-new-form {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 14px;
+    padding: 12px;
+    background: #f7faff;
+    border: 1px dashed #b9cfe8;
+    border-radius: 10px;
+}
+.roles-new-form input {
+    flex: 1;
+    min-width: 160px;
+    padding: 9px 12px;
+    border: 1px solid #d5dee8;
+    border-radius: 8px;
+    background: #fff;
+    font: inherit;
+    font-size: 13px;
+}
+.roles-new-form input:focus {
+    outline: none;
+    border-color: #2f6df6;
+    box-shadow: 0 0 0 3px rgba(47, 109, 246, 0.12);
+}
+.roles-new-form .admin-link-btn {
+    min-height: 38px;
+    align-self: center;
+}
+
+/* ===== Bảng role ===== */
+.roles-empty {
+    padding: 18px;
+    text-align: center;
+    color: #8a99ab;
+    font-size: 13px;
+    background: #fbfcfe;
+    border-radius: 10px;
+    border: 1px dashed #d5dee8;
+}
+.roles-role-ava {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 15px;
+    flex: 0 0 auto;
+}
+.roles-role-ava--sm {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+}
+.roles-roles-table td:first-child {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.roles-roles-table td:first-child strong {
+    color: #172b42;
+    font-size: 14px;
+}
+.roles-th-center {
+    text-align: center;
+}
+.roles-roles-table td.roles-th-center {
+    text-align: center;
+}
+.roles-role-delete {
+    padding: 6px 12px;
+    border: 1px solid #f0d0d0;
+    background: #fff;
+    color: #c62828;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.roles-role-delete:hover {
+    background: #fdecec;
+}
+
+/* ===== Bảng ma trận Người dùng × Vai trò ===== */
+.roles-matrix-hint {
+    margin: 0 0 10px;
+    font-size: 12px;
+}
+.roles-matrix-wrap {
+    overflow-x: auto;
+    border: 1px solid #eef2f6;
+    border-radius: 10px;
+}
+.roles-matrix {
+    min-width: 560px;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.roles-matrix th,
+.roles-matrix td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eef2f6;
+    vertical-align: middle;
+}
+.roles-matrix thead th {
+    background: #fbfcfe;
+    font-size: 12px;
+    color: #5a6b7b;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+/* Column người dùng: cố định, rộng hơn */
+.roles-mx-user {
+    min-width: 220px;
+    max-width: 300px;
+    font-weight: 600;
+}
+.roles-matrix thead th.roles-mx-user {
+    position: sticky;
+    left: 0;
+    background: #fbfcfe;
+    z-index: 2;
+}
+.roles-matrix tbody td.roles-mx-user {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 1;
+}
+.roles-matrix tbody tr.roles-mx-hasrole td.roles-mx-user {
+    background: #f5f9ff;
+}
+.roles-mx-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+.roles-matrix td.roles-mx-user {
+    cursor: pointer;
+}
+.roles-matrix td.roles-mx-user:hover {
+    background: #eef5ff;
+}
+.roles-mx-user-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.roles-mx-user-text strong {
+    color: #172b42;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.roles-mx-user-text small {
+    color: #8a99ab;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Các cột role: căn giữa, hẹp */
+.roles-mx-role {
+    text-align: center;
+    min-width: 96px;
+    width: 96px;
+}
+.roles-mx-role-name {
+    display: block;
+    font-weight: 700;
+    color: #38506a;
+    font-size: 12px;
+}
+.roles-matrix thead th.roles-mx-role small {
+    display: block;
+    font-size: 10px;
+    color: #9aa9b8;
+    font-weight: 500;
+    margin-top: 2px;
+}
+/* Nút toggle ✓ / + */
+.roles-mx-toggle {
+    width: 34px;
+    height: 34px;
+    border: 1.5px solid #d5dee8;
+    background: #fff;
+    color: #8a99ab;
+    border-radius: 9px;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.14s ease;
+}
+.roles-mx-toggle:hover {
+    border-color: #2f6df6;
+    background: #f5f9ff;
+    color: #2f6df6;
+}
+.roles-mx-toggle.on {
+    border-color: #2f6df6;
+    background: #2f6df6;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(47, 109, 246, 0.3);
+}
+.roles-mx-toggle.on:hover {
+    background: #1f5ae0;
+}
+
+/* ===== Avatar size ===== */
+.roles-member-ava--xs {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+/* ===== Orphans (chưa có role) ===== */
+.roles-orphan-count {
+    font-size: 12px;
+    font-weight: 700;
+    color: #d3a021;
+    background: #fef6e0;
+    border: 1px solid #f5e3ac;
+    padding: 3px 12px;
+    border-radius: 999px;
+}
+.roles-orphan-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.roles-orphan-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 4px 12px 4px 4px;
+    font-size: 12px;
+    color: #38506a;
+    box-shadow: 0 1px 3px rgba(14, 26, 38, 0.05);
+}
+
+/* ===== Modal xem thông tin ===== */
+.roles-modal {
+    width: min(480px, 92%);
+    max-height: 85vh;
+}
+
+/* ===== KPI row: 3 thẻ LUÔN ngang (desktop + mobile) ===== */
+.roles-kpi-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    width: 100%;
+}
+.roles-kpi {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 12px 14px;
+}
+.roles-kpi .roles-kpi-ico {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+}
+.roles-kpi .admin-kpi-label {
+    font-size: 10px;
+}
+.roles-kpi .admin-kpi strong {
+    font-size: 20px;
+}
+/* Thu nhỏ icon + chữ khi màn hình hẹp để 3 thẻ vẫn "ngang" mà không vượt màn */
+@media (max-width: 480px) {
+    .roles-kpi {
+        padding: 9px 10px;
+        gap: 8px;
+    }
+    .roles-kpi .roles-kpi-ico {
+        width: 28px;
+        height: 28px;
+        font-size: 13px;
+    }
+    .roles-kpi .admin-kpi-label { font-size: 9px; }
+    .roles-kpi .admin-kpi strong { font-size: 16px; }
+}
+
+/* ===== Responsive: mobile ===== */
+@media (max-width: 768px) {
+    .roles-section {
+        padding: 14px;
+    }
+    .roles-section-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .roles-section-head .roles-search {
+        width: 100%;
+    }
+    .roles-search {
+        width: 100%;
+        min-height: 42px;
+        padding: 0 12px;
+    }
+    .roles-search input {
+        min-height: 42px;
+    }
+    .roles-new-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .roles-new-form .admin-link-btn {
+        min-height: 40px;
+    }
+    /* Bảng role: mobile */
+    .roles-roles-table {
+        min-width: 0;
+    }
+    .roles-roles-table th,
+    .roles-roles-table td {
+        padding: 9px 10px;
+        font-size: 13px;
+    }
+    .roles-roles-table th:nth-child(2),
+    .roles-roles-table td:nth-child(2) {
+        display: none; /* ẩn cột Mô tả trên mobile để gọn */
+    }
+    .roles-roles-table .roles-role-delete {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+    /* Ma trận: user cột sticky + scroll ngang các cột role */
+    .roles-matrix {
+        min-width: 0;
+    }
+    .roles-mx-user {
+        min-width: 150px;
+    }
+    .roles-mx-user-text strong {
+        font-size: 12px;
+    }
+    .roles-mx-role {
+        min-width: 78px;
+        width: 78px;
+    }
+    .roles-mx-toggle {
+        width: 32px;
+        height: 32px;
+    }
+}

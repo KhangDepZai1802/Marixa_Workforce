@@ -1,0 +1,251 @@
+/* ===== TRANG HỒ SƠ ===== */
+.profile-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.profile-card {
+    background: #fff;
+    border: 1px solid #e8edf2;
+    border-radius: 14px;
+    padding: 22px 24px;
+    box-shadow: 0 6px 20px rgba(14, 26, 38, 0.06);
+    margin-bottom: 20px;
+}
+
+.profile-card:last-child {
+    margin-bottom: 0;
+}
+
+.profile-card h2 {
+    margin: 0 0 16px;
+    font-family: "Montserrat", "Be Vietnam Pro", sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: #182a3a;
+}
+
+.profile-avatar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.profile-avatar-img {
+    width: 120px;
+    height: 120px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #e8edf2;
+    background: #f6f7f9;
+}
+
+.profile-avatar-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-avatar-img span {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    background: #e3f0ff;
+    color: #005b94;
+    font-family: "Montserrat", "Be Vietnam Pro", sans-serif;
+    font-size: 40px;
+    font-weight: 800;
+}
+
+.profile-avatar-btn {
+    width: 100%;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    color: #182a3a;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.profile-avatar-btn:hover {
+    border-color: #005b94;
+    color: #005b94;
+}
+
+.profile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.profile-head strong {
+    display: block;
+    font-family: "Montserrat", "Be Vietnam Pro", sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: #0e1a26;
+}
+
+.profile-head span {
+    font-size: 13px;
+    color: #5a6b7b;
+}
+
+.profile-info {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-info dd {
+    white-space: normal;
+    word-break: break-word;
+}
+
+.profile-info {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 14px;
+    margin: 0;
+}
+
+.profile-info > div {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.profile-info dt {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #9aa9b8;
+}
+
+.profile-info dd {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #38506a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-notice {
+    padding: 12px 16px;
+    background: #ecfdf5;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    color: #15803d;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 16px;
+}
+
+@media (max-width: 900px) {
+    .profile-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-info {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== HỒ SƠ v2: HERO + KPI + CARD ===== */
+.profile-v2 {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* Hero */
+.profile-hero {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding: 24px 26px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #0f1b33 0%, #1e3a6e 55%, #2f6df6 100%);
+    color: #fff;
+    box-shadow: 0 14px 40px rgba(15,27,51,.28);
+}
+.profile-hero-avatar { flex: 0 0 auto; }
+.profile-hero-avatar .profile-avatar-img {
+    width: 84px; height: 84px;
+    background: rgba(255,255,255,.14);
+    border-color: rgba(255,255,255,.25);
+}
+.profile-hero-avatar .profile-avatar-btn {
+    background: rgba(255,255,255,.12);
+    border-color: rgba(255,255,255,.25);
+    color: #fff;
+    width: auto;
+    padding: 7px 14px;
+}
+.profile-hero-avatar .profile-avatar-btn:hover { background: rgba(255,255,255,.22); color: #fff; border-color: #fff; }
+.profile-hero-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.profile-hero-name { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.profile-hero-name strong { font-family: "Montserrat","Be Vietnam Pro",sans-serif; font-size: 24px; font-weight: 800; }
+.profile-hero-code { font-size: 13px; color: #c9d4e8; font-weight: 600; letter-spacing: .04em; }
+.profile-hero-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+.profile-hero-meta .att-badge { border-radius: 20px; padding: 4px 12px; font-size: 11px; }
+
+/* KPI row */
+.profile-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+.profile-kpi {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid #e6edf5;
+}
+.profile-kpi i {
+    width: 38px; height: 38px;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-style: normal; font-size: 17px;
+}
+.profile-kpi > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.profile-kpi span { font-size: 11px; text-transform: uppercase; letter-spacing: .3px; color: #8a99ab; font-weight: 600; }
+.profile-kpi strong { font-size: 16px; color: #172b42; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.profile-kpi--blue  { border-left: 3px solid #2f6df6; }  .profile-kpi--blue i  { background: #eef4ff; }
+.profile-kpi--teal  { border-left: 3px solid #16a085; }  .profile-kpi--teal i  { background: #e8f6f4; }
+.profile-kpi--green { border-left: 3px solid #2e7d32; }  .profile-kpi--green i { background: #eaf5ea; }
+.profile-kpi--amber { border-left: 3px solid #e65100; }  .profile-kpi--amber i { background: #fff4e5; }
+
+/* Grid 2 card */
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+.profile-card--avatar { display: flex; flex-direction: column; gap: 14px; }
+
+@media (max-width: 900px) {
+    .profile-kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .profile-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+    .profile-hero { flex-direction: column; align-items: flex-start; }
+    .profile-kpi-row { grid-template-columns: 1fr; }
+}

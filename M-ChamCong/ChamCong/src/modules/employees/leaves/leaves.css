@@ -1,0 +1,386 @@
+/* ============================================================
+   LEAVES (nhân sự) — giao diện riêng, mobile-friendly
+   ============================================================ */
+
+.lp-page {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* ===== Notices ===== */
+.lp-err,
+.lp-notice {
+    padding: 11px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.lp-err {
+    color: #c62828;
+    background: #fdecec;
+    border: 1px solid #f3b4b4;
+    justify-content: space-between;
+}
+.lp-err button {
+    border: 0;
+    background: none;
+    color: inherit;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+}
+.lp-notice {
+    color: #176b43;
+    background: #eaf7ef;
+    border: 1px solid #cdebd7;
+}
+
+/* ===== Card ===== */
+.lp-card {
+    padding: 18px 20px;
+    border: 1px solid #e6edf5;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(14, 26, 38, 0.04);
+}
+
+/* ===== Toolbar: filter pills + search ===== */
+.lp-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.lp-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.lp-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 13px;
+    border: 1px solid #dbe4ee;
+    border-radius: 999px;
+    background: #fff;
+    color: #38506a;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.14s ease;
+}
+.lp-filter i {
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 700;
+    background: #eef2f6;
+    color: #5a6b7b;
+    border-radius: 999px;
+    padding: 0 7px;
+    min-width: 20px;
+    text-align: center;
+}
+.lp-filter:hover {
+    border-color: #8bbcf1;
+    background: #f5f9ff;
+}
+.lp-filter.active {
+    border-color: #005b94;
+    background: #005b94;
+    color: #fff;
+}
+.lp-filter.active i {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+}
+
+.lp-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 240px;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid #d7e2ef;
+    border-radius: 10px;
+    background: #fff;
+    color: #8290a2;
+}
+.lp-search span { font-size: 18px; line-height: 1; }
+.lp-search input {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #263b54;
+    font: inherit;
+    font-size: 13px;
+}
+.lp-search input::placeholder { color: #94a0af; }
+.lp-search:focus-within {
+    border-color: #005b94;
+    box-shadow: 0 0 0 3px rgba(0, 91, 148, 0.1);
+}
+
+/* ===== Table ===== */
+.lp-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #eef2f6;
+    border-radius: 12px;
+}
+.lp-table {
+    width: 100%;
+    min-width: 780px;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.lp-table th,
+.lp-table td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #eef2f6;
+    vertical-align: middle;
+}
+.lp-table thead th {
+    background: #fbfcfe;
+    color: #5a6b7b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.lp-table tbody tr {
+    transition: background 0.1s;
+}
+.lp-table tbody tr:hover {
+    background: #f5f9ff;
+}
+.lp-table tbody tr.lp-row--ok {
+    background: #f7fcf8;
+}
+.lp-table tbody tr.lp-row--bad {
+    background: #fff7f7;
+}
+.lp-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+/* ===== User cell (avatar + name) ===== */
+.lp-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+.lp-ava {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    color: #fff;
+    font-weight: 800;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+.lp-user-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+.lp-user-meta strong {
+    color: #172b42;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lp-user-meta small {
+    color: #8a99ab;
+    font-size: 11px;
+}
+
+/* ===== Date cell ===== */
+.lp-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.lp-date strong {
+    color: #172b42;
+    font-size: 13px;
+    font-weight: 700;
+}
+.lp-date span {
+    color: #9aa9b8;
+    font-size: 11px;
+}
+
+/* ===== Status badge ===== */
+.lp-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.lp-badge--warn {
+    color: #95600c;
+    background: #fef3d7;
+}
+.lp-badge--ok {
+    color: #15803d;
+    background: #dcfce7;
+}
+.lp-badge--bad {
+    color: #b42323;
+    background: #fee2e2;
+}
+.lp-badge--muted {
+    color: #748397;
+    background: #eef2f6;
+}
+.lp-approver {
+    display: block;
+    margin-top: 4px;
+    color: #8a99ab;
+    font-size: 11px;
+}
+
+/* ===== Action buttons ===== */
+.lp-th-act {
+    text-align: right;
+    white-space: nowrap;
+}
+.lp-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+.lp-btn {
+    padding: 7px 13px;
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.14s;
+    white-space: nowrap;
+}
+.lp-btn--ok {
+    color: #15803d;
+    background: #dcfce7;
+}
+.lp-btn--ok:hover {
+    background: #15803d;
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(21, 128, 61, 0.25);
+}
+.lp-btn--bad {
+    color: #b42323;
+    background: #fee2e2;
+}
+.lp-btn--bad:hover {
+    background: #b42323;
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(180, 35, 35, 0.25);
+}
+.lp-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.lp-muted {
+    color: #c4cdd6;
+}
+.lp-empty {
+    text-align: center;
+    padding: 28px 12px;
+    color: #7b8798;
+    font-size: 13px;
+}
+
+/* ===== Responsive: mobile ===== */
+@media (max-width: 768px) {
+    .lp-card {
+        padding: 14px;
+    }
+    .lp-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .lp-filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+    }
+    .lp-filters::-webkit-scrollbar { display: none; }
+    .lp-filter { flex: 0 0 auto; }
+    .lp-search {
+        width: 100%;
+        min-width: 0;
+        height: 44px;
+    }
+    .lp-search input {
+        font-size: 16px; /* chống iOS zoom */
+    }
+    /* Table: co lại, dễ xem */
+    .lp-table {
+        min-width: 560px;
+        font-size: 12px;
+    }
+    .lp-table th,
+    .lp-table td {
+        padding: 10px;
+    }
+    .lp-ava {
+        width: 30px;
+        height: 30px;
+        font-size: 11px;
+    }
+    .lp-user-meta strong { font-size: 12px; }
+    /* Nút thao tác: 2 cột */
+    .lp-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .lp-btn {
+        padding: 9px 12px;
+        text-align: center;
+        min-height: 40px;
+    }
+}
+
+/* ===== Very small phones ===== */
+@media (max-width: 420px) {
+    .lp-filter {
+        padding: 6px 11px;
+        font-size: 11px;
+    }
+    .lp-filter i { font-size: 10px; min-width: 18px; }
+    .lp-table {
+        min-width: 480px;
+    }
+}
