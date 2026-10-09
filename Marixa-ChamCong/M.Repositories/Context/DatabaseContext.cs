@@ -473,7 +473,8 @@ public DbSet<AuditLog> AuditLogs { get; set; }
                 .HasOne(l => l.LeaveType)
                 .WithMany()
                 .HasForeignKey(l => l.LeaveTypeId)
-                .OnDelete(DeleteBehavior.SetNull);
+                // Keep historical ledger entries linked and avoid SQL Server's multiple cascade paths.
+                .OnDelete(DeleteBehavior.NoAction);
             builder.Entity<LeaveLedger>()
                 .HasOne(l => l.LeaveRequest)
                 .WithMany()

@@ -1273,7 +1273,7 @@ namespace M.Repositories.Migrations
                         column: x => x.LeaveTypeId,
                         principalTable: "LeaveTypes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.NoAction);
                 });
 
             migrationBuilder.CreateTable(

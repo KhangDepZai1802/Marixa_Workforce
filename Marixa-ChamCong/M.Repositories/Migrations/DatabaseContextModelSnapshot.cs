@@ -3009,7 +3009,7 @@ namespace M.Repositories.Migrations
                     b.HasOne("M.Contract.Repositories.Entities.LeaveType", "LeaveType")
                         .WithMany()
                         .HasForeignKey("LeaveTypeId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Employee");
 
