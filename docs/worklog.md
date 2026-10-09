@@ -100,6 +100,13 @@ Chủ dự án **đồng ý cả ba**: (1) ngày nghỉ trừ phần giao với 
 
 Chủ dự án cung cấp Session pooler cho test và production, cùng host `aws-0-ap-southeast-1.pooler.supabase.com`, cổng `5432`, user lần lượt `postgres.pkpwcpatuslfjyoivbuf` và `postgres.vmpsfwwfgoeritayfnvv`. Đã lưu **chỉ host/port/user/database** và lệnh kiểm tra test chỉ đọc trong [`../SETUP_CLOUD.md`](../SETUP_CLOUD.md). Mật khẩu chưa được cung cấp và không ghi URI vào repository. `git check-ignore -v .env.local .env.production.local` xác nhận cả hai mẫu file bị `.gitignore` bỏ qua. Chưa thử kết nối database hoặc chạy migration; việc này thuộc Phase 2 trên test.
 
+### Việc Supabase Dashboard chủ dự án đã xác nhận ngày 09/10/2026
+
+- Chủ dự án xác nhận trên cả **test** và **production** đã kiểm tra Email/Password bật, tắt **Allow new users to sign up** và **Allow anonymous sign-ins**. Đây là xác nhận thao tác Dashboard của chủ dự án; chưa kiểm tra bằng API và chưa cấu hình `.env.local`, nên 2.1 vẫn mở.
+- Chủ dự án xác nhận đã tạo bucket `attendance-photos` **Private** trên cả hai project, cho phép MIME `image/jpeg`, `image/png`, `image/webp`. PNG là lựa chọn thêm so với ví dụ WebP/JPEG trong `06-deployment-vercel-supabase.md`; validation/upload trong ứng dụng phải khớp cả ba MIME và test dung lượng PNG. Kích thước tối đa, policy Storage và quyền truy cập còn chờ thử/kiểm chứng; 2.6 vẫn mở. Không ghi ảnh thật vào bucket test.
+- Chủ dự án giữ riêng mật khẩu DB và secret key trong password manager; không gửi qua chat, không commit. URL/redirect Auth, SMTP, admin bootstrap, migration, RLS, Storage policies và dữ liệu chỉ làm khi ứng dụng/kiểm thử tương ứng đã sẵn sàng. Đây là công việc của Phase 2/9, không phải bước đã hoàn thành.
+- Phát hiện cấu trúc ngày 09/10/2026: `plan.md` và `SETUP_CLOUD.md` hiện nằm trong `docs/`, còn root không có `plan.md`, khác quy tắc ở `AGENTS.md`. Theo chỉ đạo mới nhất của chủ dự án trong cuộc trò chuyện, AI chỉ được sửa `plan.md` đang dùng làm checklist (`docs/plan.md`) và `docs/worklog.md`; các file khác, gồm `docs/SETUP_CLOUD.md`, chỉ đọc. Chỉ đạo trực tiếp này ưu tiên khi làm việc; đề xuất chủ dự án đồng bộ lại `AGENTS.md` khi thuận tiện để agent sau không nhầm vị trí checklist.
+
 **Kiểm tra thay đổi:** trong lượt này cập nhật `../plan.md`, `worklog.md` và tạo hướng dẫn `../SETUP_CLOUD.md`; kiểm tra `git diff` trước khi kết thúc để xác nhận không sửa Markdown được bảo vệ. Các thay đổi Git có sẵn ở cây dự án cũ được giữ nguyên.
 
 ## Quy tắc cập nhật worklog
