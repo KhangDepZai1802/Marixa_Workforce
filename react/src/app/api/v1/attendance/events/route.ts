@@ -9,6 +9,7 @@ const bodySchema = z.object({
   device_occurred_at: z.string().datetime({ offset: true }).nullable().optional(),
   source: z.enum(["online", "offline"]).default("online"),
   idempotency_key: z.string().uuid(),
+  queue_owner_id: z.string().uuid().optional(),
   latitude: z.number().min(-90).max(90).nullable().optional(),
   longitude: z.number().min(-180).max(180).nullable().optional(),
   accuracy_m: z.number().positive().max(10000).nullable().optional(),
@@ -22,6 +23,7 @@ export async function GET(request: Request) {
   const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
+  if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
   if (!actor.employeeId) return jsonError(403, "EMPLOYEE_PROFILE_REQUIRED", "Tài khoản chưa có hồ sơ nhân viên.", requestId);
   const url = new URL(request.url);
   const from = url.searchParams.get("from");
@@ -48,9 +50,15 @@ export async function POST(request: Request) {
   try { input = await request.json(); } catch { return jsonError(400, "INVALID_JSON", "Dữ liệu gửi lên không hợp lệ.", requestId); }
   const parsed = bodySchema.safeParse(input);
   if (!parsed.success) return jsonError(422, "VALIDATION_ERROR", "Vui lòng kiểm tra thông tin chấm công.", requestId, Object.fromEntries(parsed.error.issues.map(issue => [String(issue.path[0] ?? "body"), issue.message])));
+  if (parsed.data.queue_owner_id && parsed.data.queue_owner_id !== actor.employeeId)
+    return jsonError(403, "QUEUE_OWNER_MISMATCH", "Lượt chấm đang lưu thuộc tài khoản khác. Hãy đăng nhập lại đúng tài khoản.", requestId);
 
   const supabase = await createSupabaseServerClient();
-  const { data: existing } = await supabase.from("attendance_events").select("*").eq("idempotency_key", parsed.data.idempotency_key).maybeSingle();
+  const { data: employee, error: employeeError } = await supabase.from("employees").select("status").eq("id", actor.employeeId).maybeSingle();
+  if (employeeError) return jsonError(500, "EMPLOYEE_READ_FAILED", "Không thể xác nhận hồ sơ nhân viên.", requestId);
+  if (employee?.status !== "active") return jsonError(403, "EMPLOYEE_INACTIVE", "Hồ sơ nhân viên không còn hoạt động.", requestId);
+  const { data: existing, error: existingError } = await supabase.from("attendance_events").select("*").eq("idempotency_key", parsed.data.idempotency_key).maybeSingle();
+  if (existingError) return jsonError(500, "ATTENDANCE_READ_FAILED", "Không thể kiểm tra lượt chấm đã gửi.", requestId);
   if (existing) {
     if (existing.employee_id !== actor.employeeId) return jsonError(409, "IDEMPOTENCY_KEY_CONFLICT", "Khóa đồng bộ đã được dùng.", requestId);
     return jsonApiResponse({ data: existing, replayed: true, request_id: requestId });
@@ -62,6 +70,7 @@ export async function POST(request: Request) {
     p_photo_expected: parsed.data.photo_expected,
   });
   if (error?.code === "23505") return jsonError(409, "ATTENDANCE_ALREADY_EXISTS", "Đã có lượt chấm cùng loại trong ngày. Hãy gửi yêu cầu sửa công nếu cần.", requestId);
+  if (error?.code === "42501") return jsonError(403, "EMPLOYEE_INACTIVE", "Tài khoản hoặc hồ sơ nhân viên không còn hoạt động.", requestId);
   if (error || !data) return jsonError(500, "ATTENDANCE_CREATE_FAILED", "Không thể ghi nhận lượt chấm. Vui lòng thử lại.", requestId);
   return jsonApiResponse({ data, replayed: false, request_id: requestId }, { status: 201 });
 }

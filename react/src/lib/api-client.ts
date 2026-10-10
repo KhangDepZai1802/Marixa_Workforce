@@ -12,6 +12,9 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   const contentType = response.headers.get("content-type") ?? "";
   if (!response.ok) {
     const body = contentType.includes("application/json") ? await response.json().catch(() => null) : null;
+    if (response.status === 401 && typeof window !== "undefined" && !path.startsWith("/api/v1/auth/")) {
+      window.location.replace(new URL("/login?expired=1", window.location.origin).toString());
+    }
     throw new ApiError(body?.error?.message ?? "Không thể hoàn tất yêu cầu. Hãy thử lại.", response.status, body?.error?.code);
   }
   if (contentType.includes("application/json")) return response.json() as Promise<T>;

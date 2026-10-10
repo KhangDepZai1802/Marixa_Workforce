@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { readEnv } from './backup.mjs';
+const env=readEnv(),credentials=JSON.parse(readFileSync('.env.phase2.local','utf8'));
+if(env.NEXT_PUBLIC_SUPABASE_URL!=='https://pkpwcpatuslfjyoivbuf.supabase.co'||credentials.ref!=='pkpwcpatuslfjyoivbuf')throw Error('TEST only');
+const base='http://localhost:3001';
+const login=await fetch(base+'/api/v1/auth/login',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify({phone:'0990000101',password:credentials.passwords['TEST-P2-A']})});
+assert.equal(login.status,200);
+const pairs=login.headers.getSetCookie().map(c=>c.split(';')[0]).map(c=>[c.slice(0,c.indexOf('=')),c.slice(c.indexOf('=')+1)]);
+const key='sb-pkpwcpatuslfjyoivbuf-auth-token';
+const chunks=pairs.filter(([name])=>name===key||name.startsWith(key+'.')).sort(([a],[b])=>a.localeCompare(b));
+assert(chunks.length);
+const value=chunks.map(([,v])=>v).join('');assert(value.startsWith('base64-'));
+const session=JSON.parse(Buffer.from(value.slice(7),'base64url').toString());
+session.expires_at=1;
+const expired='base64-'+Buffer.from(JSON.stringify(session)).toString('base64url');
+const cookie=[];for(let i=0;i<expired.length;i+=3000)cookie.push(`${key}.${i/3000}=${expired.slice(i,i+3000)}`);
+const page=await fetch(base+'/today',{headers:{Cookie:cookie.join('; ')},redirect:'manual'});
+assert.equal(page.status,200,'server-rendered page refreshes a stale session without redirect');
+const refreshed=page.headers.getSetCookie().map(c=>c.split(';')[0]);assert(refreshed.some(c=>c.startsWith(key)),'refreshed cookie reaches the browser');
+const me=await fetch(base+'/api/v1/me',{headers:{Cookie:refreshed.join('; ')}});assert.equal(me.status,200,'next request uses the refreshed session');
+assert.match(page.headers.get('cache-control'),/no-store|private/);
+console.log('PASS stale session refreshed in proxy, browser receives cookies, next API request stays authenticated, private cache headers');

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiRequest } from "@/lib/api-client";
+import { listQueuedAttendance } from "@/features/attendance/offline-queue";
 
 type Role = "employee" | "hr" | "admin";
 type NavItem = { href: string; label: string; roles: Role[] };
@@ -30,8 +31,9 @@ const navItems: NavItem[] = [
   { href: "/admin/audit", label: "Nhật ký", roles: admin },
 ];
 const roleLabels: Record<Role, string> = { employee: "Nhân viên", hr: "Nhân sự", admin: "Quản trị viên" };
+const mobileNavItems = navItems.slice(0, 4);
 
-export function AppShell({ role, children }: { role: Role; children: React.ReactNode }) {
+export function AppShell({ role, employeeId, children }: { role: Role; employeeId: string | null; children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -43,6 +45,14 @@ export function AppShell({ role, children }: { role: Role; children: React.React
     setBusy(true);
     setError("");
     try {
+      if (employeeId) {
+        try {
+          const pending = await listQueuedAttendance(employeeId);
+          if (pending.length && !window.confirm(`Còn ${pending.length} lượt chấm chưa đồng bộ trên thiết bị. Đăng xuất sẽ giữ lượt chấm này tại đây; hãy đăng nhập lại đúng tài khoản để gửi. Tiếp tục đăng xuất?`)) return;
+        } catch {
+          if (!window.confirm("Không kiểm tra được lượt chấm còn lưu trên thiết bị. Đăng xuất có thể làm chậm đồng bộ; hãy đăng nhập lại đúng tài khoản để kiểm tra. Tiếp tục?")) return;
+        }
+      }
       await apiRequest("/api/v1/auth/logout", { method: "POST" });
       router.replace("/login");
       router.refresh();
@@ -54,6 +64,7 @@ export function AppShell({ role, children }: { role: Role; children: React.React
   }
 
   return <div className="app-shell">
+    <a className="skip-link" href="#main-content">Bỏ qua điều hướng</a>
     <header className="topbar">
       <Link href="/today" className="brand" aria-label="Marixa Workforce — trang chấm công">
         <Image src="/logo.png" width={42} height={42} alt="" priority />
@@ -62,9 +73,9 @@ export function AppShell({ role, children }: { role: Role; children: React.React
       <div className="topbar-right">
         <span className="role-chip">{roleLabels[role]}</span>
         <button className="button button-ghost signout" type="button" onClick={signOut} disabled={busy}>{busy ? "Đang thoát…" : "Đăng xuất"}</button>
-        <button className="mobile-menu-button" type="button" aria-expanded={menuOpen} aria-controls="main-navigation" onClick={() => setMenuOpen((open) => !open)}>
+        {role !== "employee" && <button className="mobile-menu-button" type="button" aria-expanded={menuOpen} aria-controls="main-navigation" onClick={() => setMenuOpen((open) => !open)}>
           <span className="sr-only">{menuOpen ? "Đóng menu" : "Mở menu"}</span><span className="menu-lines" />
-        </button>
+        </button>}
       </div>
     </header>
     <div className="shell-body">
@@ -86,5 +97,8 @@ export function AppShell({ role, children }: { role: Role; children: React.React
         <footer className="page-footer">Marixa Workforce <span>·</span> Múi giờ nghiệp vụ Asia/Ho_Chi_Minh</footer>
       </main>
     </div>
+    <nav className="mobile-bottom-nav" aria-label="Điều hướng nhân viên">
+      {mobileNavItems.map((item) => <Link key={item.href} href={item.href} className={`mobile-bottom-link ${pathname === item.href ? "mobile-bottom-link-active" : ""}`} aria-current={pathname === item.href ? "page" : undefined} onClick={() => setMenuOpen(false)}>{item.label}</Link>)}
+    </nav>
   </div>;
 }

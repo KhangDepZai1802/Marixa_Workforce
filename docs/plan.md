@@ -1,10 +1,14 @@
 # Kế hoạch triển khai hệ thống chấm công Marixa V1
 
-Ngày lập: 09/10/2026 (Asia/Ho_Chi_Minh). Trạng thái: **chưa triển khai ứng dụng**. Đây là checklist thực thi từ mã nguồn trống đến bản deploy kỹ thuật hoạt động trên Vercel Hobby và Supabase Free.
+Ngày lập: 09/10/2026 (Asia/Ho_Chi_Minh). Cập nhật: 10/10/2026. Trạng thái: **đã triển khai ứng dụng và kiểm thử nghiệp vụ/backup trên Supabase test; đã kiểm chứng phần kỹ thuật Phase 7–8; còn đầu vào vận hành, thiết bị thật và thao tác Vercel**. Đây là checklist thực thi đến bản deploy kỹ thuật hoạt động trên Vercel Hobby và Supabase Free.
+
+Theo yêu cầu trực tiếp của chủ dự án ngày 10/10/2026, `docs/plan.md` được cập nhật để ghi lộ trình tiếp theo. Tiến độ và bằng chứng chi tiết ghi ở `docs/worklog.md`.
+
+Quyết định mới ngày 10/10/2026: **riêng Codex được toàn quyền chỉnh sửa mọi file Markdown trong repository** theo `AGENTS.md`; các agent khác chỉ được sửa `docs/worklog.md` trong thư mục `docs/`.
 
 ## 1. Cách dùng kế hoạch
 
-1. Đọc `AGENTS.md`, `docs/worklog.md`, rồi đọc các file `docs/01`–`07` để lấy chi tiết nghiệp vụ/kiến trúc. **Không sửa bất kỳ file `*.md` nào trong `docs/` ngoài `docs/worklog.md`.** Khi đặc tả cũ khác quyết định mới, áp dụng mục 2 của file này và ghi khác biệt vào worklog.
+1. Đọc `AGENTS.md`, `docs/worklog.md`, rồi đọc các file `docs/01`–`07` để lấy chi tiết nghiệp vụ/kiến trúc. Quyền chỉnh sửa Markdown thực hiện theo `AGENTS.md`: Codex được sửa; agent khác chỉ được sửa `docs/worklog.md` trong thư mục `docs/`. Khi đặc tả cũ khác quyết định mới, áp dụng mục 2 của file này và ghi khác biệt vào worklog.
 2. Làm các phase theo thứ tự. Trong mỗi phase, làm checklist từ trên xuống. Chỉ đổi `[ ]` thành `[x]` sau khi đã làm **và kiểm chứng**; ghi ngày, commit/file thay đổi, lệnh hoặc thao tác kiểm tra và kết quả vào worklog. Một phase hoàn thành khi mọi ô của phase và tiêu chí nghiệm thu của phase đều đạt.
 3. Mọi secret nằm trong máy quản trị/Vercel Environment Variables, không commit `.env.local`, mật khẩu, connection string hoặc service-role key. Dữ liệu thử nghiệm là dữ liệu giả; không chạy test phá dữ liệu trên production.
 4. Không dùng Docker, Docker Desktop, `supabase start`, `supabase db dump`, Dockerfile hoặc docker-compose. Dùng Node.js để chạy web và PostgreSQL client cài trực tiếp (`psql`, `pg_dump`, `pg_restore`) để quản lý database hosted.
@@ -12,7 +16,7 @@ Ngày lập: 09/10/2026 (Asia/Ho_Chi_Minh). Trạng thái: **chưa triển khai 
 
 ## 2. Quyết định nghiệp vụ đang có hiệu lực
 
-Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `docs/01`–`07`**, theo trả lời mới nhất của chủ dự án ngày 09/10/2026. Không sửa các file đặc tả được bảo vệ.
+Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `docs/01`–`07`**, theo trả lời mới nhất của chủ dự án ngày 09/10/2026. Quyền sửa file đặc tả thực hiện theo `AGENTS.md`.
 
 | Chủ đề | Quy tắc phải triển khai |
 | --- | --- |
@@ -25,6 +29,7 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 | Ngày làm việc bình thường | Dùng các khoảng làm việc của **ca chung có hiệu lực** thay cho mốc giờ cố định. Phần ngoài giờ chỉ tính tăng ca trong khoảng đã được duyệt; chấm ra muộn riêng lẻ không tự tạo tăng ca. Đi trễ/về sớm so với ca có hiệu lực, có xét số phút miễn trừ đi trễ do admin đặt. |
 | Phép năm | Mức phép năm là **12 ngày/năm, cộng 1 ngày vào ngày 1 mỗi tháng**, bắt đầu từ tháng nhân viên vào làm; không cấp sẵn cả 12 ngày. Giao dịch cộng tháng phải idempotent. Số dư lịch sử khi chuyển hệ thống, nếu có, do admin nhập có lý do. |
 | Cấu hình bằng chứng | Dùng `logo.png` chính thức; lưu ảnh chấm công private với thời hạn **3 tháng**; dùng GPS nếu có để gắn nhãn vị trí tham khảo. Admin nhập lịch nghỉ/làm bù và tọa độ/bán kính văn phòng trước vận hành. Thiếu ảnh/GPS hoặc chưa có tọa độ vẫn chấm công được. |
+| Kiến trúc triển khai | **Next.js Route Handlers trong `react/src/app/api/` là API chính.** Supabase cung cấp PostgreSQL, Auth và Storage; Vercel deploy thư mục `react/`. Không triển khai .NET API hoặc EF migration cho ứng dụng này. Mã .NET cũ trong repository chỉ là tham chiếu lịch sử. Quyết định này thay thế lựa chọn .NET API ghi trong worklog ngày 09/10/2026. |
 
 **Quyết định triển khai đã được chủ dự án xác nhận ở Phase 0 và làm rõ ngày 09/10/2026:** ngày nghỉ trừ khoảng nghỉ trưa của ca chung có hiệu lực (mặc định ban đầu 12:00–13:00); ngày làm bù do admin đánh dấu được xem là ngày làm việc; số phút nguyên được lấy sau khi cộng khoảng thời gian thực tế theo giây trong từng loại công. Admin có chức năng chỉnh ca chung và ngày hiệu lực; không cố định mốc 08:00/12:00/13:00/17:00 trong logic.
 
@@ -47,11 +52,11 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 
 **Mục tiêu:** repository build được, có route rõ và cấu trúc để các module dùng chung.
 
-- [ ] 1.1. Khởi tạo Next.js App Router + React + TypeScript tại root repository; thêm script `dev`, `build`, `lint`, `test` và khóa dependency trong lockfile. Chạy `npm run dev` và `npm run build`.
-- [ ] 1.2. Tạo các nhóm route `/login`, `/change-password`, `/today`, `/my-attendance`, `/my-requests`, `/my-profile`, `/hr/*`, `/admin/*`; route chưa có tính năng phải hiển thị trạng thái rõ ràng, không giả dữ liệu thật.
-- [ ] 1.3. Tạo `src/lib` hoặc thư mục tương đương cho Supabase client, auth, phân quyền, tính công, thời gian `Asia/Ho_Chi_Minh`, validation, lỗi API và audit. Tạo Route Handlers dưới `/api/v1`; không đặt logic tính công riêng trong các trang.
-- [ ] 1.4. Dựng token màu/chữ/khoảng cách và layout mobile/desktop theo `docs/07-ui-design-system.md`; thêm loading, empty, error, trạng thái offline và điều hướng bàn phím.
-- [ ] 1.5. Tạo `.env.example` chỉ có tên biến (`NEXT_PUBLIC_SUPABASE_URL`, publishable key, server secret, app URL, `CRON_SECRET`) và kiểm tra `.gitignore` bỏ qua file chứa giá trị thật. Không đọc server secret trong Client Component.
+- [x] 1.1. Khởi tạo Next.js App Router + React + TypeScript tại `react/` (Root Directory trên Vercel); thêm script `dev`, `build`, `lint`, `test` và khóa dependency trong lockfile. Chạy `npm run dev` và `npm run build` từ `react/`.
+- [x] 1.2. Tạo các nhóm route `/login`, `/change-password`, `/today`, `/my-attendance`, `/my-requests`, `/my-profile`, `/hr/*`, `/admin/*`; route chưa có tính năng phải hiển thị trạng thái rõ ràng, không giả dữ liệu thật.
+- [x] 1.3. Tạo `src/lib` hoặc thư mục tương đương cho Supabase client, auth, phân quyền, tính công, thời gian `Asia/Ho_Chi_Minh`, validation, lỗi API và audit. Tạo Route Handlers dưới `/api/v1`; không đặt logic tính công riêng trong các trang.
+- [x] 1.4. Dựng token màu/chữ/khoảng cách và layout mobile/desktop theo `docs/07-ui-design-system.md`; thêm loading, empty, error, trạng thái offline và điều hướng bàn phím.
+- [x] 1.5. Tạo `.env.example` chỉ có tên biến (`NEXT_PUBLIC_SUPABASE_URL`, publishable key, server secret, app URL, `CRON_SECRET`) và kiểm tra `.gitignore` bỏ qua file chứa giá trị thật. Không đọc server secret trong Client Component.
 
 **Đạt khi:** trang khung hiển thị ở 375px và desktop, refresh route đúng, lint/build sạch, không có secret trong Git hoặc bundle.
 
@@ -59,13 +64,13 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 
 **Mục tiêu:** dữ liệu và quyền đủ an toàn để các phase sau nối vào.
 
-- [ ] 2.1. Tạo Supabase Free project thử nghiệm hosted; bật Auth email/mật khẩu, tắt đăng ký công khai, lưu URL/publishable key trong `.env.local`, secret quản trị chỉ ở server/máy quản trị.
-- [ ] 2.2. Viết migration SQL có version trong `supabase/migrations/`. Tạo bảng hồ sơ/tài khoản, chính sách, lịch nghỉ, event công, ảnh tùy chọn, yêu cầu sửa, nghỉ phép/sổ phép, tăng ca, kỳ/snapshot, **điều chỉnh kỳ trước** và audit. Tạo bảng lịch sử migration để biết file nào đã áp.
-- [ ] 2.3. Thiết kế `attendance_events` với `work_date`, `kind`, `occurred_at`, `device_occurred_at`, `received_at`, `source`, `idempotency_key` và GPS **nullable**. Cho phép không có record `attendance_photos`; nếu có ảnh thì ảnh gắn duy nhất với event. Thêm trạng thái `not_provided`/`ready`/`upload_failed`/`expired` hoặc giá trị tương đương, không coi `not_provided` là lỗi công.
-- [ ] 2.4. Tạo unique constraint cho một chấm vào và một chấm ra hợp lệ mỗi người/ngày, khóa idempotency, một admin active, một giao dịch sổ phép/đơn/phiên bản, một giao dịch cộng phép mỗi nhân viên/tháng và một điều chỉnh cho cùng event + kỳ đích. Ghi audit cho việc áp/mở lại điều chỉnh.
-- [ ] 2.5. Bật RLS trên mọi bảng nghiệp vụ, thu hồi grant không cần thiết và viết policy cho `anon`, employee A/B, HR, admin. Client không được sửa trực tiếp event gốc, ledger, snapshot, audit hay điều chỉnh. Các mutation đi qua API/service có kiểm tra session và role.
+- [x] 2.1. Tạo Supabase Free project thử nghiệm hosted; bật Auth email/mật khẩu, tắt đăng ký công khai, lưu URL/publishable key trong `.env.local`, secret quản trị chỉ ở server/máy quản trị.
+- [x] 2.2. Viết migration SQL có version trong `supabase/migrations/`. Tạo bảng hồ sơ/tài khoản, chính sách, lịch nghỉ, event công, ảnh tùy chọn, yêu cầu sửa, nghỉ phép/sổ phép, tăng ca, kỳ/snapshot, **điều chỉnh kỳ trước** và audit. Tạo bảng lịch sử migration để biết file nào đã áp.
+- [x] 2.3. Thiết kế `attendance_events` với `work_date`, `kind`, `occurred_at`, `device_occurred_at`, `received_at`, `source`, `idempotency_key` và GPS **nullable**. Cho phép không có record `attendance_photos`; nếu có ảnh thì ảnh gắn duy nhất với event. Thêm trạng thái `not_provided`/`ready`/`upload_failed`/`expired` hoặc giá trị tương đương, không coi `not_provided` là lỗi công.
+- [x] 2.4. Tạo unique constraint cho một chấm vào và một chấm ra hợp lệ mỗi người/ngày, khóa idempotency, một admin active, một giao dịch sổ phép/đơn/phiên bản, một giao dịch cộng phép mỗi nhân viên/tháng và một điều chỉnh cho cùng event + kỳ đích. Ghi audit cho việc áp/mở lại điều chỉnh.
+- [x] 2.5. Bật RLS trên mọi bảng nghiệp vụ, thu hồi grant không cần thiết và viết policy cho `anon`, employee A/B, HR, admin. Client không được sửa trực tiếp event gốc, ledger, snapshot, audit hay điều chỉnh. Các mutation đi qua API/service có kiểm tra session và role.
 - [ ] 2.6. Tạo bucket `attendance-photos` **private** cho người muốn gửi ảnh; MIME đã chọn trên test/production là `image/jpeg`, `image/png`, `image/webp` theo xác nhận của chủ dự án. Chốt và cấu hình kích thước tối đa sau khi thử ảnh trên điện thoại; kiểm tra policy Storage theo quyền. Không tạo file rỗng giả làm bằng chứng; không bắt người dùng cấp quyền camera/GPS để truy cập nút chấm.
-- [ ] 2.7. Chạy migration bằng `psql -v ON_ERROR_STOP=1` trên project thử nghiệm; tạo seed giả và một admin bằng bootstrap phía server. Kiểm tra schema, ràng buộc, RLS và quyền Storage bằng các tài khoản thử nghiệm.
+- [x] 2.7. Chạy migration bằng `psql -v ON_ERROR_STOP=1` trên project thử nghiệm; tạo seed giả và một admin bằng bootstrap phía server. Kiểm tra schema, ràng buộc, RLS và quyền Storage bằng các tài khoản thử nghiệm.
 
 **Đạt khi:** project thử nghiệm tạo được dữ liệu giả, chặn truy cập chéo và ghi trái quyền, nullable evidence hoạt động, migration áp theo version và có cách tái tạo môi trường thử nghiệm.
 
@@ -73,10 +78,10 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 
 **Mục tiêu:** người dùng vào đúng màn hình và API theo quyền.
 
-- [ ] 3.1. Tích hợp Supabase Auth SSR/cookie theo SDK hiện hành; xác thực lại user phía server cho route riêng tư và mọi API. Route có dữ liệu cá nhân không được cache dùng chung giữa người dùng.
-- [ ] 3.2. Làm đăng nhập/đăng xuất, tài khoản bị khóa, hết phiên, lỗi mạng và buộc đổi mật khẩu tạm ở lần đầu. Admin cấp/reset tài khoản qua server, không để service-role key đến client.
-- [ ] 3.3. Làm hồ sơ cá nhân, danh sách/tạo/sửa hồ sơ cơ bản cho HR, cấp role/trạng thái cho admin. Hồ sơ còn khi tài khoản bị khóa; chặn admin thứ hai và chặn khóa admin active cuối cùng.
-- [ ] 3.4. Kiểm tra quyền ở cả UI, API và RLS; ẩn menu chỉ là hỗ trợ, không thay bảo vệ server. Ghi audit khi cấp tài khoản, reset mật khẩu, đổi role hoặc khóa tài khoản.
+- [x] 3.1. Tích hợp Supabase Auth SSR/cookie theo SDK hiện hành; xác thực lại user phía server cho route riêng tư và mọi API. Route có dữ liệu cá nhân không được cache dùng chung giữa người dùng.
+- [x] 3.2. Làm đăng nhập/đăng xuất, tài khoản bị khóa, hết phiên, lỗi mạng và buộc đổi mật khẩu tạm ở lần đầu. Admin cấp/reset tài khoản qua server, không để service-role key đến client.
+- [x] 3.3. Làm hồ sơ cá nhân, danh sách/tạo/sửa hồ sơ cơ bản cho HR, cấp role/trạng thái cho admin. Hồ sơ còn khi tài khoản bị khóa; chặn admin thứ hai và chặn khóa admin active cuối cùng.
+- [x] 3.4. Kiểm tra quyền ở cả UI, API và RLS; ẩn menu chỉ là hỗ trợ, không thay bảo vệ server. Ghi audit khi cấp tài khoản, reset mật khẩu, đổi role hoặc khóa tài khoản.
 
 **Đạt khi:** tài khoản thử của employee, HR, admin xem đúng dữ liệu; gọi API trái quyền bị từ chối; người dùng không thể tự nâng role hoặc tự bỏ qua đổi mật khẩu tạm.
 
@@ -84,13 +89,13 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 
 **Mục tiêu:** chấm vào/ra ổn định khi có mạng, kể cả không có ảnh và GPS.
 
-- [ ] 4.1. Dựng trang `/today` với một nút chính theo trạng thái: chưa vào → chấm vào; đã vào → chấm ra; đã đủ → xem lịch sử/yêu cầu sửa. Dùng ngày nghiệp vụ `Asia/Ho_Chi_Minh`; V1 không có ca qua đêm.
-- [ ] 4.2. Cho người dùng chọn chụp ảnh và lấy GPS nhưng có thể tiếp tục ngay khi một hoặc cả hai quyền bị từ chối hoặc thiết bị không hỗ trợ. UI báo “Không có ảnh/vị trí” như thông tin, không gọi là chấm công thất bại.
-- [ ] 4.3. Khi nhấn chấm, client tạo `idempotency_key`, thời điểm thiết bị và payload tùy chọn. Server lấy employee từ session, xác nhận active, xác định online time bằng giờ server, `work_date` theo múi giờ công ty và kiểm tra một event/người/ngày/loại.
-- [ ] 4.4. Trả cùng event khi retry cùng khóa; nếu thiết bị khác đã tạo loại event đó, trả xung đột và chỉ đường yêu cầu sửa. Không ghi đè event gốc.
-- [ ] 4.5. Nếu có GPS và có tọa độ văn phòng, tính khoảng cách/cờ trong/ngoài; **cờ ngoài văn phòng không ảnh hưởng số công**. Nếu thiếu GPS hoặc địa điểm chưa cấu hình, để trạng thái `không có vị trí`, không suy ra ở ngoài.
-- [ ] 4.6. Nếu có ảnh, nén/định hướng ảnh, upload private, kiểm tra chủ sở hữu/MIME/kích thước, rồi gắn metadata. Upload lỗi giữ nguyên event hợp lệ và cho retry ảnh; nếu không chụp ảnh thì không tạo lỗi upload.
-- [ ] 4.7. Làm lịch sử cá nhân và HR đối soát. HR xem cờ vị trí/ảnh khi có; thiếu bằng chứng tự nó không phải ngoại lệ bắt buộc xử lý. Chỉ chủ sở hữu, HR và admin có quyền xem ảnh private.
+- [x] 4.1. Dựng trang `/today` với một nút chính theo trạng thái: chưa vào → chấm vào; đã vào → chấm ra; đã đủ → xem lịch sử/yêu cầu sửa. Dùng ngày nghiệp vụ `Asia/Ho_Chi_Minh`; V1 không có ca qua đêm.
+- [x] 4.2. Cho người dùng chọn chụp ảnh và lấy GPS nhưng có thể tiếp tục ngay khi một hoặc cả hai quyền bị từ chối hoặc thiết bị không hỗ trợ. UI báo “Không có ảnh/vị trí” như thông tin, không gọi là chấm công thất bại.
+- [x] 4.3. Khi nhấn chấm, client tạo `idempotency_key`, thời điểm thiết bị và payload tùy chọn. Server lấy employee từ session, xác nhận active, xác định online time bằng giờ server, `work_date` theo múi giờ công ty và kiểm tra một event/người/ngày/loại.
+- [x] 4.4. Trả cùng event khi retry cùng khóa; nếu thiết bị khác đã tạo loại event đó, trả xung đột và chỉ đường yêu cầu sửa. Không ghi đè event gốc.
+- [x] 4.5. Nếu có GPS và có tọa độ văn phòng, tính khoảng cách/cờ trong/ngoài; **cờ ngoài văn phòng không ảnh hưởng số công**. Nếu thiếu GPS hoặc địa điểm chưa cấu hình, để trạng thái `không có vị trí`, không suy ra ở ngoài.
+- [x] 4.6. Nếu có ảnh, nén/định hướng ảnh, upload private, kiểm tra chủ sở hữu/MIME/kích thước, rồi gắn metadata. Upload lỗi giữ nguyên event hợp lệ và cho retry ảnh; nếu không chụp ảnh thì không tạo lỗi upload.
+- [x] 4.7. Làm lịch sử cá nhân và HR đối soát. HR xem cờ vị trí/ảnh khi có; thiếu bằng chứng tự nó không phải ngoại lệ bắt buộc xử lý. Chỉ chủ sở hữu, HR và admin có quyền xem ảnh private.
 
 **Đạt khi:** bốn trường hợp có cả ảnh+GPS, chỉ ảnh, chỉ GPS, không có cả hai đều chấm được và tính công giống nhau; chấm ngoài văn phòng vẫn tính; hai lần bấm/retry không tạo bản ghi trùng.
 
@@ -98,12 +103,12 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 
 **Mục tiêu:** không mất event khi mất mạng và không làm sai kỳ đã khóa.
 
-- [ ] 5.1. Tạo IndexedDB queue lưu event, `idempotency_key`, thời điểm thiết bị, ảnh/GPS nếu có, trạng thái và số lần thử. Chỉ báo “đã lưu trên thiết bị” sau khi transaction IndexedDB thành công; không báo “đã đồng bộ” khi chưa có xác nhận server.
-- [ ] 5.2. Khi mở ứng dụng, trở lại online hoặc người dùng bấm thử lại, gửi queue theo thứ tự, backoff khi lỗi tạm; luôn dùng lại khóa cũ. Không đặt TTL/ngày hết hạn cho queue hoặc từ chối chỉ vì event cũ. Cảnh báo rủi ro nếu xóa dữ liệu trình duyệt hay đăng xuất khi còn queue.
-- [ ] 5.3. Server nhận event offline với thời điểm thiết bị và `received_at` riêng, xác định ngày gốc theo `Asia/Ho_Chi_Minh`, đánh dấu cần HR đối soát đồng hồ thiết bị. Nếu ảnh tùy chọn chưa upload xong, event vẫn được lưu.
-- [ ] 5.4. Nếu kỳ gốc **chưa khóa**, tính lại ngày/kỳ đó như bình thường sau khi event hợp lệ. Nếu **đã khóa**, không cập nhật snapshot cũ: tạo đề xuất điều chỉnh ở kỳ mở tại thời điểm nhận hoặc kỳ mở đầu tiên sau đó, tham chiếu employee/ngày/kỳ gốc/event, số phút chênh lệch và lý do “đồng bộ muộn”.
-- [ ] 5.5. HR xem đề xuất, so sánh với snapshot cũ và mọi đơn sửa công/điều chỉnh đã có; chỉ xác nhận phần chênh lệch thực tế. Một event không được cộng hai lần; trường hợp đã được bù bằng yêu cầu sửa công phải ra chênh lệch 0 hoặc đánh dấu đã xử lý.
-- [ ] 5.6. Khi HR xác nhận, ghi điều chỉnh vào kỳ mở và audit; nếu kỳ đó đóng trước khi xác nhận, chuyển sang kỳ mở kế tiếp. Báo cáo hiển thị điều chỉnh kỳ trước riêng, không sửa bảng công/Excel kỳ gốc đã khóa.
+- [x] 5.1. Tạo IndexedDB queue lưu event, `idempotency_key`, thời điểm thiết bị, ảnh/GPS nếu có, trạng thái và số lần thử. Chỉ báo “đã lưu trên thiết bị” sau khi transaction IndexedDB thành công; không báo “đã đồng bộ” khi chưa có xác nhận server.
+- [x] 5.2. Khi mở ứng dụng, trở lại online hoặc người dùng bấm thử lại, gửi queue theo thứ tự, backoff khi lỗi tạm; luôn dùng lại khóa cũ. Không đặt TTL/ngày hết hạn cho queue hoặc từ chối chỉ vì event cũ. Cảnh báo rủi ro nếu xóa dữ liệu trình duyệt hay đăng xuất khi còn queue.
+- [x] 5.3. Server nhận event offline với thời điểm thiết bị và `received_at` riêng, xác định ngày gốc theo `Asia/Ho_Chi_Minh`, đánh dấu cần HR đối soát đồng hồ thiết bị. Nếu ảnh tùy chọn chưa upload xong, event vẫn được lưu.
+- [x] 5.4. Nếu kỳ gốc **chưa khóa**, tính lại ngày/kỳ đó như bình thường sau khi event hợp lệ. Nếu **đã khóa**, không cập nhật snapshot cũ: tạo đề xuất điều chỉnh ở kỳ mở tại thời điểm nhận hoặc kỳ mở đầu tiên sau đó, tham chiếu employee/ngày/kỳ gốc/event, số phút chênh lệch và lý do “đồng bộ muộn”.
+- [x] 5.5. HR xem đề xuất, so sánh với snapshot cũ và mọi đơn sửa công/điều chỉnh đã có; chỉ xác nhận phần chênh lệch thực tế. Một event không được cộng hai lần; trường hợp đã được bù bằng yêu cầu sửa công phải ra chênh lệch 0 hoặc đánh dấu đã xử lý.
+- [x] 5.6. Khi HR xác nhận, ghi điều chỉnh vào kỳ mở và audit; nếu kỳ đó đóng trước khi xác nhận, chuyển sang kỳ mở kế tiếp. Báo cáo hiển thị điều chỉnh kỳ trước riêng, không sửa bảng công/Excel kỳ gốc đã khóa.
 
 **Đạt khi:** thử sync muộn sau nhiều ngày/tháng, retry lặp, mất mạng giữa upload, đồng hồ thiết bị lệch, kỳ gốc đang mở/đã khóa, kỳ kế cũng khóa và trường hợp đã sửa công; không mất dữ liệu, không nhân đôi công và snapshot cũ bất biến.
 
@@ -111,13 +116,13 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 
 **Mục tiêu:** một nguồn tính số phút nhất quán cho UI, dashboard và Excel.
 
-- [ ] 6.1. Viết service tính theo khoảng thời gian với timestamp đầy đủ; chọn phiên bản **ca chung có hiệu lực tại ngày công**, lấy giao khoảng chấm vào–ra với hai khoảng làm việc trước/sau nghỉ trưa do admin cấu hình. Trừ phần nghỉ được duyệt/điều chỉnh theo đúng ngày. Quy đổi kết quả cuối sang phút nguyên, không làm tròn theo block.
-- [ ] 6.2. Ngày làm việc: ngoài giờ của ca chung chỉ cộng tăng ca trong phần giao giữa giờ chấm thực tế và đơn tăng ca đã duyệt; đi trễ/về sớm so với ca có hiệu lực và áp số phút miễn trừ đi trễ. Ngày Chủ nhật/ngày nghỉ theo lịch: giờ thực tế sau khi loại giao với khoảng nghỉ trưa của ca chung có hiệu lực tự động là tăng ca, không cần đơn. Ngày làm bù được đánh dấu là ngày làm việc áp ca chung.
-- [ ] 6.3. Thiếu chấm vào/ra: đánh dấu chưa hoàn chỉnh, không tự suy ra đủ giờ/tăng ca. Cho tạo yêu cầu sửa công; khi duyệt tạo record điều chỉnh và audit, giữ event gốc. Với event offline đến sau khóa kỳ, **luôn** áp quy trình điều chỉnh kỳ sau; các sai sót khác chỉ được mở lại kỳ bởi admin có lý do và audit theo quy trình đặc tả.
-- [ ] 6.4. Làm đơn nghỉ theo cả ngày/nửa ngày, loại nghỉ, người duyệt; sổ phép cộng 1 ngày vào ngày 1 mỗi tháng từ tháng nhân viên vào làm (tối đa 12 ngày/năm), hỗ trợ nhập số dư lịch sử có lý do và giao dịch chuyển/điều chỉnh/trừ/hoàn. Giao dịch cộng tháng, duyệt và hủy phải nguyên tử, idempotent; không duyệt vượt số dư nếu chưa điều chỉnh có lý do.
-- [ ] 6.5. Làm đơn tăng ca cho ngày làm việc, luồng duyệt employee → HR, HR → admin, admin có hồ sơ → HR; không ai tự duyệt. Ngày nghỉ tự tính OT nên đơn tăng ca ngày nghỉ, nếu có, chỉ là thông tin/lý do và không cộng thêm lần nữa.
-- [ ] 6.6. Làm kỳ tháng `open → hr_reviewed → locked`; HR xử lý thiếu mốc, đồng bộ trễ, xung đột, đơn và điều chỉnh kỳ trước. Admin khóa tạo snapshot có version; mở lại cần lý do/audit. Thiếu ảnh/GPS hoặc cờ ngoài văn phòng **không tự chặn khóa kỳ**.
-- [ ] 6.7. Unit test ca mặc định: 08:00–17:00 nghỉ 12:00–13:00 = 480 phút công thường; ngày nghỉ cùng khoảng = 480 phút tăng ca. Test ca admin đổi, ví dụ 09:00–18:00 nghỉ 12:30–13:30, miễn trừ trễ 10 phút: mốc biên, ngày trước/sau hiệu lực, ngày nghỉ/làm bù, kỳ đã khóa. Kiểm tra nửa ngày, cộng phép tháng không lặp, giới hạn 12 ngày/năm theo chính sách và chấm thiếu.
+- [x] 6.1. Viết service tính theo khoảng thời gian với timestamp đầy đủ; chọn phiên bản **ca chung có hiệu lực tại ngày công**, lấy giao khoảng chấm vào–ra với hai khoảng làm việc trước/sau nghỉ trưa do admin cấu hình. Trừ phần nghỉ được duyệt/điều chỉnh theo đúng ngày. Quy đổi kết quả cuối sang phút nguyên, không làm tròn theo block.
+- [x] 6.2. Ngày làm việc: ngoài giờ của ca chung chỉ cộng tăng ca trong phần giao giữa giờ chấm thực tế và đơn tăng ca đã duyệt; đi trễ/về sớm so với ca có hiệu lực và áp số phút miễn trừ đi trễ. Ngày Chủ nhật/ngày nghỉ theo lịch: giờ thực tế sau khi loại giao với khoảng nghỉ trưa của ca chung có hiệu lực tự động là tăng ca, không cần đơn. Ngày làm bù được đánh dấu là ngày làm việc áp ca chung.
+- [x] 6.3. Thiếu chấm vào/ra: đánh dấu chưa hoàn chỉnh, không tự suy ra đủ giờ/tăng ca. Cho tạo yêu cầu sửa công; khi duyệt tạo record điều chỉnh và audit, giữ event gốc. Với event offline đến sau khóa kỳ, **luôn** áp quy trình điều chỉnh kỳ sau; các sai sót khác chỉ được mở lại kỳ bởi admin có lý do và audit theo quy trình đặc tả.
+- [x] 6.4. Làm đơn nghỉ theo cả ngày/nửa ngày, loại nghỉ, người duyệt; sổ phép cộng 1 ngày vào ngày 1 mỗi tháng từ tháng nhân viên vào làm (tối đa 12 ngày/năm), hỗ trợ nhập số dư lịch sử có lý do và giao dịch chuyển/điều chỉnh/trừ/hoàn. Giao dịch cộng tháng, duyệt và hủy phải nguyên tử, idempotent; không duyệt vượt số dư nếu chưa điều chỉnh có lý do.
+- [x] 6.5. Làm đơn tăng ca cho ngày làm việc, luồng duyệt employee → HR, HR → admin, admin có hồ sơ → HR; không ai tự duyệt. Ngày nghỉ tự tính OT nên đơn tăng ca ngày nghỉ, nếu có, chỉ là thông tin/lý do và không cộng thêm lần nữa.
+- [x] 6.6. Làm kỳ tháng `open → hr_reviewed → locked`; HR xử lý thiếu mốc, đồng bộ trễ, xung đột, đơn và điều chỉnh kỳ trước. Admin khóa tạo snapshot có version; mở lại cần lý do/audit. Thiếu ảnh/GPS hoặc cờ ngoài văn phòng **không tự chặn khóa kỳ**.
+- [x] 6.7. Unit test ca mặc định: 08:00–17:00 nghỉ 12:00–13:00 = 480 phút công thường; ngày nghỉ cùng khoảng = 480 phút tăng ca. Test ca admin đổi, ví dụ 09:00–18:00 nghỉ 12:30–13:30, miễn trừ trễ 10 phút: mốc biên, ngày trước/sau hiệu lực, ngày nghỉ/làm bù, kỳ đã khóa. Kiểm tra nửa ngày, cộng phép tháng không lặp, giới hạn 12 ngày/năm theo chính sách và chấm thiếu.
 
 **Đạt khi:** mọi màn hình và export dùng cùng kết quả; ngày nghỉ tự OT, ngày thường OT cần duyệt; không trừ/cộng phép hoặc điều chỉnh hai lần; kỳ khóa không đổi nếu dữ liệu đến muộn.
 
@@ -125,12 +130,12 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 
 **Mục tiêu:** hệ thống đủ chức năng quản lý và có cách phục hồi trên gói Free.
 
-- [ ] 7.1. Làm dashboard HR/admin, lọc/phân trang event và ngoại lệ, lịch sử cá nhân; thể hiện riêng công thường, tăng ca tự động ngày nghỉ, tăng ca đã duyệt ngày thường và điều chỉnh kỳ trước.
-- [ ] 7.2. Xuất Excel kỳ mở với nhãn “bản tạm”, kỳ khóa từ snapshot; cột điều chỉnh kỳ trước có ngày/kỳ nguồn. Xuất PDF đơn nghỉ với mã, trạng thái, phiên bản, người duyệt. Kiểm tra quyền trước mỗi lần xuất.
+- [x] 7.1. Làm dashboard HR/admin, lọc/phân trang event và ngoại lệ, lịch sử cá nhân; thể hiện riêng công thường, tăng ca tự động ngày nghỉ, tăng ca đã duyệt ngày thường và điều chỉnh kỳ trước.
+- [x] 7.2. Xuất Excel kỳ mở với nhãn “bản tạm”, kỳ khóa từ snapshot; cột điều chỉnh kỳ trước có ngày/kỳ nguồn. Xuất PDF đơn nghỉ với mã, trạng thái, phiên bản, người duyệt. Kiểm tra quyền trước mỗi lần xuất.
 - [ ] 7.3. Làm **màn hình admin quản lý ca làm chung**: xem ca hiện tại/lịch sử, chỉnh ngày làm việc, giờ vào/ra, giờ nghỉ trưa, phút miễn trừ đi trễ và ngày hiệu lực; kiểm tra thứ tự giờ, xem trước tác động rồi lưu phiên bản mới có audit. Khi phiên bản mới bắt đầu, đóng phiên bản cũ vào ngày liền trước trong cùng giao dịch; từ chối khoảng hiệu lực chồng lấn để mỗi ngày có đúng một ca. Cùng khu cấu hình cho lịch nghỉ/làm bù, loại nghỉ/phép, địa điểm/bán kính tham khảo và retention ảnh 3 tháng. Admin nhập lịch, tọa độ/bán kính và số dư phép lịch sử nếu có trước vận hành; thiếu tọa độ không chặn chấm công. Cấu hình mới không tính lại snapshot đã khóa.
-- [ ] 7.4. Nếu có ảnh, chạy job dọn object hết hạn và giữ metadata/event/audit; endpoint có `CRON_SECRET`, idempotent, có log kết quả và cách chạy lại. Nếu không có ảnh, job không được báo lỗi giả.
-- [ ] 7.5. Theo dõi DB/Storage, lỗi chấm, queue chờ, ảnh upload lỗi và job retention; cảnh báo trước khi chạm hạn mức Free. Kiểm tra cơ chế project Free tạm dừng khi ít hoạt động và cách khôi phục.
-- [ ] 7.6. Viết runbook backup: `pg_dump` các schema/bảng nghiệp vụ bằng client cài trực tiếp, mã hóa bản sao ngoài Supabase; backup object Storage riêng; ghi cách tái cấp Auth/ghép hồ sơ. Restore vào project **thử nghiệm** và đối chiếu số event, sổ phép, ảnh, điều chỉnh và quyền.
+- [x] 7.4. Nếu có ảnh, chạy job dọn object hết hạn và giữ metadata/event/audit; endpoint có `CRON_SECRET`, idempotent, có log kết quả và cách chạy lại. Nếu không có ảnh, job không được báo lỗi giả.
+- [x] 7.5. Theo dõi DB/Storage, lỗi chấm, queue chờ, ảnh upload lỗi và job retention; cảnh báo trước khi chạm hạn mức Free. Kiểm tra cơ chế project Free tạm dừng khi ít hoạt động và cách khôi phục.
+- [x] 7.6. Viết runbook backup: `pg_dump` các schema/bảng nghiệp vụ bằng client cài trực tiếp, mã hóa bản sao ngoài Supabase; backup object Storage riêng; ghi cách tái cấp Auth/ghép hồ sơ. Restore vào project **thử nghiệm** và đối chiếu số event, sổ phép, ảnh, điều chỉnh và quyền.
 
 **Đạt khi:** Excel/PDF đúng số liệu và quyền, cấu hình/audit hoạt động, ảnh optional không cản chấm, bản backup thử restore được.
 
@@ -138,12 +143,12 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 
 **Mục tiêu:** chứng minh luồng nghiệp vụ mới và bảo mật trước deploy.
 
-- [ ] 8.1. Chạy lint, build, unit/integration/E2E trên project thử nghiệm; cập nhật ma trận test ở **mã nguồn hoặc worklog** theo quyết định mới, không sửa `docs/05-testing-strategy.md`.
-- [ ] 8.2. Test quyền employee A/B, HR, admin ở UI/API/RLS/Storage; không lộ dữ liệu chéo, `service_role` không có trong client bundle/log, không có secret trong Git.
+- [x] 8.1. Chạy lint, build, unit/integration/E2E trên project thử nghiệm; cập nhật ma trận test ở **mã nguồn hoặc worklog**. Nếu cần cập nhật `docs/05-testing-strategy.md`, thực hiện theo quyền Markdown trong `AGENTS.md`.
+- [x] 8.2. Test quyền employee A/B, HR, admin ở UI/API/RLS/Storage; không lộ dữ liệu chéo, `service_role` không có trong client bundle/log, không có secret trong Git.
 - [ ] 8.3. Test trên điện thoại thật và desktop: bốn trạng thái ảnh/GPS, ngoài văn phòng, offline không thời hạn, queue sau refresh, retry cùng khóa, hai thiết bị, server nhận event nhưng ảnh lỗi, ngày nghỉ tự OT.
-- [ ] 8.4. Test kỳ tháng: late sync vào kỳ đã khóa, điều chỉnh ở kỳ mở sau, kỳ sau cũng bị khóa, đã có sửa công, mở lại kỳ có audit, export snapshot gốc bất biến.
+- [x] 8.4. Test kỳ tháng: late sync vào kỳ đã khóa, điều chỉnh ở kỳ mở sau, kỳ sau cũng bị khóa, đã có sửa công, mở lại kỳ có audit, export snapshot gốc bất biến.
 - [ ] 8.5. Test responsive 375/768/1024/1440px, bàn phím, screen reader cơ bản, Safari iOS/Chrome Android nếu có thiết bị; test mạng chậm và ngắt giữa upload.
-- [ ] 8.6. Sửa toàn bộ lỗi chặn phát hành: mất/nhân đôi công, sai số phút, sai OT, sai quyền, sai kỳ/điều chỉnh, lộ secret, lỗi restore. Ghi bằng chứng test và lỗi còn lại vào worklog.
+- [x] 8.6. Sửa toàn bộ lỗi chặn phát hành: mất/nhân đôi công, sai số phút, sai OT, sai quyền, sai kỳ/điều chỉnh, lộ secret, lỗi restore. Ghi bằng chứng test và lỗi còn lại vào worklog.
 
 **Đạt khi:** không còn lỗi chặn phát hành; ma trận test và restore đều đạt bằng dữ liệu giả, có bản build xác định bằng commit hash.
 
@@ -151,7 +156,7 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 
 **Mục tiêu:** URL HTTPS hoạt động với Supabase production Free và đã smoke test end-to-end.
 
-- [ ] 9.0. Kiểm tra lại điều khoản Vercel Hobby và xác nhận phương án triển khai được nhà cung cấp cho phép. Nếu mục đích công ty chưa phù hợp điều khoản Hobby, ghi Phase 9 bị chặn về điều kiện sử dụng; chỉ chuyển sang phương án hợp lệ khi chủ dự án quyết định.
+- [x] 9.0. Kiểm tra lại điều khoản Vercel Hobby và xác nhận phương án triển khai được nhà cung cấp cho phép. Nếu mục đích công ty chưa phù hợp điều khoản Hobby, ghi Phase 9 bị chặn về điều kiện sử dụng; chỉ chuyển sang phương án hợp lệ khi chủ dự án quyết định.
 - [ ] 9.1. Tạo Supabase Free project production riêng. Áp đúng migration version đã test bằng `psql`, kiểm tra RLS, bucket private và cấu hình Auth; bootstrap một admin bằng quy trình an toàn. Không đưa seed/dữ liệu giả vào production.
 - [ ] 9.2. Kết nối Git repository với Vercel Hobby, chọn đúng Root Directory/Framework Next.js/branch production. Cấu hình URL + publishable key và server secret ở **đúng scope Production/Preview**; preview dùng project thử nghiệm, không dùng production.
 - [ ] 9.3. Deploy commit đã qua Phase 8, theo dõi build/log đến trạng thái Ready; mở URL `https://...vercel.app` hoặc domain được cấp, kiểm tra HTTPS, refresh route và lỗi server. Cập nhật Supabase Auth Site URL/Redirect URLs theo domain thật.
@@ -163,10 +168,19 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 
 **Điều kiện dùng chính thức cho công ty:** Vercel hiện giới hạn Hobby cho mục đích cá nhân hoặc phi thương mại. Phase 9 chỉ được triển khai theo phương án phù hợp điều khoản hiện hành. Trước khi vận hành còn cần cấu hình thật, người vận hành, quy trình backup/khôi phục và xác nhận hạn mức Free.
 
+## Bàn giao thao tác còn cần chủ dự án — 10/10/2026
+
+- Chủ dự án xác nhận Vercel chưa được thiết lập; tiếp tục dùng Supabase test, chưa thao tác production. [Hướng dẫn Vercel từ đầu](DEPLOY_VERCEL.md) phân biệt bản deploy thử HTTPS với nghiệm thu Phase 9 dùng production. [Runbook vận hành/backup](OPERATIONS_RUNBOOK.md).
+- 1.5: `.env.example` chỉ có giá trị trống; kiểm tra Git-selected working tree và browser bundle không chứa các secret đang dùng. Không khẳng định đã xóa secret từng tồn tại trong lịch sử Git cũ.
+- 2.6 và 8.3/8.5: còn bài thử ảnh thật trên điện thoại để chốt 200 KB, Safari iOS/Chrome Android và screen reader thực tế. Không thay bằng ảnh PNG fixture hoặc giả lập viewport.
+- 7.3: phần màn hình/version/audit/xem trước đã được triển khai. Admin còn nhập lịch nghỉ/làm bù, vị trí/bán kính thực tế và số dư phép lịch sử nếu có trước vận hành; chưa tự điền giả các đầu vào đó.
+- 9.0: đã đối chiếu điều khoản hiện hành và xác nhận đồ án cá nhân có trong worklog; Hobby chỉ áp dụng theo mục đích đó. 9.1–9.6 chưa đánh dấu: chưa áp migration/khởi tạo admin production, chưa có commit deploy, Vercel URL/Ready/deployment ID, smoke test và backup production.
+- Sau khi khôi phục stash ngày 10/10/2026, working tree đã ghép các phase với code team tại commit `9275317`; chưa phải một commit phát hành mới đã push. Bằng chứng kiểm thử trước khi ghép dựa trên `f59eaea60c91ea85feb8b136731f3a6c5c533f6e`; kiểm tra sau ghép ghi riêng trong worklog. Không đánh dấu nghiệm thu toàn Phase 8/9 chỉ vì local build đạt.
+
 ## 3. Tài liệu nhà cung cấp để kiểm tra khi thực hiện
 
 - [Supabase SSR Auth](https://supabase.com/docs/guides/auth/server-side) và [RLS/grants](https://supabase.com/docs/guides/database/postgres/row-level-security).
 - [Vercel Hobby](https://vercel.com/docs/plans/hobby), [Vercel Environment Variables](https://vercel.com/docs/environment-variables) và [Vercel Cron](https://vercel.com/docs/cron-jobs/usage-and-pricing).
 - [Supabase Free và hạn mức](https://supabase.com/docs/guides/platform/billing-on-supabase), [project Free tạm dừng](https://supabase.com/docs/guides/platform/free-project-pausing) và [backup](https://supabase.com/docs/guides/platform/backups).
 
-Hạn mức, API và điều khoản có thể đổi; kiểm tra lại trang chính thức tại thời điểm làm Phase 0 và Phase 9. Ghi thay đổi thực tế vào worklog, không sửa file đặc tả trong `docs/`.
+Hạn mức, API và điều khoản có thể đổi; kiểm tra lại trang chính thức tại thời điểm làm Phase 0 và Phase 9. Ghi thay đổi thực tế vào worklog; quyền sửa file đặc tả trong `docs/` thực hiện theo `AGENTS.md`.

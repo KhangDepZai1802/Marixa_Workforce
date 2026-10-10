@@ -4,13 +4,15 @@
 
 Ưu tiên kiểm chứng **không mất công, không nhân đôi công, đúng quyền và đúng số liệu**. Dùng unit test cho hàm tính công/nghỉ/phép, integration test cho API + migration/RLS, và end-to-end test cho luồng nhân viên–HR–admin trên desktop/mobile. **Không dùng Docker**: chạy Next.js/test runner bằng Node.js trên máy, integration/end-to-end test nối tới Supabase project thử nghiệm riêng với dữ liệu giả; không dùng project production hoặc ảnh/hồ sơ thật. Mọi trường hợp về ngày giờ chạy cố định múi giờ `Asia/Ho_Chi_Minh`.
 
+Bằng chứng thực thi mới nhất nằm trong `worklog.md`; thiết bị thật và URL Vercel chỉ đánh dấu sau khi có kết quả thực tế. Bộ hồi quy local: `react/supabase/verify-release.mjs`, giao diện: `verify-phase8-browser.mjs`, secret: `verify-secrets.mjs`.
+
 ## 2. Ma trận kịch bản bắt buộc
 
 Các ví dụ 08:00–17:00 dưới đây dùng **ca chung mặc định khi khởi tạo**, không phải mốc cố định trong code. Chạy lại phép tính với ca do admin đổi và ngày hiệu lực khác nhau; mọi nhân viên cùng nhận một ca đang có hiệu lực.
 
 | Nhóm | Kịch bản | Kết quả mong đợi |
 | --- | --- | --- |
-| Chấm công | Chấm vào 08:00, ra 17:00 ngày thứ 2–thứ 7 | 8 giờ thường, nghỉ trưa 1 giờ; đủ hai ảnh/GPS. |
+| Chấm công | Chấm vào 08:00, ra 17:00 ngày thứ 2–thứ 7 | 8 giờ thường, nghỉ trưa 1 giờ; thử độc lập bốn tổ hợp ảnh/GPS tùy chọn. |
 | Cấu hình ca chung | Admin tạo phiên bản từ ngày kế tiếp: thứ 2–thứ 6, 09:00–18:00, nghỉ 12:30–13:30, miễn trừ đi trễ 10 phút | Toàn bộ nhân viên dùng ca mới từ ngày hiệu lực; ngày trước đó vẫn theo ca cũ. Chấm 09:00–18:00 được 480 phút thường; chấm 09:05 không bị tính phút đi trễ, chấm 09:11 bị tính theo quy tắc miễn trừ. |
 | Ngày nghỉ với ca đã đổi | Chấm 09:00–18:00 trong ngày nghỉ sau khi ca mới có hiệu lực | 480 phút tăng ca tự động; trừ nghỉ 12:30–13:30 theo ca mới, không dùng cứng 12:00–13:00. |
 | Quyền và lịch sử ca | HR/employee thử chỉnh ca; admin chọn ngày hiệu lực chồng lấn hoặc đổi ca sau khi khóa kỳ | Chỉ admin lưu được phiên bản hợp lệ; từ chối khoảng hiệu lực chồng lấn; có audit và snapshot kỳ đã khóa không đổi. |
@@ -23,7 +25,7 @@ Các ví dụ 08:00–17:00 dưới đây dùng **ca chung mặc định khi kh�
 | Chống trùng | Hai thiết bị cùng chấm vào một ngày | Một event được giữ; thiết bị thứ hai thấy thông báo xung đột. |
 | Offline | Chụp ảnh/GPS khi mất mạng, reload trang, sau đó có mạng | Queue vẫn còn; đồng bộ đúng một event và một ảnh. |
 | Ảnh lỗi | Event lên server, upload ảnh thất bại | Event vẫn tồn tại, trạng thái ảnh chờ/lỗi; retry ảnh không nhân đôi event. |
-| Quyền thiết bị | Từ chối camera hoặc GPS | Không tạo event thiếu bằng chứng; có hướng dẫn/đường gửi yêu cầu sửa. |
+| Quyền thiết bị | Từ chối camera hoặc GPS | Vẫn tạo event hợp lệ, không bắt sửa công chỉ vì thiếu ảnh/GPS. |
 | Vị trí | GPS ngoài bán kính văn phòng | Event được nhận, gắn cờ; HR có thể xem và ghi kết quả kiểm tra. |
 | Đồng hồ thiết bị | Offline với giờ thiết bị lệch đáng kể | Lưu giờ thiết bị và giờ nhận, cờ cần HR đối soát. |
 | Sửa công | Nhân viên đề nghị sửa; HR duyệt | Event gốc bất biến, điều chỉnh và audit xuất hiện, bảng công tính lại. |
@@ -34,7 +36,7 @@ Các ví dụ 08:00–17:00 dưới đây dùng **ca chung mặc định khi kh�
 | Phê duyệt | Admin có hồ sơ nhân viên tạo đơn của mình | HR duyệt; admin không tự duyệt dù có toàn quyền cấu hình. |
 | Quyền | Nhân viên gọi API công/ảnh người khác; HR gọi API đổi role | Bị từ chối ở API và RLS, không lộ dữ liệu. |
 | Tài khoản | Admin reset mật khẩu tạm; người dùng đăng nhập lần đầu | Bị chuyển đến đổi mật khẩu, không vào trang công trước khi đổi; thao tác được audit. |
-| Kỳ công | HR kiểm tra, admin khóa rồi có yêu cầu sửa mới | Snapshot cũ không đổi; chỉ cập nhật sau khi admin mở lại có lý do. |
+| Kỳ công | HR kiểm tra, admin khóa rồi có yêu cầu sửa mới | Snapshot cũ không đổi; event offline muộn vào quy trình điều chỉnh kỳ mở sau. Mở lại có lý do chỉ dùng cho quy trình sửa kỳ riêng. |
 | Export | Excel kỳ mở và kỳ khóa; PDF đơn trước/sau duyệt | Excel kỳ mở ghi bản tạm; kỳ khóa dùng snapshot; PDF có đúng trạng thái/phiên bản. |
 | Retention | Hết hạn ảnh | Object bị xóa, metadata đánh dấu, event và công vẫn còn; link ảnh báo hết hạn. |
 
@@ -54,4 +56,4 @@ Kiểm tra tính nguyên tử khi hai reviewer bấm duyệt cùng lúc: chỉ m
 
 ## 5. Cổng chấp nhận trước dùng thật
 
-Không đưa vào sử dụng nếu còn lỗi làm mất/nhân đôi event, vượt quyền, tính sai công/phép, khóa kỳ không ổn định, hoặc ảnh/GPS bắt buộc có thể bị bỏ qua. Đạt toàn bộ kịch bản trong ma trận, kiểm tra dung lượng theo dữ liệu giả dưới 15 người, thử backup/restore ít nhất một lần, xác nhận admin đã nhập địa điểm văn phòng, lịch ngày nghỉ, số phép và thời hạn lưu ảnh. Các cảnh báo về hạn mức/điều kiện gói Free trong [06-deployment-vercel-supabase.md](06-deployment-vercel-supabase.md) phải được bàn giao rõ.
+Không đưa vào sử dụng nếu còn lỗi làm mất/nhân đôi event, vượt quyền, tính sai công/phép, khóa kỳ không ổn định, hoặc hệ thống bắt buộc ảnh/GPS trái quyết định hiện hành. Đạt toàn bộ kịch bản trong ma trận, kiểm tra dung lượng theo dữ liệu giả dưới 15 người, thử backup/restore ít nhất một lần, xác nhận admin đã nhập địa điểm văn phòng, lịch ngày nghỉ, số phép và thời hạn lưu ảnh. Các cảnh báo về hạn mức/điều kiện gói Free trong [06-deployment-vercel-supabase.md](06-deployment-vercel-supabase.md) phải được bàn giao rõ.

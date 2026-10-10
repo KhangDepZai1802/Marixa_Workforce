@@ -3,7 +3,7 @@
 // run-migrations.mjs — Chạy TOÀN BỘ schema + seed + auth users trên Supabase
 //
 // Cách dùng (trong thư mục react/):
-//   node supabase/run-migrations.mjs "postgresql://postgres:MAT_KHAU@db.lasdnfytejntonjfkspv.supabase.co:5432/postgres"
+//   node supabase/run-migrations.mjs "postgresql://postgres:MAT_KHAU@db.pkpwcpatuslfjyoivbuf.supabase.co:5432/postgres"
 //
 // Lấy connection string: Supabase Dashboard > Database > Connection string
 // > "Direct connection string" (session pooler OFF) — thay [YOUR-PASSWORD]
@@ -29,6 +29,22 @@ if (!dbUrl) {
   process.exit(1);
 }
 
+// Legacy bootstrap resets the whole public schema. Keep it unusable for an
+// accidental invocation or a production/pooler connection. Normal migration
+// verification uses verify-phase2.mjs and never calls this script.
+let databaseHost;
+try {
+  databaseHost = new URL(dbUrl).hostname;
+} catch {
+  console.error('Connection string khong hop le.');
+  process.exit(1);
+}
+if (databaseHost !== 'db.pkpwcpatuslfjyoivbuf.supabase.co' ||
+    process.env.MARIXA_ALLOW_TEST_RESET !== 'pkpwcpatuslfjyoivbuf') {
+  console.error('Tu choi reset: chi cho phep Direct connection cua project test va can xac nhan MARIXA_ALLOW_TEST_RESET.');
+  process.exit(1);
+}
+
 // --- Doc secret key: uu tien argv[3], sau do moi .env.local -----------------
 const envLocalPath = path.join(__dirname, '..', '.env.local');
 let SERVICE_KEY = '';
@@ -47,7 +63,7 @@ if (!SERVICE_KEY || SERVICE_KEY === '***' || SERVICE_KEY.length < 20) {
   process.exit(1);
 }
 
-const SUPABASE_URL = 'https://lasdnfytejntonjfkspv.supabase.co';
+const SUPABASE_URL = 'https://pkpwcpatuslfjyoivbuf.supabase.co';
 
 // --- Danh sach tai khoan (mat khau chung) -----------------------------------
 const PASSWORD = 'Hovaten123@';

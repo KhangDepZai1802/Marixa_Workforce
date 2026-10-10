@@ -4,6 +4,8 @@ import { join } from "node:path";
 import PDFDocument from "pdfkit";
 import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { labelStatus, formatDateTime } from "@/lib/format";
 export const runtime = "nodejs";
 const dateVi = (s: string) => new Intl.DateTimeFormat("vi-VN", { dateStyle: "long", timeZone: "Asia/Ho_Chi_Minh" }).format(new Date(`${s}T12:00:00+07:00`));
 export async function GET(request: Request) {
@@ -12,9 +14,18 @@ export async function GET(request: Request) {
   if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
   const id = decodeURIComponent(new URL(request.url).pathname.split("/").at(-1) ?? "").replace(/\.pdf$/, "");
   const supabase = await createSupabaseServerClient();
-  const { data: leave, error } = await supabase.from("leave_requests").select("id,employee_id,leave_type_id,start_date,end_date,day_parts,total_days,reason,status,version,review_note,reviewed_at,created_at,employees(employee_code,full_name,work_email),leave_types(name)").eq("id", id).maybeSingle();
+  const { data: leave, error } = await supabase.from("leave_requests").select("id,employee_id,leave_type_id,start_date,end_date,day_parts,total_days,reason,status,version,reviewer_id,review_note,reviewed_at,created_at,employees(employee_code,full_name,work_email),leave_types(name)").eq("id", id).maybeSingle();
   if (error || !leave || (actor.role === "employee" && leave.employee_id !== actor.employeeId)) return jsonError(404, "LEAVE_REQUEST_NOT_FOUND", "Không tìm thấy đơn nghỉ.", requestId);
-  const font = await readFile(join(process.cwd(), "assets", "fonts", "be-vietnam-pro-vietnamese-400-normal.woff"));
+  // Resolve only the reviewer name after the caller has passed the leave's RLS.
+  let reviewerName = "Chưa có quyết định";
+  if (leave.reviewer_id) {
+    const { data: reviewer, error: reviewerError } = await createSupabaseServiceClient().from("app_users")
+      .select("role,employees(full_name)").eq("id", leave.reviewer_id).maybeSingle();
+    if (reviewerError) return jsonError(503, "REVIEWER_READ_FAILED", "Không đọc được người duyệt đơn.", requestId);
+    const profile = Array.isArray(reviewer?.employees) ? reviewer.employees[0] : reviewer?.employees;
+    reviewerName = profile?.full_name ?? (reviewer?.role === "admin" ? "Quản trị viên" : "Nhân sự");
+  }
+  const font = await readFile(join(process.cwd(), "assets", "fonts", "BeVietnamPro-Regular.ttf"));
   const doc = new PDFDocument({ size: "A4", margins: { top: 64, bottom: 64, left: 64, right: 64 }, info: { Title: "Đơn nghỉ phép Marixa", Author: "Marixa Workforce", Subject: `Phiên bản ${leave.version}` } });
   doc.font(font);
   const chunks: Buffer[] = [];
@@ -25,17 +36,20 @@ export async function GET(request: Request) {
   });
   doc.fontSize(11).fillColor("#1647C8").text("MARIXA · WORKFORCE", { align: "center" });
   doc.moveDown(1.4).fontSize(19).fillColor("#172033").text("ĐƠN XIN NGHỈ", { align: "center" });
-  doc.moveDown(0.4).fontSize(10).fillColor("#526174").text(`Phiên bản ${leave.version} · Trạng thái tại thời điểm xuất: ${leave.status}`, { align: "center" });
+  doc.moveDown(0.4).fontSize(10).fillColor("#526174").text(`Phiên bản ${leave.version} · Trạng thái tại thời điểm xuất: ${labelStatus(leave.status)}`, { align: "center" });
   doc.moveDown(2).fontSize(12).fillColor("#172033");
   const employee = Array.isArray(leave.employees) ? leave.employees[0] : leave.employees;
   const leaveType = Array.isArray(leave.leave_types) ? leave.leave_types[0] : leave.leave_types;
   const rows: [string, string][] = [
+    ["Mã đơn", leave.id],
     ["Nhân viên", `${employee?.employee_code ?? ""} · ${employee?.full_name ?? ""}`],
     ["Email công việc", employee?.work_email ?? ""],
     ["Loại nghỉ", leaveType?.name ?? ""],
     ["Thời gian", `${dateVi(leave.start_date)} đến ${dateVi(leave.end_date)}`],
     ["Số ngày", `${leave.total_days} ngày`],
     ["Lý do", leave.reason],
+    ["Người xét duyệt", reviewerName],
+    ["Thời điểm xét duyệt", formatDateTime(leave.reviewed_at)],
     ["Ngày tạo", new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Ho_Chi_Minh" }).format(new Date(leave.created_at))],
   ];
   for (const [label, value] of rows) {

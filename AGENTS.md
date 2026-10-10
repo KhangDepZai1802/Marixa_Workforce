@@ -1,7 +1,7 @@
 # Quy tắc làm việc với tài liệu dự án
 
-- Mọi AI/agent làm việc trong repository này phải xem các file Markdown dưới `docs/` là tài liệu chỉ đọc, **ngoại trừ `docs/worklog.md`**.
-- Không sửa nội dung, ghi đè, tạo lại, đổi tên, di chuyển hoặc xóa bất kỳ file `*.md` nào dưới `docs/` ngoài `docs/worklog.md`. Quy tắc này áp dụng cho cả thao tác tự động, chỉnh sửa trực tiếp và các lệnh sinh mã/tài liệu.
-- Trong thư mục `docs/`, chỉ ghi tiến độ, phát hiện mới và điểm khác biệt so với đặc tả vào `docs/worklog.md`. Checklist triển khai nằm ở `plan.md` tại thư mục gốc và được đánh dấu khi có bằng chứng. Nếu một đặc tả cần thay đổi, ghi đề xuất vào worklog; không tự sửa file đặc tả.
-- Trước khi triển khai, đọc `plan.md` và các quyết định mới trong `docs/worklog.md`. Khi chúng khác bộ đặc tả `docs/01`–`07`, áp dụng quyết định mới của người dùng được ghi trong `plan.md`/worklog.
-- Trước khi hoàn tất công việc, kiểm tra diff để xác nhận không có file Markdown bị bảo vệ nào thay đổi.
+- **Riêng Codex được toàn quyền tạo, chỉnh sửa, ghi đè, đổi tên, di chuyển và xóa mọi file `*.md` trong repository**, kể cả các file dưới `docs/`. Đây là ngoại lệ do chủ dự án cấp ngày 10/10/2026 và ưu tiên hơn các quy tắc bảo vệ Markdown bên dưới.
+- Các AI/agent khác Codex phải xem file Markdown dưới `docs/` là tài liệu chỉ đọc, **ngoại trừ `docs/worklog.md`**. Không sửa nội dung, ghi đè, tạo lại, đổi tên, di chuyển hoặc xóa file `*.md` được bảo vệ bằng bất kỳ cách nào, kể cả lệnh sinh mã/tài liệu.
+- Checklist triển khai nằm ở `docs/plan.md`; Codex đánh dấu khi có bằng chứng đã làm và kiểm chứng. Tiến độ, phát hiện mới và điểm khác biệt so với đặc tả được ghi vào `docs/worklog.md`. Agent khác Codex không tự sửa file đặc tả hoặc checklist được bảo vệ; ghi đề xuất vào worklog.
+- Trước khi triển khai, đọc `docs/plan.md` và các quyết định mới trong `docs/worklog.md`. Khi chúng khác bộ đặc tả `docs/01`–`07`, áp dụng quyết định mới của người dùng được ghi trong plan/worklog.
+- Trước khi hoàn tất công việc, kiểm tra diff: agent khác Codex xác nhận không có file Markdown được bảo vệ nào thay đổi; Codex xác nhận mọi thay đổi Markdown là có chủ đích và có bằng chứng phù hợp.

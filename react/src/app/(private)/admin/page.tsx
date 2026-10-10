@@ -1,6 +1,9 @@
 "use client";
+import { MonthSummary } from "@/features/attendance/month-summary";
 
+import { businessDate } from "@/lib/format";
 import Link from "next/link";
+import { OperationsPanel } from "@/features/operations/operations-panel";
 import { useEffect, useState } from "react";
 import { ApiError, apiRequest, type ApiEnvelope } from "@/lib/api-client";
 import { LoadingState, Notice, PageHeader, Panel, StatCard } from "@/components/ui";
@@ -15,6 +18,8 @@ export default function AdminPage() {
     <PageHeader title="Quản trị hệ thống" description="Quản lý quyền truy cập, chính sách vận hành và kiểm soát thay đổi." />
     {error && <Notice kind="error">{error}</Notice>}
     {loading ? <LoadingState /> : data && <div className="stats-grid stats-grid-three"><StatCard label="Nhân viên hoạt động" value={data.active_employees} /><StatCard label="Đơn chờ HR xử lý" value={data.pending_requests} tone="gold" /><StatCard label="Điều chỉnh kỳ trước" value={data.pending_prior_period_adjustments} tone="cyan" /></div>}
+    <MonthSummary month={businessDate().slice(0, 7)} scope="all" />
+    <OperationsPanel />
     <Panel title="Công cụ quản trị" description="Một số thao tác ảnh hưởng toàn hệ thống; chúng được ghi audit ở API.">
       <div className="quick-links">{links.map(item => <Link href={item.href} key={item.href}><span><strong>{item.title}</strong><small>{item.detail}</small></span><b>›</b></Link>)}</div>
     </Panel>

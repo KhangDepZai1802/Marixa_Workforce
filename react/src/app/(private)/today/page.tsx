@@ -1,2 +1,6 @@
 import { TodayPage } from "@/features/attendance/today-page";
-export default function TodayRoute() { return <TodayPage />; }
+import { getActor } from "@/lib/auth";
+export default async function TodayRoute() {
+  const actor = await getActor();
+  return <TodayPage employeeId={actor?.employeeId ?? ""} />;
+}

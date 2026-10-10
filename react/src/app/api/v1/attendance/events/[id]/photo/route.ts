@@ -32,16 +32,18 @@ export async function POST(request: Request, context: RouteContext) {
   const isPng = bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 && bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a;
   if ((file.type === "image/webp" && !isWebp) || (file.type === "image/jpeg" && !isJpeg) || (file.type === "image/png" && !isPng))
     return jsonError(422, "PHOTO_CONTENT_MISMATCH", "Nội dung tệp không khớp định dạng ảnh.", requestId);
-  const [year, month] = event.work_date.split("-");
   const extension = file.type === "image/webp" ? "webp" : file.type === "image/png" ? "png" : "jpg";
-  const path = `${actor.employeeId}/${year}/${month}/${event.work_date}/${id}.${extension}`;
-  const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, bytes, { contentType: file.type, upsert: true, cacheControl: "3600" });
-  if (uploadError) return jsonError(503, "PHOTO_UPLOAD_FAILED", "Giờ chấm đã được ghi nhận. Ảnh chưa tải lên; hãy thử lại khi có mạng.", requestId);
+  const path = `${actor.employeeId}/${event.work_date.replaceAll("-", "/")}/${id}.${extension}`;
+  const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, bytes, { contentType: file.type, upsert: false, cacheControl: "3600" });
+  // A previous upload may have reached Storage while its HTTP response was lost.
+  // The path is fixed to this user's event, so a duplicate can finish metadata registration.
+  const alreadyUploaded = uploadError && (String(uploadError.statusCode) === "409" || /already exists|duplicate/i.test(uploadError.message));
+  if (uploadError && !alreadyUploaded) return jsonError(503, "PHOTO_UPLOAD_FAILED", "Giờ chấm đã được ghi nhận. Ảnh chưa tải lên; hãy thử lại khi có mạng.", requestId);
   const { data: photo, error: metadataError } = await supabase.rpc("register_attendance_photo", {
     p_event_id: id, p_storage_path: path, p_mime_type: file.type, p_bytes: file.size,
   });
   if (metadataError) {
-    await supabase.storage.from(BUCKET).remove([path]);
+    if (!alreadyUploaded) await supabase.storage.from(BUCKET).remove([path]);
     return jsonError(503, "PHOTO_METADATA_FAILED", "Chưa lưu được thông tin ảnh. Vui lòng thử đồng bộ lại.", requestId);
   }
   return jsonApiResponse({ data: { event_id: id, evidence_status: "ready", photo: { id: photo.id, uploaded_at: photo.uploaded_at } }, request_id: requestId }, { status: 201 });
@@ -58,7 +60,8 @@ export async function GET(_request: Request, context: RouteContext) {
   if (!event || (event.employee_id !== actor.employeeId && !["hr", "admin"].includes(actor.role)))
     return jsonError(404, "EVENT_NOT_FOUND", "Không tìm thấy lượt chấm công.", requestId);
   const { data: photo } = await supabase.from("attendance_photos").select("storage_path, expires_at, deleted_at").eq("attendance_event_id", id).maybeSingle();
-  if (!photo || photo.deleted_at || event.evidence_status === "expired") return jsonError(410, "PHOTO_EXPIRED", "Ảnh đã hết thời hạn lưu.", requestId);
+  if (!photo || photo.deleted_at || (photo.expires_at && Date.parse(photo.expires_at) <= Date.now()) || event.evidence_status === "expired")
+    return jsonError(410, "PHOTO_EXPIRED", "Ảnh đã hết thời hạn lưu.", requestId);
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(photo.storage_path, 60);
   if (error || !data) return jsonError(404, "PHOTO_UNAVAILABLE", "Không thể mở ảnh chấm công.", requestId);
   return jsonApiResponse({ data: { url: data.signedUrl, expires_in: 60 }, request_id: requestId });

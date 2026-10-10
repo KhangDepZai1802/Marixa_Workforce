@@ -41,7 +41,7 @@ export default function MyProfilePage() {
           <div className="notice" style={{ marginTop: 16 }}>Thông tin thay đổi hồ sơ vui lòng gửi HR. Nếu cần reset mật khẩu, liên hệ quản trị viên.</div>
         </Panel>
         <Panel title="Quy trình chấm công" description="Múi giờ và giờ làm theo cấu hình công ty.">
-          <ul className="rule-list"><li>Múi giờ nghiệp vụ: Asia/Ho_Chi_Minh.</li><li>Lịch chuẩn: thứ 2–thứ 7, 08:00–12:00 và 13:00–17:00.</li><li>Ảnh và GPS là tùy chọn, không làm mất công nếu không có.</li><li>Ngày nghỉ vẫn có thể chấm công; giờ thực tế tự tính tăng ca theo quy định.</li></ul>
+          <ul className="rule-list"><li>Múi giờ nghiệp vụ: Asia/Ho_Chi_Minh.</li><li>Giờ làm và ngày làm việc theo ca chung do admin cấu hình cho từng ngày hiệu lực.</li><li>Ảnh và GPS là tùy chọn, không làm mất công nếu không có.</li><li>Ngày nghỉ vẫn có thể chấm công; giờ thực tế tự tính tăng ca theo quy định.</li></ul>
         </Panel>
       </div>}
   </>;

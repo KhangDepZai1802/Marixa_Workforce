@@ -1,4 +1,5 @@
 "use client";
+import { MonthSummary } from "@/features/attendance/month-summary";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -40,6 +41,7 @@ export default function HrDashboardPage() {
         <StatCard label="Cần đối soát" value={data.unresolved_evidence_or_sync} detail="Đồng bộ muộn hoặc ảnh đang tải" tone="gold" />
         <StatCard label="Điều chỉnh kỳ trước" value={data.pending_prior_period_adjustments} detail="Đang chờ HR đối soát" tone="cyan" />
       </div>
+      <MonthSummary month={businessDate().slice(0, 7)} scope="all" />
       <div className="dashboard-grid">
         <Panel title="Việc cần xử lý" description="Mở đúng màn hình để xem dữ liệu và ghi nhận quyết định.">
           <div className="quick-links">

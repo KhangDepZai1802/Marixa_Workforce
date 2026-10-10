@@ -1,5 +1,7 @@
 # 06 — Triển khai Vercel và Supabase Free cho Marixa
 
+> Quy trình thao tác hiện hành (10/10/2026): [Deploy Vercel](DEPLOY_VERCEL.md), [Backup/restore và vận hành](OPERATIONS_RUNBOOK.md). Quyết định mới trong `plan.md` và `worklog.md` ưu tiên khi khác các giả định lịch sử dưới đây.
+
 ## 1. Mục tiêu và điều kiện
 
 Theo quyết định của Marixa, bản chính thức dự kiến dùng **Vercel Hobby (Free)** và **Supabase Free**. Tài liệu này mô tả cách triển khai, giới hạn kỹ thuật và các điểm phải theo dõi; nó **không xác nhận việc dùng Vercel Hobby cho công ty là phù hợp điều kiện dịch vụ**. [Vercel ghi Hobby chỉ dành cho mục đích cá nhân phi thương mại](https://vercel.com/docs/plans/hobby) và [định nghĩa sử dụng thương mại trong Fair Use](https://vercel.com/docs/limits/fair-use-guidelines) bao gồm dự án do nhân viên được trả lương phát triển. Đây là rủi ro vận hành/điều kiện sử dụng còn mở; không nên che giấu trong checklist bàn giao.
@@ -16,7 +18,7 @@ Mã nguồn Next.js được build trên Vercel; dữ liệu/Auth/ảnh ở mộ
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Client/server | URL project, không phải bí mật. |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Client/server | Key publishable, kết hợp RLS; không cấp quyền admin bằng key này. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Chỉ tác vụ cấp tài khoản/cleanup cần thiết; tuyệt đối không có tiền tố `NEXT_PUBLIC_`. |
+| `SUPABASE_SECRET_KEY` | Server only | Chỉ tác vụ cấp tài khoản/cleanup cần thiết; tuyệt đối không có tiền tố `NEXT_PUBLIC_`. |
 | `CRON_SECRET` | Server only | Bảo vệ endpoint dọn ảnh hằng ngày. |
 | `NEXT_PUBLIC_APP_URL` | Client/server | Domain thật để tạo link trong Excel/PDF và Auth redirect. |
 
@@ -42,7 +44,7 @@ Phép tính gần đúng ở quy mô tối đa 15 người, 2 ảnh/ngày, 26 ng
 | 100 KB | 780 | 78 MB | 468 MB | 936 MB |
 | 200 KB | 780 | 156 MB | 936 MB | 1.872 MB |
 
-Con số chưa tính ảnh lỗi lặp, tài liệu khác và phần dung lượng dự phòng. Vì vậy admin phải chọn thời hạn lưu ảnh trước khi vận hành; **6 tháng là gợi ý khởi đầu nếu ảnh trung bình gần 100 KB**, không phải chính sách tự động áp đặt. Dashboard admin hiển thị tổng Storage/DB và ước tính tháng còn lại; cảnh báo ở 70%, 85% và 95% hạn mức. Khi gần đầy, ưu tiên kiểm tra ảnh chưa dọn, giảm kích thước sau khi kiểm thử chất lượng, hoặc rút ngắn retention cho ảnh mới theo quyết định admin; không xóa event công/sổ phép/audit để lấy chỗ.
+Con số chưa tính ảnh lỗi lặp, tài liệu khác và phần dung lượng dự phòng. Vì vậy admin phải chọn thời hạn lưu ảnh trước khi vận hành; **chính sách hiện hành đã chốt là 3 tháng**; ảnh mới hết hạn sau 3 tháng lịch từ lúc upload, ảnh cũ giữ thời điểm hết hạn đã ghi. Dashboard admin hiển thị tổng Storage/DB và ước tính tháng còn lại; cảnh báo ở 70%, 85% và 95% hạn mức. Khi gần đầy, ưu tiên kiểm tra ảnh chưa dọn, giảm kích thước sau khi kiểm thử chất lượng, hoặc rút ngắn retention cho ảnh mới theo quyết định admin; không xóa event công/sổ phép/audit để lấy chỗ.
 
 Dọn ảnh hết hạn hằng ngày bằng endpoint server có `CRON_SECRET`, xóa object Storage trước rồi đánh dấu metadata; xử lý lặp an toàn. Vercel Hobby [hỗ trợ cron tối đa một lần mỗi ngày, với độ chính xác theo giờ](https://vercel.com/docs/cron-jobs/usage-and-pricing), đủ cho retention nhưng không dùng nó để quyết định phút chấm công. Nếu cron lỗi, admin thấy cảnh báo và có thao tác chạy lại; event công vẫn tồn tại khi ảnh đã hết hạn.
 

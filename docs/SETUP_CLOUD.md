@@ -1,6 +1,6 @@
 # Hướng dẫn tạo môi trường Supabase và Vercel cho Marixa V1
 
-Cập nhật: 09/10/2026. Chủ dự án tự quản trị GitHub, Supabase và Vercel. Hướng dẫn này đi cùng checklist ở `plan.md`; các bước tạo tài khoản/project do chủ dự án thao tác trong Dashboard. Giao diện nhà cung cấp có thể đổi tên mục, nên dùng các liên kết tài liệu chính thức bên dưới để đối chiếu.
+Cập nhật: 10/10/2026. Hướng dẫn deploy từng bước hiện hành: [DEPLOY_VERCEL.md](DEPLOY_VERCEL.md); vận hành/backup: [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md). Chủ dự án tự quản trị GitHub, Supabase và Vercel. Hướng dẫn này đi cùng checklist ở `plan.md`; các bước tạo tài khoản/project do chủ dự án thao tác trong Dashboard. Giao diện nhà cung cấp có thể đổi tên mục, nên dùng các liên kết tài liệu chính thức bên dưới để đối chiếu.
 
 ## 1. Việc làm ngay ở Phase 0
 
@@ -45,7 +45,7 @@ psql -h aws-0-ap-southeast-1.pooler.supabase.com -p 5432 -U postgres.pkpwcpatusl
 
 ## 3. Khi ứng dụng đã qua Phase 8 và chuẩn bị Phase 9
 
-1. Kiểm tra lại điều khoản Vercel và chọn phương án được phép dùng cho công ty. Chỉ sau đó mở **Vercel Dashboard → Add New → Project**, cấp quyền truy cập đúng repository GitHub, chọn **Import**. Chọn Framework **Next.js**, Root Directory là thư mục chứa `package.json` (theo kế hoạch là root repository), và production branch đã kiểm thử, thường là `main`. [Tài liệu import Git](https://vercel.com/docs/git).
+1. Kiểm tra lại điều khoản Vercel và chọn phương án được phép dùng cho công ty. Chỉ sau đó mở **Vercel Dashboard → Add New → Project**, cấp quyền truy cập đúng repository GitHub, chọn **Import**. Chọn Framework **Next.js**, Root Directory là **`react`**, và production branch đã kiểm thử, thường là `main`. [Tài liệu import Git](https://vercel.com/docs/git).
 2. Vào **Project Settings → Environment Variables**. Cấu hình **Production** với URL/publishable/secret key của Supabase **production**; cấu hình **Preview** với bộ key của **test**. Thêm `CRON_SECRET` riêng cho mỗi môi trường nếu đã có job dọn ảnh. `NEXT_PUBLIC_APP_URL` phải trỏ tới domain tương ứng. Kiểm tra từng scope trước khi deploy; đổi biến môi trường cần deployment mới để có hiệu lực. [Tài liệu Vercel Environment Variables](https://vercel.com/docs/environment-variables).
 3. Trên project Supabase production, áp migration đã thử ở test bằng `psql`, kiểm tra RLS, bucket ảnh private, Auth và bootstrap đúng một admin. Không đưa seed giả vào production. Trong **Authentication → URL Configuration**, đặt Site URL và các Redirect URLs theo domain Vercel thực tế, kiểm tra cả luồng đăng nhập/đổi mật khẩu. [Tài liệu URL Configuration](https://supabase.com/docs/guides/auth/redirect-urls).
 4. Deploy commit đã qua kiểm thử; trong Vercel kiểm tra trạng thái **Ready**, build log và URL HTTPS. Chạy smoke test đầy đủ của Phase 9.5 trong `plan.md`, đặc biệt: quyền ba role, ảnh private, chấm không ảnh/GPS, offline, công ngày nghỉ, phép tháng, khóa kỳ và điều chỉnh kỳ sau. Sau đó kiểm tra backup/restore trên project test, ghi commit hash/deployment ID và kết quả vào worklog.

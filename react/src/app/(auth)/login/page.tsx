@@ -1,19 +1,22 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useState } from "react";
 import { ApiError, apiRequest } from "@/lib/api-client";
 import { Button, Field, Notice } from "@/components/ui";
 
 type LoginResult = { data: { role: "employee" | "hr" | "admin"; must_change_password: boolean } };
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(searchParams.get("expired") === "1"
+    ? "Phiên đăng nhập không còn hiệu lực hoặc tài khoản đã bị khóa. Vui lòng đăng nhập lại."
+    : "");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,4 +45,8 @@ export default function LoginPage() {
       <p className="login-footnote">Chưa có tài khoản hoặc cần đặt lại mật khẩu? Vui lòng liên hệ quản trị viên.</p>
     </section>
   </main>;
+}
+
+export default function LoginPage() {
+  return <Suspense><LoginForm /></Suspense>;
 }

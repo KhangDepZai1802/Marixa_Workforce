@@ -6,6 +6,19 @@ export type WorkPolicy = {
   lateGraceMinutes: number;
 };
 
+export function effectivePolicyOnDate<T extends { effective_from: string; effective_to: string | null }>(
+  policies: T[], date: string,
+): T | undefined {
+  return policies.filter(policy => policy.effective_from <= date && (!policy.effective_to || policy.effective_to >= date))
+    .sort((left, right) => right.effective_from.localeCompare(left.effective_from))[0];
+}
+
+export function isPolicyWorkday(date: string, workingWeekdays: number[], workingOverride?: boolean): boolean {
+  if (workingOverride !== undefined) return workingOverride;
+  const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+  return workingWeekdays.includes(weekday === 0 ? 7 : weekday);
+}
+
 export type ApprovedInterval = { start: Date; end: Date; days?: number };
 export type AttendanceDayInput = {
   checkIn: Date | null;
@@ -110,10 +123,26 @@ function emptyDay(leaveDays: number, exceptions: string[], complete = false): At
   return { complete, regularMinutes: 0, overtimeMinutes: 0, lateMinutes: 0, earlyMinutes: 0, leaveDays, exceptions };
 }
 
+export function calculateLateMinutes(checkIn: Date, policy: WorkPolicy, approvedLeave: ApprovedInterval[], timeZone: string): number {
+  const dayStart = localDayStart(checkIn, timeZone);
+  const actualStart = localWallMilliseconds(checkIn, timeZone);
+  const scheduledStart = dayStart + minuteOfDay(policy.start) * 60_000;
+  if (actualStart <= scheduledStart) return 0;
+  const scheduledEnd = dayStart + minuteOfDay(policy.end) * 60_000;
+  const lateEnd = Math.min(actualStart, scheduledEnd);
+  const scheduled = workWindows(dayStart, policy);
+  const leaveRanges = mergeRanges(approvedLeave.map(({ start, end }) => ({
+    start: localWallMilliseconds(start, timeZone), end: localWallMilliseconds(end, timeZone),
+  })));
+  return minutes(Math.max(0, overlap(scheduledStart, lateEnd, scheduled)
+    - overlap(scheduledStart, lateEnd, leaveRanges) - policy.lateGraceMinutes * 60_000));
+}
+
 export function calculateAttendanceDay(input: AttendanceDayInput): AttendanceDayResult {
   const exceptions: string[] = [];
-  const checkIn = input.approvedCorrection ? input.approvedCorrection.checkIn : input.checkIn;
-  const checkOut = input.approvedCorrection ? input.approvedCorrection.checkOut : input.checkOut;
+  // A correction may replace only one missing or disputed punch.
+  const checkIn = input.approvedCorrection?.checkIn ?? input.checkIn;
+  const checkOut = input.approvedCorrection?.checkOut ?? input.checkOut;
   const leaveDays = input.approvedLeave.reduce((sum, leave) => sum + (leave.days ?? 0), 0);
 
   if (!(input.isWorkday ?? true) && !checkIn && !checkOut) return emptyDay(leaveDays, [], true);
@@ -133,7 +162,6 @@ export function calculateAttendanceDay(input: AttendanceDayInput): AttendanceDay
 
   let regularSeconds = 0;
   let overtimeSeconds = 0;
-  let lateSeconds = 0;
   let earlySeconds = 0;
 
   if (input.isWorkday ?? true) {
@@ -154,13 +182,7 @@ export function calculateAttendanceDay(input: AttendanceDayInput): AttendanceDay
       if (end > start) overtimeSeconds += Math.max(0, end - start - overlap(start, end, scheduled));
     }
 
-    const graceMilliseconds = input.policy.lateGraceMinutes * 60_000;
-    const scheduledStart = dayStart + minuteOfDay(input.policy.start) * 60_000;
     const scheduledEnd = dayStart + minuteOfDay(input.policy.end) * 60_000;
-    if (actualStart > scheduledStart) {
-      const lateEnd = Math.min(actualStart, scheduledEnd);
-      lateSeconds = Math.max(0, overlap(scheduledStart, lateEnd, scheduled) - overlap(scheduledStart, lateEnd, leaveRanges) - graceMilliseconds);
-    }
     if (actualEnd < scheduledEnd) {
       earlySeconds = Math.max(0, overlap(actualEnd, scheduledEnd, scheduled) - overlap(actualEnd, scheduledEnd, leaveRanges));
     }
@@ -168,7 +190,8 @@ export function calculateAttendanceDay(input: AttendanceDayInput): AttendanceDay
     // Rest days and holidays count actual paired work as overtime. The midday
     // break remains excluded; this rule does not require an overtime request.
     overtimeSeconds = Math.max(0, actualEnd - actualStart - overlap(actualStart, actualEnd, [
-      { start: dayStart + 12 * 60 * 60_000, end: dayStart + 13 * 60 * 60_000 },
+      { start: dayStart + minuteOfDay(input.policy.lunchStart) * 60_000,
+        end: dayStart + minuteOfDay(input.policy.lunchEnd) * 60_000 },
     ]));
   }
 
@@ -182,7 +205,7 @@ export function calculateAttendanceDay(input: AttendanceDayInput): AttendanceDay
     complete: true,
     regularMinutes: minutes(regularSeconds),
     overtimeMinutes: minutes(overtimeSeconds),
-    lateMinutes: minutes(lateSeconds),
+    lateMinutes: (input.isWorkday ?? true) ? calculateLateMinutes(checkIn, input.policy, input.approvedLeave, input.timeZone) : 0,
     earlyMinutes: minutes(earlySeconds),
     leaveDays,
     exceptions,

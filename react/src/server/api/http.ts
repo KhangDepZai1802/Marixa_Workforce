@@ -12,6 +12,8 @@ export function jsonError(
   requestId: string,
   fields?: Record<string, string>,
 ) {
+  // Log only diagnostic identifiers, never credentials or request contents.
+  console.warn(JSON.stringify({ request_id: requestId, status, code }));
   return jsonApiResponse(
     { error: { code, message, ...(fields ? { fields } : {}) }, request_id: requestId },
     { status },

@@ -22,8 +22,9 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (before.id === reviewer.id && parsed.data.status === "disabled") return jsonError(409, "LAST_ADMIN_PROTECTED", "Không thể tự khóa tài khoản quản trị đang đăng nhập.", requestId);
   const { data: after, error } = await service.from("app_users").update(parsed.data).eq("id", id).select("id,employee_id,role,status,must_change_password").single();
   if (error || !after) {
-    const protectedAdmin = error?.code === "23505" || error?.code === "23514";
-    return jsonError(protectedAdmin ? 409 : 500, protectedAdmin ? "ACTIVE_ADMIN_EXISTS" : "ACCOUNT_UPDATE_FAILED", protectedAdmin ? "Hệ thống phải luôn giữ đúng một admin đang hoạt động." : "Không thể cập nhật tài khoản.", requestId);
+    if (error?.code === "23505") return jsonError(409, "ACTIVE_ADMIN_EXISTS", "Đã có một quản trị viên đang hoạt động.", requestId);
+    if (error?.code === "23514") return jsonError(409, "LAST_ADMIN_PROTECTED", "Không thể khóa hoặc đổi vai trò của quản trị viên đang hoạt động cuối cùng.", requestId);
+    return jsonError(500, "ACCOUNT_UPDATE_FAILED", "Không thể cập nhật tài khoản.", requestId);
   }
   await service.from("audit_logs").insert({ actor_user_id: reviewer.id, action: "account.updated", entity_type: "app_user", entity_id: id, before_json: before, after_json: after, reason: "Admin cập nhật tài khoản", request_id: requestId });
   return jsonApiResponse({ data: after, request_id: requestId });
