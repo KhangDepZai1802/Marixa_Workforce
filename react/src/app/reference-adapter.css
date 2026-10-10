@@ -1,0 +1,178 @@
+/* Existing Next.js features use the reference presentation, with their own APIs. */
+.app-header-left, .app-header-user { display: flex; align-items: center; gap: 12px; }
+.app-header-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.app-header-logo { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #005b94; color: #fff; font-weight: 800; }
+.app-header-logo-text { font-weight: 800; letter-spacing: .04em; }
+.app-header-slogan { font-size: 13px; color: #5a6b7b; }
+.app-header-toggle { display: grid; place-content: center; gap: 4px; width: 40px; height: 40px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; cursor: pointer; }
+.app-header-toggle span { display: block; width: 18px; height: 2px; background: #0e1a26; }
+.reference-header-button { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #e8edf2; border-radius: 10px; color: #005b94; background: white; text-decoration: none; }
+.notification-container { position: relative; }
+.notification-trigger { cursor: pointer; }
+.notification-trigger[aria-expanded="true"] { background: #e3f0ff; border-color: #005b94; }
+.notification-panel { position: absolute; top: 52px; right: 0; width: min(360px, calc(100vw - 24px)); border: 1px solid #e8edf2; border-radius: 14px; background: white; box-shadow: 0 16px 40px #0e1a2624; overflow: hidden; z-index: 45; }
+.notification-panel > header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #eef2f6; }
+.notification-panel h2 { margin: 0; color: #0e1a26; font-size: 16px; }
+.notification-panel header p { margin: 4px 0 0; color: #5a6b7b; font-size: 12px; }
+.notification-panel header button { width: 32px; height: 32px; border: 0; border-radius: 8px; background: #f6f7f9; color: #5a6b7b; font-size: 22px; cursor: pointer; }
+.notification-body { max-height: min(420px, 65dvh); overflow-y: auto; }
+.notification-body ul { padding: 0; margin: 0; list-style: none; }
+.notification-body li + li { border-top: 1px solid #eef2f6; }
+.notification-body li a { display: flex; align-items: start; gap: 12px; padding: 14px 18px; text-decoration: none; }
+.notification-body li a:hover { background: #f8fafc; }
+.notification-body li a > span:last-child { min-width: 0; display: grid; gap: 4px; }
+.notification-body strong { color: #182a3a; font-size: 13px; }
+.notification-body li span span { color: #5a6b7b; font-size: 12px; overflow-wrap: anywhere; }
+.notification-body small { color: #7c8995; font-size: 11px; }
+.notification-dot { flex-shrink: 0; width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; background: #cbd5e1; }
+.notification-dot.is-pending { background: #005b94; }
+.notification-empty { padding: 24px 18px; margin: 0; color: #5a6b7b; text-align: center; font-size: 13px; }
+.notification-summary { margin: 0; padding: 10px 18px; background: #f0f7fc; color: #005b94; font-size: 12px; }
+.notification-panel > footer { padding: 12px 18px; text-align: center; border-top: 1px solid #eef2f6; }
+.notification-panel > footer a { color: #005b94; font-size: 13px; font-weight: 600; text-decoration: none; }
+@media (max-width: 600px) { .notification-panel { right: -56px; } }
+.app-header-avatar-btn { width: 44px; height: 44px; border: 1px solid #d1d5db; border-radius: 10px; background: #e3f0ff; color: #005b94; font-size: 18px; font-weight: 800; cursor: pointer; }
+.app-header-user { position: relative; }
+.app-header-menu { position: absolute; top: 52px; right: 0; width: 240px; padding: 6px; border: 1px solid #e8edf2; border-radius: 12px; background: white; box-shadow: 0 16px 40px #0e1a2624; z-index: 40; }
+.app-header-menu-head { display: grid; gap: 2px; padding: 10px 12px; border-bottom: 1px solid #eef2f6; }
+.app-header-menu-head strong { font-size: 14px; }
+.app-header-menu-head span { color: #5a6b7b; font-size: 12px; }
+.app-header-menu a, .app-header-menu button { display: block; width: 100%; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: #182a3a; text-align: left; text-decoration: none; font-size: 14px; cursor: pointer; }
+.app-header-menu a:hover, .app-header-menu button:hover { background: #f1f5f9; }
+.app-header-menu button.danger { color: #b42323; }
+.att-sidebar-section-title { margin: 10px 14px 6px; color: #5a6b7b; font-size: 12px; font-weight: 700; }
+.reference-login-brand { display: none; }
+.reference-login-page .password-wrapper { position: relative; display: block; }
+.reference-login-page .password-wrapper input { padding-right: 56px; }
+.reference-login-page .password-toggle { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); border: 0; background: none; color: #5a6b7b; font-size: 13px; cursor: pointer; }
+.reference-profile-summary { display: grid; gap: 12px; }
+.reference-profile-avatar { display: grid; place-items: center; width: 120px; height: 120px; border-radius: 14px; background: #e3f0ff; color: #005b94; font-size: 40px; font-weight: 800; }
+.reference-profile-info { display: grid; gap: 20px; min-width: 0; }
+.reference-profile-info .panel + .panel { margin-top: 0; }
+.reference-profile-summary p { margin: 0; color: #5a6b7b; font-size: 13px; }
+.reference-photo-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.reference-photo-label { display: flex; justify-content: center; align-items: center; gap: 10px; min-height: 70px; padding: 22px; border: 2px dashed #cbd5e1; border-radius: 14px; background: #f6f7f9; color: #182a3a; font-weight: 700; cursor: pointer; }
+.reference-photo-label:hover { border-color: #005b94; background: #e3f0ff; }
+.reference-photo-label:has(input:focus-visible) { outline: 3px solid #005b94; outline-offset: 3px; }
+.reference-attendance-options { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+.reference-attendance-options .check-item input { width: 16px; height: 16px; }
+.reference-attendance-status { display: grid; gap: 10px; margin: 20px 0; }
+.reference-attendance-status > div { display: grid; gap: 8px; border: 1px solid #e8edf2; background: #f6f7f9; border-radius: 14px; padding: 22px 16px; text-align: center; }
+.reference-attendance-status strong { font-size: 24px; }
+.reference-attendance-status span { color: #5a6b7b; font-size: 15px; font-weight: 700; }
+.reference-attendance-status small { color: #5a6b7b; font-size: 12px; }
+.personal-leave-page { display: grid; gap: 20px; }
+.personal-leave-page .leave-history { border: 0; box-shadow: none; padding: 0; background: transparent; }
+.personal-leave-page .leave-history .panel-heading { align-items: center; }
+.personal-leave-page .leave-table { min-width: 0; border: 1px solid #e8edf2; border-radius: 12px; padding: 0; background: white; }
+.personal-leave-page .leave-table table { min-width: 700px; }
+.personal-leave-page .leave-filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.personal-leave-page .leave-filters .field { flex: 1 1 160px; }
+.personal-leave-page .leave-view-switch { display: flex; padding: 3px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
+.personal-leave-page .leave-view-switch .tab-button { border: 0; border-radius: 6px; font-size: 13px; padding: 8px 14px; }
+.personal-leave-page .leave-view-switch .tab-button[aria-pressed="true"] { background: #fff; color: #005b94; box-shadow: 0 1px 4px #0e1a2610; }
+.leave-month { display: flex; align-items: center; justify-content: space-between; margin: 16px 0; }
+.leave-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.calendar-weekday { text-align: center; padding: 8px; color: #5a6b7b; font-size: 12px; }
+.calendar-day { min-width: 0; min-height: 86px; padding: 8px; border: 1px solid #e8edf2; border-radius: 8px; background: white; text-align: left; cursor: pointer; }
+.calendar-day small { display: block; margin-top: 6px; padding: 3px; border-radius: 4px; background: #e3f0ff; color: #005b94; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.calendar-today { border-color: #005b94; }
+.reference-modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.reference-modal-heading h2 { margin: 0; font-size: 20px; }
+.reference-modal-heading button { min-width: 40px; min-height: 40px; border: 0; border-radius: 8px; background: #f1f5f9; font-size: 24px; cursor: pointer; }
+.reference-request-details p { overflow-wrap: anywhere; }
+.reference-history-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.reference-history-controls .field { flex: 1 1 140px; }
+.reference-hr-kpis { margin-bottom: 20px; }
+.reference-history-controls { margin-bottom: 18px; }
+.reference-pagination { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 14px; color: #5a6b7b; font-size: 13px; }
+.reference-pagination > div { display: flex; align-items: center; gap: 8px; }
+@media (min-width: 901px) {
+  :root { --brand-primary: #005b94; --brand-cyan: #58c3e7; --text-primary: #0e1a26; --text-secondary: #5a6b7b; --surface-page: #f6f7f9; --border-default: #e8edf2; --shadow-card: 0 6px 20px #0e1a260f; --focus-ring: #0072b9; }
+  body { background: #f6f7f9; }
+  .reference-shell .topbar { height: 69px; padding: 12px 24px; }
+  .reference-shell .shell-body { display: flex; min-height: calc(100vh - 69px); }
+  .reference-shell .sidebar { width: 234px; height: calc(100vh - 69px); top: 69px; background: #f9fbfd; padding: 14px 12px 18px; }
+  .reference-shell.sidebar-collapsed .sidebar { display: none; }
+  .reference-shell .main-content { flex: 1; width: auto; max-width: none; margin: 0; padding: 32px 40px; }
+  .reference-shell.is-home .main-content { padding: 0; }
+  .reference-shell .nav-link { min-height: 40px; padding: 10px 14px; font-weight: 500; }
+  .reference-shell .att-sidebar-nav { display: flex; flex-direction: column; gap: 6px; }
+  .reference-shell .nav-link-active { background: #dfeeff; color: #0b5d9f; font-weight: 700; box-shadow: inset 0 0 0 1px #428ae02e; }
+  h1, h2, .stat-card strong { font-family: "Montserrat", "Be Vietnam Pro", sans-serif; }
+  .page-header h1 { font-size: 26px; letter-spacing: normal; }
+  .page-header p { margin-top: 4px; }
+  .panel { border-radius: 14px; padding: 22px 24px; }
+  .panel-heading h2 { font-size: 18px; }
+  .stat-card { border-left: 1px solid #e8edf2; min-height: 112px; padding: 16px 18px; box-shadow: 0 4px 14px #0e1a260a; }
+  .stat-card > span { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .stat-card strong { font-size: 24px; }
+  .button { min-height: 40px; padding: 9px 16px; font-weight: 600; }
+  .button-primary:hover:not(:disabled) { background: #004b7a; }
+  .field input, .field select, .field textarea { padding: 11px 14px; border-color: #cbd5e1; }
+  .field { color: #182a3a; font-weight: 600; }
+  th { background: #f6f7f9; color: #5a6b7b; }
+  th, td { padding: 13px 14px; }
+  .badge { border-radius: 6px; font-weight: 600; }
+  .reference-login-page { padding: 0; display: flex; background: #f6f7f9; }
+  .reference-login-brand { display: flex; }
+  .reference-login-brand h2, .reference-login-card h1 { font-family: "Be Vietnam Pro", sans-serif; }
+  .reference-login-content { flex: 1; }
+  .reference-login-card { margin: 0; max-width: 400px; padding: 40px 36px; border-radius: 14px; }
+  .reference-login-card .reference-login-subtitle { margin: 0 0 28px; font-size: 14px; color: #5a6b7b; }
+  .reference-login-btn { width: 100%; }
+  .reference-profile-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 20px; align-items: start; }
+  .reference-profile-summary .panel-heading { display: none; }
+  .reference-attendance-status { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .reference-attendance-status strong { font-family: "Montserrat", "Be Vietnam Pro", sans-serif; font-size: 40px; font-weight: 800; }
+  .reference-attendance-status > div:last-child strong { font-size: 18px; }
+  .reference-attendance .today-layout { display: block; }
+  .reference-attendance .today-layout > .panel:first-child { border-radius: 16px; padding: 24px; }
+  .reference-attendance .today-layout > .panel + .panel { margin-top: 20px; }
+  .reference-attendance .attendance-action { margin: 0; }
+  .reference-attendance .attendance-action .button { padding: 12px 26px; min-height: 44px; }
+  .reference-week-header { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 14px; }
+  .reference-week-header h2 { margin: 0; font-size: 18px; }
+  .reference-week-header span { color: #5a6b7b; font-size: 13px; }
+  .reference-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+  .reference-week a { display: grid; justify-items: center; gap: 5px; padding: 14px; border: 1px solid #e8edf2; border-radius: 10px; background: #f6f7f9; color: #5a6b7b; text-decoration: none; }
+  .reference-week a[aria-current="date"] { background: #e3f0ff; border-color: #005b94; color: #005b94; }
+  .reference-week a[data-checked="true"] { background: #ecfdf5; border-color: #bbf7d0; color: #15803d; }
+  .personal-leave-page .stats-grid { margin: 0; }
+  .personal-leave-page .stat-card { box-shadow: 0 4px 14px #0e1a260a; }
+  .personal-leave-page .page-header { margin: 0; }
+  .personal-leave-page .request-history-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0; }
+  .personal-leave-page .leave-history .panel-heading h2 { font-size: 18px; }
+  .personal-leave-page .leave-filters .field:nth-child(-n+3) > span { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; }
+  .personal-leave-page .leave-filters .field { flex: 0 1 auto; min-width: 150px; }
+  .personal-leave-page .leave-filters .field:nth-child(3) { flex: 1 1 180px; }
+  .personal-leave-page .leave-filters .field:nth-child(n+4) { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 12px; font-weight: 400; }
+  .personal-leave-page .leave-filters .field:nth-child(n+4) input { width: 150px; }
+  .personal-leave-page .leave-filters input, .personal-leave-page .leave-filters select { min-height: 38px; padding: 7px 10px; border-radius: 7px; font-size: 13px; }
+  .personal-leave-page .badge { padding: 4px 9px; border: 0; border-radius: 999px; font-size: 12px; }
+  .personal-leave-page .badge[data-status="pending"] { background: #fef3c7; color: #a16207; }
+  .personal-leave-page .badge[data-status="approved"] { background: #dcfce7; color: #15803d; }
+  .personal-leave-page .badge[data-status="rejected"] { background: #fee2e2; color: #b42323; }
+  .personal-leave-page .badge[data-status="cancelled"] { background: #eef2f6; color: #64748b; }
+}
+@media (max-width: 900px) {
+  .reference-shell .app-header-slogan { display: none; }
+  .reference-shell .topbar { padding: 10px 12px; }
+  .reference-shell .shell-body { display: block; }
+  .reference-shell .sidebar { display: none; }
+  .reference-shell .sidebar-open { display: block; position: fixed; z-index: 18; top: 72px; right: 0; left: 0; height: calc(100dvh - 72px); overflow-y: auto; }
+  .reference-attendance-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reference-profile-summary { margin-bottom: 16px; }
+  .home-grid { display: grid; gap: 12px; }
+  .home-card { display: grid; gap: 6px; border: 1px solid #e8edf2; border-radius: 12px; background: white; padding: 18px; text-decoration: none; }
+  .home-hero-art { display: none; }
+}
+@media (max-width: 600px) {
+  .reference-shell .app-header-left { gap: 8px; }
+  .reference-shell .app-header-user { gap: 7px; }
+  .reference-shell .app-header-brand { gap: 8px; }
+  .reference-shell .app-header-logo { width: 28px; height: 28px; }
+  .reference-shell .app-header-logo-text { font-size: 13px; }
+  .reference-shell .topbar { gap: 8px; }
+  .reference-shell .reference-header-button { width: 36px; }
+}

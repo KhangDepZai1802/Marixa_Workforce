@@ -35,7 +35,7 @@ export function Field({ label, children, hint }: { label: string; children: Reac
 export function StatusBadge({ value }: { value: string | null | undefined }) {
   const tone = value === "approved" || value === "active" || value === "locked" || value === "reviewed" ? "positive"
     : value === "rejected" || value === "disabled" || value === "failed" ? "negative" : "neutral";
-  return <span className={`badge badge-${tone}`}>{labelStatus(value)}</span>;
+  return <span className={`badge badge-${tone}`} data-status={value ?? undefined}>{labelStatus(value)}</span>;
 }
 
 export function Button({ children, variant = "primary", className = "", ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "danger" | "ghost" }) {

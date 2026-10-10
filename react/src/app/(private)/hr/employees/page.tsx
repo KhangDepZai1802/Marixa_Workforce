@@ -2,8 +2,10 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Button, EmptyState, Field, LoadingState, Notice, PageHeader, Panel, StatusBadge, TableWrap } from "@/components/ui";
+import { MobileFilters } from "@/components/mobile-filters";
 import { ApiError, apiRequest, type ApiEnvelope } from "@/lib/api-client";
 import { formatDate } from "@/lib/format";
+import { Dialog } from "@/components/dialog";
 
 type Employee = { id: string; employee_code: string; full_name: string; work_email: string; phone: string | null; department: string | null; job_title: string | null; hire_date: string | null; status: string };
 type EmployeeForm = { employee_code: string; full_name: string; work_email: string; phone: string; department: string; job_title: string; hire_date: string };
@@ -43,7 +45,10 @@ export default function HrEmployeesPage() {
   return <>
     <PageHeader title="Hồ sơ nhân viên" description="HR quản lý hồ sơ công việc; tài khoản đăng nhập và vai trò được cấp riêng bởi admin." action={<Button type="button" onClick={openCreate}>Thêm nhân viên</Button>} />
     {error && <Notice kind="error">{error}</Notice>}{message && <Notice kind="success">{message}</Notice>}
-    {showForm && <Panel title={editing ? "Cập nhật hồ sơ" : "Tạo hồ sơ nhân viên"} description="Email cần khớp với email công việc sẽ dùng khi admin cấp tài khoản.">
+    {!loading && <div className="hr-kpi-row reference-hr-kpis"><div className="hr-card hr-card--ok"><div className="hr-card-head"><span className="hr-card-icon" aria-hidden="true">♙</span>Đang làm việc</div><p className="hr-card-sub">Trong danh sách đang hiển thị</p><div className="hr-card-value"><strong>{rows.filter(employee => employee.status === "active").length}</strong><span className="hr-card-of">/ {rows.length}</span></div></div><div className="hr-card hr-card--warn"><div className="hr-card-head"><span className="hr-card-icon" aria-hidden="true">◷</span>Không hoạt động</div><p className="hr-card-sub">Hồ sơ tạm nghỉ hoặc đã nghỉ</p><div className="hr-card-value"><strong>{rows.filter(employee => employee.status !== "active").length}</strong><span className="hr-card-of">/ {rows.length}</span></div></div></div>}
+    {showForm && <Dialog title={editing ? "Cập nhật hồ sơ" : "Tạo hồ sơ nhân viên"} busy={saving} onClose={() => setShowForm(false)}>
+      <p className="subtle-note">Email cần khớp với email công việc sẽ dùng khi admin cấp tài khoản.</p>
+      {error && <Notice kind="error">{error}</Notice>}
       <form className="form-grid" onSubmit={submit}>
         {!editing && <Field label="Mã nhân viên"><input required maxLength={30} value={form.employee_code} onChange={e => setForm({ ...form, employee_code: e.target.value })} /></Field>}
         <Field label="Họ và tên"><input required minLength={2} maxLength={160} value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} /></Field>
@@ -54,10 +59,10 @@ export default function HrEmployeesPage() {
         <Field label="Ngày vào làm"><input type="date" value={form.hire_date} onChange={e => setForm({ ...form, hire_date: e.target.value })} /></Field>
         <div className="form-actions full"><Button type="submit" disabled={saving}>{saving ? "Đang lưu…" : "Lưu hồ sơ"}</Button><Button type="button" variant="secondary" onClick={() => setShowForm(false)}>Đóng</Button></div>
       </form>
-    </Panel>}
+    </Dialog>}
     <Panel title="Danh sách" description={rows.length + " hồ sơ đang hiển thị · tối đa 100 hồ sơ mỗi lượt tải"}>
-      <form className="toolbar" onSubmit={search}><label className="field"><span>Tìm mã, tên, email hoặc phòng ban</span><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Ví dụ: NV001 hoặc Kế toán" /></label><Button type="submit" variant="secondary" disabled={loading}>Tìm kiếm</Button></form>
-      {loading ? <LoadingState /> : rows.length === 0 ? <EmptyState title="Chưa có hồ sơ phù hợp" description="Thêm hồ sơ nhân viên hoặc thay đổi từ khóa tìm kiếm." /> : <TableWrap><table><thead><tr><th>Mã / nhân viên</th><th>Liên hệ</th><th>Phòng ban / chức danh</th><th>Ngày vào làm</th><th>Trạng thái</th><th></th></tr></thead><tbody>{rows.map(employee => <tr key={employee.id}><td><strong>{employee.employee_code}</strong><small>{employee.full_name}</small></td><td>{employee.work_email}<small>{employee.phone || "Chưa có số điện thoại"}</small></td><td>{employee.department || "—"}<small>{employee.job_title || "—"}</small></td><td>{formatDate(employee.hire_date)}</td><td><StatusBadge value={employee.status} /></td><td><Button type="button" variant="secondary" onClick={() => openEdit(employee)}>Sửa</Button></td></tr>)}</tbody></table></TableWrap>}
+      <MobileFilters><form className="toolbar" onSubmit={search}><label className="field"><span>Tìm mã, tên, email hoặc phòng ban</span><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Ví dụ: NV001 hoặc Kế toán" /></label><Button type="submit" variant="secondary" disabled={loading}>Tìm kiếm</Button></form></MobileFilters>
+      {loading ? <LoadingState /> : rows.length === 0 ? <EmptyState title="Chưa có hồ sơ phù hợp" description="Thêm hồ sơ nhân viên hoặc thay đổi từ khóa tìm kiếm." /> : <TableWrap><table><thead><tr><th>Mã / nhân viên</th><th>Liên hệ</th><th>Phòng ban / chức danh</th><th>Ngày vào làm</th><th>Trạng thái</th><th></th></tr></thead><tbody>{rows.map(employee => <tr key={employee.id}><td data-label="Mã / nhân viên"><strong>{employee.employee_code}</strong><small>{employee.full_name}</small></td><td data-label="Liên hệ">{employee.work_email}<small>{employee.phone || "Chưa có số điện thoại"}</small></td><td data-label="Phòng ban / chức danh">{employee.department || "—"}<small>{employee.job_title || "—"}</small></td><td data-label="Ngày vào làm">{formatDate(employee.hire_date)}</td><td data-label="Trạng thái"><StatusBadge value={employee.status} /></td><td data-label="Thao tác"><Button type="button" variant="secondary" onClick={() => openEdit(employee)}>Sửa</Button></td></tr>)}</tbody></table></TableWrap>}
     </Panel>
   </>;
 }

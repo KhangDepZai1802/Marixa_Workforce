@@ -1,0 +1,59 @@
+/* Keep phone content in the viewport, including at increased text sizes. */
+@media (max-width: 600px) {
+  html { min-width: 0; width: 100%; }
+  body { width: 100%; min-width: 0; }
+  .reference-shell { width: 100%; min-width: 0; max-width: 100%; }
+  .reference-shell .shell-body, .reference-shell .main-content { width: 100%; min-width: 0; max-width: 100%; }
+  .reference-shell .main-content > *, .reference-shell .panel, .reference-shell .panel-heading > *, .reference-shell .page-header > * { min-width: 0; max-width: 100%; }
+  .reference-shell .home-main, .reference-shell .home-launcher { width: 100%; min-width: 0; max-width: 100%; }
+  .reference-shell .home-hero { width: 100%; min-width: 0; display: block; padding: 18px; }
+  .reference-shell .home-hero > div:first-child { width: 100%; min-width: 0; max-width: 100%; }
+  .reference-shell .home-hero-art { display: none; }
+  .reference-shell .home-hero h1, .reference-shell .home-hero p { max-width: 100%; overflow-wrap: anywhere; }
+  .reference-shell .home-heading { flex-direction: column; align-items: start; }
+  .reference-shell .home-grid { width: 100%; min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .reference-shell .home-card { width: 100%; min-width: 0; max-width: 100%; padding: 12px; }
+  .reference-shell .home-card strong, .reference-shell .home-card > span { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .reference-shell .home-card strong { padding-right: 0; }
+  .reference-shell .home-footer { flex-wrap: wrap; }
+  .reference-shell .mobile-bottom-nav { left: 0; right: 0; width: 100%; max-width: 100%; min-width: 0; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .reference-shell .mobile-nav-item { min-width: 0; max-width: 100%; }
+  .reference-shell .mobile-nav-item > span { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; }
+  .reference-shell .app-header { width: 100%; min-width: 0; max-width: 100%; }
+  .reference-shell .app-header-left { min-width: 0; }
+  .reference-shell .app-header-user { flex-shrink: 0; }
+  .reference-shell .field, .dialog .field { min-width: 0; max-width: 100%; }
+  .reference-shell input:not([type="checkbox"]):not([type="radio"]), .reference-shell select, .reference-shell textarea, .dialog input:not([type="checkbox"]):not([type="radio"]), .dialog select, .dialog textarea { min-width: 0; width: 100%; max-width: 100%; }
+  .reference-shell .button, .dialog .button { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .reference-shell .tabs, .dialog .tabs { display: flex; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+  .reference-shell .tab-button, .dialog .tab-button { flex: 1 1 90px; min-width: 0; white-space: normal; padding: 10px 6px; }
+  .reference-shell .calendar-day { min-width: 0; overflow-wrap: anywhere; }
+  .reference-shell .calendar-day small { white-space: normal; }
+  .reference-shell .queue-item, .reference-shell .queue-item > div { min-width: 0; overflow-wrap: anywhere; }
+  .reference-shell .reference-profile-layout, .reference-shell .reference-profile-info, .reference-shell .detail-grid { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+  .reference-shell .detail-item, .reference-shell .reference-request-details { min-width: 0; overflow-wrap: anywhere; }
+  .dialog { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+  .dialog .form-grid, .dialog .form-grid > *, .dialog .review-controls { min-width: 0; max-width: 100%; }
+  .dialog .reference-modal-heading { gap: 10px; }
+  .dialog .reference-modal-heading h2 { min-width: 0; overflow-wrap: anywhere; }
+  .dialog .reference-modal-heading button { flex-shrink: 0; }
+  .reference-shell .audit-json { white-space: pre-wrap; overflow-wrap: anywhere; }
+}
+@media (max-width: 380px) {
+  .reference-shell .home-grid, .reference-shell .admhome-grid { grid-template-columns: minmax(0, 1fr); }
+  .reference-shell .mobile-nav-camera svg { width: 20px; height: 20px; padding: 8px; border-width: 3px; }
+}
+
+@media (max-width: 600px) {
+  .reference-shell .mobile-profile-more {
+    bottom: calc(100px + env(safe-area-inset-bottom));
+    max-width: calc(100% - 24px);
+    background: #006fa5;
+    color: #fff;
+    border: 1px solid #005b88;
+    box-shadow: 0 6px 18px rgb(0 91 136 / 24%);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .reference-shell .mobile-profile-more:active { background: #005b88; }
+}

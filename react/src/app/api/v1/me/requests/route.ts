@@ -9,7 +9,7 @@ export async function GET() {
   if (!actor.employeeId) return jsonError(403, "EMPLOYEE_PROFILE_REQUIRED", "Tài khoản chưa có hồ sơ nhân viên.", requestId);
   const supabase = await createSupabaseServerClient();
   const [leave, overtime, corrections, balance] = await Promise.all([
-    supabase.from("leave_requests").select("id,start_date,end_date,day_parts,total_days,reason,status,review_note,created_at,leave_types(name)").eq("employee_id", actor.employeeId).order("created_at", { ascending: false }).limit(100),
+    supabase.from("leave_requests").select("id,leave_type_id,start_date,end_date,day_parts,total_days,reason,status,review_note,created_at,leave_types(name,deducts_annual_balance)").eq("employee_id", actor.employeeId).order("created_at", { ascending: false }).limit(100),
     supabase.from("overtime_requests").select("id,work_date,start_at,end_at,reason,status,review_note,created_at").eq("employee_id", actor.employeeId).order("created_at", { ascending: false }).limit(100),
     supabase.from("attendance_corrections").select("id,work_date,proposed_check_in,proposed_check_out,reason,status,review_note,created_at").eq("employee_id", actor.employeeId).order("created_at", { ascending: false }).limit(100),
     supabase.from("leave_ledger").select("year,amount_days,entry_type,reason,created_at").eq("employee_id", actor.employeeId).order("created_at", { ascending: false }).limit(500),
