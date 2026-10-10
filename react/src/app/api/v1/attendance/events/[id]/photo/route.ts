@@ -1,5 +1,5 @@
-import { randomUUID } from "node:crypto";
-import { getActor, jsonError } from "@/lib/auth";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -7,7 +7,7 @@ const BUCKET = "attendance-photos";
 const MAX_BYTES = 200_000;
 
 export async function POST(request: Request, context: RouteContext) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
@@ -18,7 +18,7 @@ export async function POST(request: Request, context: RouteContext) {
   if (!event || event.employee_id !== actor.employeeId) return jsonError(404, "EVENT_NOT_FOUND", "Không tìm thấy lượt chấm công.", requestId);
   if (event.evidence_status === "ready") {
     const { data: photo } = await supabase.from("attendance_photos").select("id, uploaded_at").eq("attendance_event_id", id).maybeSingle();
-    return Response.json({ data: { event_id: id, evidence_status: "ready", photo }, replayed: true, request_id: requestId });
+    return jsonApiResponse({ data: { event_id: id, evidence_status: "ready", photo }, replayed: true, request_id: requestId });
   }
   let form: FormData;
   try { form = await request.formData(); } catch { return jsonError(400, "INVALID_MULTIPART", "Tệp ảnh không hợp lệ.", requestId); }
@@ -44,11 +44,11 @@ export async function POST(request: Request, context: RouteContext) {
     await supabase.storage.from(BUCKET).remove([path]);
     return jsonError(503, "PHOTO_METADATA_FAILED", "Chưa lưu được thông tin ảnh. Vui lòng thử đồng bộ lại.", requestId);
   }
-  return Response.json({ data: { event_id: id, evidence_status: "ready", photo: { id: photo.id, uploaded_at: photo.uploaded_at } }, request_id: requestId }, { status: 201 });
+  return jsonApiResponse({ data: { event_id: id, evidence_status: "ready", photo: { id: photo.id, uploaded_at: photo.uploaded_at } }, request_id: requestId }, { status: 201 });
 }
 
 export async function GET(_request: Request, context: RouteContext) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
@@ -61,5 +61,5 @@ export async function GET(_request: Request, context: RouteContext) {
   if (!photo || photo.deleted_at || event.evidence_status === "expired") return jsonError(410, "PHOTO_EXPIRED", "Ảnh đã hết thời hạn lưu.", requestId);
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(photo.storage_path, 60);
   if (error || !data) return jsonError(404, "PHOTO_UNAVAILABLE", "Không thể mở ảnh chấm công.", requestId);
-  return Response.json({ data: { url: data.signedUrl, expires_in: 60 }, request_id: requestId });
+  return jsonApiResponse({ data: { url: data.signedUrl, expires_in: 60 }, request_id: requestId });
 }

@@ -1,6 +1,5 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { jsonError } from "@/lib/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -17,7 +16,7 @@ const schema = z.object({
 }).strict();
 
 export async function POST(request: Request) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   let input: unknown;
   try { input = await request.json(); } catch { return jsonError(400, "INVALID_JSON", "Thông tin đăng nhập không hợp lệ.", requestId); }
   const parsed = schema.safeParse(input);
@@ -44,7 +43,7 @@ export async function POST(request: Request) {
       await supabase.auth.signOut();
       return jsonError(403, "ACCOUNT_UNAVAILABLE", "Tài khoản chưa được cấp quyền hoặc đã bị khóa. Hãy liên hệ quản trị viên.", requestId);
     }
-    return Response.json({ data: { role: account.role, must_change_password: account.must_change_password }, request_id: requestId });
+    return jsonApiResponse({ data: { role: account.role, must_change_password: account.must_change_password }, request_id: requestId });
   } catch {
     return jsonError(503, "AUTH_UNAVAILABLE", "Chưa kết nối được Supabase. Hãy kiểm tra cấu hình môi trường và thử lại.", requestId);
   }

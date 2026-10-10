@@ -1,9 +1,9 @@
-import { randomUUID } from "node:crypto";
-import { getActor, jsonError } from "@/lib/auth";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function GET() {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (!new Set(["hr", "admin"]).has(actor.role) || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Bạn không có quyền xem hàng đợi duyệt.", requestId);
@@ -15,7 +15,7 @@ export async function GET() {
   ]);
   if (leave.error || overtime.error || corrections.error) return jsonError(500, "REQUESTS_READ_FAILED", "Không thể tải hàng đợi duyệt.", requestId);
   const ownEmployeeId = actor.employeeId;
-  return Response.json({ data: {
+  return jsonApiResponse({ data: {
     leave: (leave.data ?? []).map(item => ({ ...item, can_decide: item.employee_id !== ownEmployeeId && !(actor.role === "hr" && item.employee_id === ownEmployeeId) })),
     overtime: (overtime.data ?? []).map(item => ({ ...item, can_decide: item.employee_id !== ownEmployeeId })),
     corrections: (corrections.data ?? []).map(item => ({ ...item, can_decide: item.employee_id !== ownEmployeeId })),

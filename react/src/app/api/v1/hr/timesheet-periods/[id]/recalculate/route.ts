@@ -1,5 +1,6 @@
-import { createHash, randomUUID } from "node:crypto";
-import { getActor, jsonError } from "@/lib/auth";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
+import { createHash } from "node:crypto";
+import { getActor } from "@/lib/auth";
 import { calculateAttendanceDay, type ApprovedInterval, type WorkPolicy } from "@/lib/domain/timesheet";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -7,7 +8,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 type Part = { date: string; part: "full" | "morning" | "afternoon" };
 const inBusinessTime = (date: string, time: string) => new Date(`${date}T${time.slice(0, 5)}:00+07:00`);
 export async function POST(_request: Request, context: RouteContext) {
-  const requestId = randomUUID(); const actor = await getActor();
+  const requestId = createRequestId(); const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (!new Set(["hr", "admin"]).has(actor.role) || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Bạn không có quyền tính lại kỳ công.", requestId);
   const { id } = await context.params; const service = createSupabaseServiceClient();
@@ -100,5 +101,5 @@ export async function POST(_request: Request, context: RouteContext) {
   }
   const { data: saved, error } = await service.rpc("replace_timesheet_snapshot", { p_period_id: id, p_version: period.version, p_actor_id: reviewer.id, p_days: days });
   if (error) return jsonError(error.code === "40001" ? 409 : 500, error.code === "40001" ? "TIMESHEET_CHANGED" : "TIMESHEET_SNAPSHOT_FAILED", "Không thể lưu snapshot bảng công.", requestId);
-  return Response.json({ data: { period_id: id, version: period.version, rows: saved }, request_id: requestId });
+  return jsonApiResponse({ data: { period_id: id, version: period.version, rows: saved }, request_id: requestId });
 }

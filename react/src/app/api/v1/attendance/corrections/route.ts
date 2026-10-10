@@ -1,11 +1,28 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const schema = z.object({ work_date: z.string().date(), proposed_check_in: z.string().datetime({ offset: true }).nullable(), proposed_check_out: z.string().datetime({ offset: true }).nullable(), reason: z.string().trim().min(3).max(2000) }).strict();
+export async function GET() {
+  const requestId = createRequestId();
+  const actor = await getActor();
+  if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
+  if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
+  if (!actor.employeeId) return jsonError(403, "EMPLOYEE_PROFILE_REQUIRED", "Tài khoản chưa có hồ sơ nhân viên.", requestId);
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("attendance_corrections")
+    .select("id,work_date,proposed_check_in,proposed_check_out,reason,status,review_note,created_at")
+    .eq("employee_id", actor.employeeId)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) return jsonError(500, "CORRECTIONS_READ_FAILED", "Không thể tải yêu cầu sửa công.", requestId);
+  return jsonApiResponse({ data, request_id: requestId });
+}
+
 export async function POST(request: Request) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
@@ -22,5 +39,5 @@ export async function POST(request: Request) {
   if (error?.code === "23505") return jsonError(409, "CORRECTION_ALREADY_PENDING", "Đã có yêu cầu sửa công đang chờ cho ngày này.", requestId);
   if (error) return jsonError(error.code === "42501" ? 403 : 422, error.code === "42501" ? "FORBIDDEN" : "CORRECTION_INVALID", "Không thể gửi yêu cầu sửa công.", requestId);
   if (!data) return jsonError(500, "CORRECTION_CREATE_FAILED", "Không thể gửi yêu cầu sửa công.", requestId);
-  return Response.json({ data, request_id: requestId }, { status: 201 });
+  return jsonApiResponse({ data, request_id: requestId }, { status: 201 });
 }

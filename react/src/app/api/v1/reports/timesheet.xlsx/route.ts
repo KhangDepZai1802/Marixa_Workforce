@@ -1,10 +1,10 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonError } from "@/server/api/http";
 import ExcelJS from "exceljs";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 export async function GET(request: Request) {
-  const requestId = randomUUID(); const actor = await getActor();
+  const requestId = createRequestId(); const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (!new Set(["hr", "admin"]).has(actor.role) || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Bạn không có quyền xuất bảng công.", requestId);
   const periodId = new URL(request.url).searchParams.get("period_id");

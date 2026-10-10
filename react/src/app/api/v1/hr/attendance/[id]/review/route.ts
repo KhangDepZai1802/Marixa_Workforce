@@ -1,13 +1,13 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type RouteContext = { params: Promise<{ id: string }> };
 const schema = z.object({ result: z.enum(["reviewed", "rejected"]), note: z.string().trim().max(2000).nullable().optional() }).strict();
 
 export async function POST(request: Request, context: RouteContext) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (!["hr", "admin"].includes(actor.role) || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Bạn không có quyền đối soát lượt chấm.", requestId);
@@ -23,5 +23,5 @@ export async function POST(request: Request, context: RouteContext) {
     if (error.code === "P0002") return jsonError(404, "EVENT_NOT_FOUND", "Không tìm thấy lượt chấm.", requestId);
     return jsonError(409, "ATTENDANCE_REVIEW_FAILED", "Không thể lưu kết quả đối soát. Tải lại dữ liệu rồi thử lại.", requestId);
   }
-  return Response.json({ data, request_id: requestId });
+  return jsonApiResponse({ data, request_id: requestId });
 }

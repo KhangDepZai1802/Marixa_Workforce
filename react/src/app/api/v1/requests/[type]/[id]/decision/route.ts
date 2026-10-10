@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const inputSchema = z.object({ decision: z.enum(["approved", "rejected"]), note: z.string().max(2000).optional() }).strict();
@@ -8,7 +8,7 @@ const rpcByType = { leave: "decide_leave_request", overtime: "decide_overtime_re
 
 type RouteContext = { params: Promise<{ type: string; id: string }> };
 export async function POST(request: Request, context: RouteContext) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
@@ -29,5 +29,5 @@ export async function POST(request: Request, context: RouteContext) {
     if (error.code === "23514") return jsonError(409, "INSUFFICIENT_LEAVE_BALANCE", "Số dư phép không đủ để duyệt đơn.", requestId);
     return jsonError(500, "DECISION_FAILED", "Không thể lưu quyết định.", requestId);
   }
-  return Response.json({ data, request_id: requestId });
+  return jsonApiResponse({ data, request_id: requestId });
 }

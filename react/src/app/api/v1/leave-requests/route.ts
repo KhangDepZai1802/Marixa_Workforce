@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const schema = z.object({
@@ -9,7 +9,7 @@ const schema = z.object({
 }).strict();
 
 export async function POST(request: Request) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
@@ -28,5 +28,5 @@ export async function POST(request: Request) {
   if (error?.code === "23505") return jsonError(409, "LEAVE_DATE_CONFLICT", "Đã có đơn nghỉ đang chờ hoặc được duyệt trùng ngày.", requestId);
   if (error) return jsonError(error.code === "42501" ? 403 : 422, error.code === "42501" ? "FORBIDDEN" : "LEAVE_REQUEST_INVALID", "Không thể gửi đơn nghỉ. Hãy kiểm tra lịch làm và thông tin đơn.", requestId);
   if (!data) return jsonError(500, "LEAVE_REQUEST_CREATE_FAILED", "Không thể gửi đơn nghỉ. Vui lòng thử lại.", requestId);
-  return Response.json({ data, request_id: requestId }, { status: 201 });
+  return jsonApiResponse({ data, request_id: requestId }, { status: 201 });
 }

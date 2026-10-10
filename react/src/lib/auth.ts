@@ -13,7 +13,3 @@ export async function getActor(): Promise<Actor | null> {
   if (!["employee", "hr", "admin"].includes(account.role)) return null;
   return { userId: user.id, employeeId: account.employee_id, role: account.role as Role, mustChangePassword: account.must_change_password };
 }
-
-export function jsonError(status: number, code: string, message: string, requestId: string, fields?: Record<string, string>) {
-  return Response.json({ error: { code, message, ...(fields ? { fields } : {}) }, request_id: requestId }, { status });
-}

@@ -1,12 +1,12 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 type RouteContext = { params: Promise<{ id: string }> };
 const schema = z.object({ temporary_password: z.string().min(12).max(128) }).strict();
 export async function POST(request: Request, context: RouteContext) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.role !== "admin" || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Chỉ quản trị viên được đặt lại mật khẩu.", requestId);
@@ -26,5 +26,5 @@ export async function POST(request: Request, context: RouteContext) {
   const { error } = await service.from("app_users").update({ must_change_password: true }).eq("id", id);
   if (error) return jsonError(500, "ACCOUNT_UPDATE_FAILED", "Mật khẩu đã đặt lại nhưng trạng thái tài khoản chưa đồng bộ.", requestId);
   await service.from("audit_logs").insert({ actor_user_id: reviewer.id, action: "account.password_reset", entity_type: "app_user", entity_id: id, request_id: requestId });
-  return Response.json({ data: { id, must_change_password: true }, request_id: requestId });
+  return jsonApiResponse({ data: { id, must_change_password: true }, request_id: requestId });
 }

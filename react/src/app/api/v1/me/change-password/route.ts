@@ -1,12 +1,12 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const schema = z.object({ new_password: z.string().min(12).max(128) }).strict();
 export async function POST(request: Request) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   let body: unknown;
@@ -22,5 +22,5 @@ export async function POST(request: Request) {
   const { error } = await service.from("app_users").update({ must_change_password: false }).eq("id", account.id);
   if (error) return jsonError(500, "ACCOUNT_UPDATE_FAILED", "Mật khẩu đã đổi nhưng trạng thái tài khoản chưa đồng bộ. Hãy liên hệ quản trị viên.", requestId);
   await service.from("audit_logs").insert({ actor_user_id: account.id, action: "account.password_changed", entity_type: "app_user", entity_id: account.id, request_id: requestId });
-  return Response.json({ data: { must_change_password: false }, request_id: requestId });
+  return jsonApiResponse({ data: { must_change_password: false }, request_id: requestId });
 }

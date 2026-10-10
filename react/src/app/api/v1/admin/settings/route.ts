@@ -1,8 +1,8 @@
-import { randomUUID } from "node:crypto";
-import { getActor, jsonError } from "@/lib/auth";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 export async function GET() {
-  const requestId = randomUUID(); const actor = await getActor();
+  const requestId = createRequestId(); const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.role !== "admin" || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Chỉ admin được xem cấu hình hệ thống.", requestId);
   const supabase = await createSupabaseServerClient();
@@ -13,5 +13,5 @@ export async function GET() {
     supabase.from("leave_types").select("id,code,name,deducts_annual_balance,active").order("name"),
   ]);
   if (offices.error || policies.error || holidays.error || leaveTypes.error) return jsonError(500, "SETTINGS_READ_FAILED", "Không thể tải cấu hình.", requestId);
-  return Response.json({ data: { office_locations: offices.data, work_policies: policies.data, holidays: holidays.data, leave_types: leaveTypes.data }, request_id: requestId });
+  return jsonApiResponse({ data: { office_locations: offices.data, work_policies: policies.data, holidays: holidays.data, leave_types: leaveTypes.data }, request_id: requestId });
 }

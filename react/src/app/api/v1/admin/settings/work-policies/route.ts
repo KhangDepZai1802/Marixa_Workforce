@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
@@ -12,7 +12,7 @@ const schema = z.object({
 }).strict();
 
 export async function POST(request: Request) {
-  const requestId = randomUUID(); const actor = await getActor();
+  const requestId = createRequestId(); const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.role !== "admin" || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Chỉ admin được cấu hình chính sách công.", requestId);
   let raw: unknown; try { raw = await request.json(); } catch { return jsonError(400, "INVALID_JSON", "Dữ liệu gửi lên không hợp lệ.", requestId); }
@@ -27,5 +27,5 @@ export async function POST(request: Request) {
     .select("id,effective_from,effective_to,timezone,start_time,lunch_start,lunch_end,end_time,working_weekdays,late_grace_minutes,photo_retention_days").single();
   if (error?.code === "23505") return jsonError(409, "POLICY_VERSION_EXISTS", "Đã có phiên bản chính sách bắt đầu từ ngày này.", requestId);
   if (error || !data) return jsonError(500, "POLICY_CREATE_FAILED", "Không thể tạo phiên bản chính sách.", requestId);
-  return Response.json({ data, request_id: requestId }, { status: 201 });
+  return jsonApiResponse({ data, request_id: requestId }, { status: 201 });
 }

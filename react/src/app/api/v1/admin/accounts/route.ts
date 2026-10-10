@@ -1,20 +1,20 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 const schema = z.object({ employee_id: z.string().uuid(), role: z.enum(["employee", "hr", "admin"]), email: z.string().email(), temporary_password: z.string().min(12).max(128) }).strict();
 export async function GET() {
-  const requestId = randomUUID(); const actor = await getActor();
+  const requestId = createRequestId(); const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.role !== "admin" || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Chỉ admin được quản lý tài khoản.", requestId);
   const service = createSupabaseServiceClient();
   const { data, error } = await service.from("app_users").select("id,employee_id,role,status,must_change_password,created_at,employees(employee_code,full_name,work_email)").order("created_at", { ascending: false }).limit(100);
   if (error) return jsonError(500, "ACCOUNTS_READ_FAILED", "Không thể tải danh sách tài khoản.", requestId);
-  return Response.json({ data, request_id: requestId });
+  return jsonApiResponse({ data, request_id: requestId });
 }
 export async function POST(request: Request) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.role !== "admin" || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Chỉ quản trị viên được cấp tài khoản.", requestId);
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     return jsonError(duplicateAdmin ? 409 : 409, duplicateAdmin ? "ACTIVE_ADMIN_EXISTS" : "ACCOUNT_CONFLICT", duplicateAdmin ? "Đã có một quản trị viên đang hoạt động." : "Hồ sơ đã có tài khoản hoặc dữ liệu bị trùng.", requestId);
   }
   await service.from("audit_logs").insert({ actor_user_id: reviewer.id, action: "account.created", entity_type: "app_user", entity_id: account.id, after_json: account, reason: "Admin cấp tài khoản", request_id: requestId });
-  return Response.json({ data: account, request_id: requestId }, { status: 201 });
+  return jsonApiResponse({ data: account, request_id: requestId }, { status: 201 });
 }
 
 

@@ -1,13 +1,13 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonError } from "@/server/api/http";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import PDFDocument from "pdfkit";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 const dateVi = (s: string) => new Intl.DateTimeFormat("vi-VN", { dateStyle: "long", timeZone: "Asia/Ho_Chi_Minh" }).format(new Date(`${s}T12:00:00+07:00`));
 export async function GET(request: Request) {
-  const requestId = randomUUID(); const actor = await getActor();
+  const requestId = createRequestId(); const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
   const id = decodeURIComponent(new URL(request.url).pathname.split("/").at(-1) ?? "").replace(/\.pdf$/, "");

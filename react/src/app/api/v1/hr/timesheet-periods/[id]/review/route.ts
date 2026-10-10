@@ -1,9 +1,9 @@
-import { randomUUID } from "node:crypto";
-import { getActor, jsonError } from "@/lib/auth";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 type RouteContext = { params: Promise<{ id: string }> };
 export async function POST(_request: Request, context: RouteContext) {
-  const requestId = randomUUID(); const actor = await getActor();
+  const requestId = createRequestId(); const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (!new Set(["hr", "admin"]).has(actor.role) || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Bạn không có quyền đối soát kỳ công.", requestId);
   const { id } = await context.params; const supabase = await createSupabaseServerClient();
@@ -14,5 +14,5 @@ export async function POST(_request: Request, context: RouteContext) {
     if (error.code === "40001") return jsonError(409, "TIMESHEET_NOT_OPEN", "Kỳ công không còn ở trạng thái mở.", requestId);
     return jsonError(500, "TIMESHEET_REVIEW_FAILED", "Không thể xác nhận đối soát kỳ công.", requestId);
   }
-  return Response.json({ data, request_id: requestId });
+  return jsonApiResponse({ data, request_id: requestId });
 }

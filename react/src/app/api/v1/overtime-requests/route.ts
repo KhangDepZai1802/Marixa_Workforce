@@ -1,11 +1,11 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const schema = z.object({ work_date: z.string().date(), start_at: z.string().datetime({ offset: true }), end_at: z.string().datetime({ offset: true }), reason: z.string().trim().min(3).max(2000) }).strict();
 export async function POST(request: Request) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
@@ -22,5 +22,5 @@ export async function POST(request: Request) {
   const { data, error } = await supabase.rpc("submit_overtime_request", { p_date: parsed.data.work_date, p_start: parsed.data.start_at, p_end: parsed.data.end_at, p_reason: parsed.data.reason });
   if (error) return jsonError(error.code === "42501" ? 403 : 422, error.code === "42501" ? "FORBIDDEN" : "OVERTIME_REQUEST_INVALID", "Không thể gửi yêu cầu tăng ca.", requestId);
   if (!data) return jsonError(500, "OVERTIME_REQUEST_CREATE_FAILED", "Không thể gửi yêu cầu tăng ca.", requestId);
-  return Response.json({ data, request_id: requestId }, { status: 201 });
+  return jsonApiResponse({ data, request_id: requestId }, { status: 201 });
 }

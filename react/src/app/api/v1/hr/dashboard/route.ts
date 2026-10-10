@@ -1,10 +1,10 @@
-import { randomUUID } from "node:crypto";
-import { getActor, jsonError } from "@/lib/auth";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const todayInBusinessZone = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 export async function GET() {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (!new Set(["hr", "admin"]).has(actor.role) || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Bạn không có quyền xem dashboard HR.", requestId);
@@ -47,7 +47,7 @@ export async function GET() {
     const second = Number(parts.find(part => part.type === "second")?.value ?? 0);
     return hour * 3600 + minute * 60 + second > scheduledMinutes * 60;
   }).length;
-  return Response.json({ data: {
+  return jsonApiResponse({ data: {
     date: today, active_employees: employees.count ?? 0, checked_in: checkedIn.size,
     not_checked_in: isWorkingDay ? Math.max(0, (employees.count ?? 0) - fullDayLeave.size - checkedInExpected.size) : 0,
     late: lateCount,

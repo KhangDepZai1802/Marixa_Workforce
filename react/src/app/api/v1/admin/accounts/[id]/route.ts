@@ -1,11 +1,11 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 type RouteContext = { params: Promise<{ id: string }> };
 export async function PATCH(request: Request, context: RouteContext) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.role !== "admin" || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Chỉ quản trị viên được sửa tài khoản.", requestId);
@@ -26,6 +26,6 @@ export async function PATCH(request: Request, context: RouteContext) {
     return jsonError(protectedAdmin ? 409 : 500, protectedAdmin ? "ACTIVE_ADMIN_EXISTS" : "ACCOUNT_UPDATE_FAILED", protectedAdmin ? "Hệ thống phải luôn giữ đúng một admin đang hoạt động." : "Không thể cập nhật tài khoản.", requestId);
   }
   await service.from("audit_logs").insert({ actor_user_id: reviewer.id, action: "account.updated", entity_type: "app_user", entity_id: id, before_json: before, after_json: after, reason: "Admin cập nhật tài khoản", request_id: requestId });
-  return Response.json({ data: after, request_id: requestId });
+  return jsonApiResponse({ data: after, request_id: requestId });
 }
 

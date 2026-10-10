@@ -1,11 +1,11 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 type RouteContext = { params: Promise<{ id: string }> };
 const schema = z.object({ name: z.string().trim().min(2).max(120).optional(), latitude: z.number().min(-90).max(90).optional(), longitude: z.number().min(-180).max(180).optional(), radius_m: z.number().int().min(10).max(50000).optional(), active: z.boolean().optional() }).strict().refine(v => Object.keys(v).length > 0);
 export async function PATCH(request: Request, context: RouteContext) {
-  const requestId = randomUUID(); const actor = await getActor();
+  const requestId = createRequestId(); const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.role !== "admin" || actor.mustChangePassword) return jsonError(403, "FORBIDDEN", "Chỉ admin được cấu hình vị trí văn phòng.", requestId);
   let body: unknown; try { body = await request.json(); } catch { return jsonError(400, "INVALID_JSON", "Dữ liệu gửi lên không hợp lệ.", requestId); }
@@ -18,5 +18,5 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
   const { data, error } = await supabase.from("office_locations").update(parsed.data).eq("id", id).select("id,name,latitude,longitude,radius_m,active").maybeSingle();
   if (error || !data) return jsonError(error ? 500 : 404, error ? "OFFICE_LOCATION_UPDATE_FAILED" : "OFFICE_LOCATION_NOT_FOUND", "Không thể cập nhật văn phòng.", requestId);
-  return Response.json({ data, request_id: requestId });
+  return jsonApiResponse({ data, request_id: requestId });
 }

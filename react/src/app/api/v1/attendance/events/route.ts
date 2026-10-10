@@ -1,7 +1,8 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getPagination } from "@/server/api/pagination";
 
 const bodySchema = z.object({
   kind: z.enum(["check_in", "check_out"]),
@@ -18,7 +19,7 @@ const bodySchema = z.object({
 }, { path: ["location"], message: "Gửi đủ latitude, longitude, accuracy_m hoặc bỏ trống cả ba." });
 
 export async function GET(request: Request) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (!actor.employeeId) return jsonError(403, "EMPLOYEE_PROFILE_REQUIRED", "Tài khoản chưa có hồ sơ nhân viên.", requestId);
@@ -27,19 +28,18 @@ export async function GET(request: Request) {
   const to = url.searchParams.get("to");
   if ((from && !/^\d{4}-\d{2}-\d{2}$/.test(from)) || (to && !/^\d{4}-\d{2}-\d{2}$/.test(to)))
     return jsonError(422, "INVALID_DATE_FILTER", "Ngày lọc phải theo định dạng YYYY-MM-DD.", requestId);
-  const page = Math.max(1, Number(url.searchParams.get("page") ?? 1) || 1);
-  const pageSize = Math.min(31, Math.max(1, Number(url.searchParams.get("page_size") ?? 31) || 31));
+  const pagination = getPagination(url.searchParams, { defaultSize: 31, maxSize: 31 });
   const supabase = await createSupabaseServerClient();
   let query = supabase.from("attendance_events").select("id,work_date,kind,occurred_at,device_occurred_at,received_at,source,location_flag,evidence_status,review_status,review_note", { count: "exact" }).eq("employee_id", actor.employeeId).order("work_date", { ascending: false }).order("kind");
   if (from) query = query.gte("work_date", from);
   if (to) query = query.lte("work_date", to);
-  const { data, count, error } = await query.range((page - 1) * pageSize, page * pageSize - 1);
+  const { data, count, error } = await query.range(pagination.from, pagination.to);
   if (error) return jsonError(500, "ATTENDANCE_READ_FAILED", "Không thể tải lịch sử chấm công.", requestId);
-  return Response.json({ data, page: { number: page, size: pageSize, total: count ?? 0 }, request_id: requestId });
+  return jsonApiResponse({ data, page: { number: pagination.page, size: pagination.size, total: count ?? 0 }, request_id: requestId });
 }
 
 export async function POST(request: Request) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   const { data: existing } = await supabase.from("attendance_events").select("*").eq("idempotency_key", parsed.data.idempotency_key).maybeSingle();
   if (existing) {
     if (existing.employee_id !== actor.employeeId) return jsonError(409, "IDEMPOTENCY_KEY_CONFLICT", "Khóa đồng bộ đã được dùng.", requestId);
-    return Response.json({ data: existing, replayed: true, request_id: requestId });
+    return jsonApiResponse({ data: existing, replayed: true, request_id: requestId });
   }
   const { data, error } = await supabase.rpc("create_attendance_event", {
     p_kind: parsed.data.kind, p_source: parsed.data.source, p_device_occurred_at: parsed.data.device_occurred_at ?? null,
@@ -63,5 +63,5 @@ export async function POST(request: Request) {
   });
   if (error?.code === "23505") return jsonError(409, "ATTENDANCE_ALREADY_EXISTS", "Đã có lượt chấm cùng loại trong ngày. Hãy gửi yêu cầu sửa công nếu cần.", requestId);
   if (error || !data) return jsonError(500, "ATTENDANCE_CREATE_FAILED", "Không thể ghi nhận lượt chấm. Vui lòng thử lại.", requestId);
-  return Response.json({ data, replayed: false, request_id: requestId }, { status: 201 });
+  return jsonApiResponse({ data, replayed: false, request_id: requestId }, { status: 201 });
 }

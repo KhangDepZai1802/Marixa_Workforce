@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto";
+import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
 import { z } from "zod";
-import { getActor, jsonError } from "@/lib/auth";
+import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const decisionSchema = z.object({
@@ -12,7 +12,7 @@ const decisionSchema = z.object({
 }).strict();
 
 export async function GET(request: Request) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (!new Set(["hr", "admin"]).has(actor.role) || actor.mustChangePassword)
@@ -28,11 +28,11 @@ export async function GET(request: Request) {
   if (periodId) query = query.eq("target_period_id", periodId);
   const { data, error } = await query;
   if (error) return jsonError(500, "TIMESHEET_ADJUSTMENT_READ_FAILED", "Không thể tải điều chỉnh kỳ trước.", requestId);
-  return Response.json({ data: data ?? [], request_id: requestId }, { headers: { "Cache-Control": "private, no-store" } });
+  return jsonApiResponse({ data: data ?? [], request_id: requestId }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 export async function POST(request: Request) {
-  const requestId = randomUUID();
+  const requestId = createRequestId();
   const actor = await getActor();
   if (!actor) return jsonError(401, "UNAUTHENTICATED", "Vui lòng đăng nhập.", requestId);
   if (!new Set(["hr", "admin"]).has(actor.role) || actor.mustChangePassword)
@@ -56,5 +56,5 @@ export async function POST(request: Request) {
     const code = error.code === "42501" ? "FORBIDDEN" : error.code === "40001" ? "ADJUSTMENT_NOT_PENDING" : "ADJUSTMENT_REVIEW_FAILED";
     return jsonError(status, code, "Không thể xác nhận điều chỉnh. Hãy tải lại danh sách và kiểm tra ghi chú.", requestId);
   }
-  return Response.json({ data, request_id: requestId });
+  return jsonApiResponse({ data, request_id: requestId });
 }
