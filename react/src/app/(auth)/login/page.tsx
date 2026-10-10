@@ -10,6 +10,7 @@ type LoginResult = { data: { role: "employee" | "hr" | "admin"; must_change_pass
 
 export default function LoginPage() {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,7 +22,7 @@ export default function LoginPage() {
     setError("");
     try {
       const result = await apiRequest<LoginResult>("/api/v1/auth/login", { method: "POST", body: JSON.stringify({ phone, password }) });
-      router.replace(result.data.must_change_password ? "/change-password" : "/today");
+      router.replace(result.data.must_change_password ? "/change-password" : "/home");
       router.refresh();
     } catch (cause) {
       setError(cause instanceof ApiError ? cause.message : "Không kết nối được máy chủ. Hãy kiểm tra mạng rồi thử lại.");
@@ -30,16 +31,16 @@ export default function LoginPage() {
     }
   }
 
-  return <main className="login-page">
-    <section className="login-card" aria-labelledby="login-title">
-      <div className="login-brand"><Image src="/logo.png" width={78} height={78} alt="Logo Marixa" priority /><h1 id="login-title">Đăng nhập Marixa</h1><p>Hệ thống chấm công và nhân sự</p></div>
+  return <main className="login-page reference-login-page">
+    <section className="reference-login-brand"><div className="reference-login-brand-logo"><Image src="/logo.png" width={44} height={44} alt="MARIXA" priority /><span>MARIXA</span></div><h2>Hệ thống chấm công &amp; quản lý nhân sự</h2><p>Quản lý chấm công, nghỉ phép và nhân sự của doanh nghiệp trên một nền tảng duy nhất.</p><div className="reference-login-brand-badge"><span className="badge-dot" />Attendance Module</div></section>
+    <div className="reference-login-content"><section className="login-card reference-login-card" aria-labelledby="login-title">
+      <h1 id="login-title">Đăng nhập</h1><p className="reference-login-subtitle">Vui lòng nhập thông tin tài khoản để tiếp tục</p>
       {error && <Notice kind="error">{error}</Notice>}
-      <form className="login-form" onSubmit={submit}>
-        <Field label="Số điện thoại"><input type="tel" name="phone" autoComplete="tel" inputMode="tel" required value={phone} onChange={(event) => setPhone(event.target.value)} /></Field>
-        <Field label="Mật khẩu"><input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></Field>
-        <Button type="submit" className="button-large" disabled={busy}>{busy ? "Đang đăng nhập…" : "Đăng nhập"}</Button>
-      </form>
-      <p className="login-footnote">Chưa có tài khoản hoặc cần đặt lại mật khẩu? Vui lòng liên hệ quản trị viên.</p>
-    </section>
+      <form className="login-form reference-login-form" onSubmit={submit}>
+        <Field label="Số điện thoại"><input type="tel" name="phone" autoComplete="tel" placeholder="Nhập số điện thoại" inputMode="tel" required value={phone} onChange={event => setPhone(event.target.value)} /></Field>
+        <Field label="Mật khẩu"><span className="password-wrapper"><input type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="Nhập mật khẩu" required value={password} onChange={event => setPassword(event.target.value)} /><button type="button" className="password-toggle" aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"} aria-pressed={showPassword} onClick={() => setShowPassword(show => !show)}>{showPassword ? "Ẩn" : "Hiện"}</button></span></Field>
+        <Button type="submit" className="reference-login-btn" disabled={busy}>{busy ? "Đang đăng nhập…" : "Đăng nhập"}</Button>
+      </form><p className="login-footnote">Chưa có tài khoản hoặc cần đặt lại mật khẩu? Vui lòng liên hệ quản trị viên.</p>
+    </section></div>
   </main>;
 }

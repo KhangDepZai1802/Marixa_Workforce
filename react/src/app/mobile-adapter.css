@@ -1,0 +1,90 @@
+/* Adapt the reference's mobile classes to the current feature components. */
+@media (max-width: 900px) {
+  .reference-shell .shell-body { display: block; min-height: calc(100dvh - 69px); }
+  .reference-shell .main-content { max-width: none; margin: 0; }
+  .reference-shell.is-home .main-content { padding: 0; }
+  .reference-login-page { padding: 0; display: flex; flex-direction: column; background: #f6f7f9; }
+  .reference-login-brand { display: flex; width: 100%; }
+  .reference-login-content { width: 100%; }
+  .reference-profile-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .reference-profile-summary { padding: 16px; }
+  .reference-profile-avatar { width: 64px; height: 64px; font-size: 28px; }
+  .admhome-tile { text-decoration: none; }
+}
+@media (max-width: 600px) {
+  :root { --brand-primary: #005b94; --surface-page: #f1f5f9; --text-primary: #0f172a; --text-secondary: #475569; --border-default: #dbe4ec; }
+  .reference-shell .app-header { height: 60px; padding: 8px 10px; }
+  .reference-shell .app-header-logo { width: 32px; height: 32px; font-size: 18px; }
+  .reference-shell .app-header-logo-text { font-size: 14px; }
+  .reference-shell .app-header-toggle, .reference-shell .sidebar, .reference-shell .sidebar-open { display: none; }
+  .reference-shell .main-content { width: 100%; padding: 18px 12px calc(100px + env(safe-area-inset-bottom)); }
+  .reference-shell:has(.mobile-profile-more) .main-content { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
+  .reference-shell.is-home .home-main { padding: 16px 12px calc(100px + env(safe-area-inset-bottom)); }
+  .reference-shell .home-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reference-shell .home-card { min-width: 0; }
+  .reference-shell .home-card strong { font-size: 13px; }
+  .reference-shell .home-card > span:not(.home-icon):not(.home-arrow) { font-size: 11px; }
+  .reference-shell .page-header { gap: 12px; margin-bottom: 16px; }
+  .reference-shell .page-header h1 { font-size: 21px; }
+  .reference-shell .page-header p { font-size: 12px; }
+  .reference-shell .panel { padding: 14px; border-radius: 12px; }
+  .reference-shell .field input:not([type="checkbox"]):not([type="radio"]), .reference-shell .field select, .reference-shell .field textarea, .dialog .field input, .dialog .field select, .dialog .field textarea { min-height: 44px; font-size: 16px; }
+  .reference-shell .button { min-height: 44px; }
+  .phone-attendance { display: block; padding-bottom: 0; }
+  .desktop-attendance-content { display: none; }
+  html[data-mobile-design="pro"] .phone-nav-layout .phone-attendance { padding: 0 4px 70px; margin: 0; }
+  html[data-mobile-design="pro"] .phone-nav-layout .phone-attendance-heading { padding: 8px 0 16px; }
+  .phone-check-action { bottom: calc(78px + env(safe-area-inset-bottom)); }
+  .personal-leave-page { gap: 16px; }
+  .personal-leave-page .page-header { margin-bottom: 0; }
+  .personal-leave-page .page-header-action, .personal-leave-page .page-header-action .button { width: 100%; }
+  .personal-leave-page .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+  .personal-leave-page .stat-card { min-height: 94px; border-left: 1px solid #e8edf2; padding: 12px; border-radius: 10px; }
+  .personal-leave-page .stat-card > span { color: #5a6b7b; text-transform: uppercase; font-size: 10px; font-weight: 700; }
+  .personal-leave-page .stat-card strong { font-size: 20px; }
+  .personal-leave-page .leave-history { padding: 0; border: 0; background: transparent; box-shadow: none; }
+  .personal-leave-page .leave-history .panel-heading { display: flex; flex-direction: column; align-items: start; gap: 12px; }
+  .personal-leave-page .leave-history .panel-heading h2 { font-size: 16px; }
+  .personal-leave-page .leave-filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .personal-leave-page .leave-filters .field:nth-child(-n+3) > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .personal-leave-page .leave-filters .field:nth-child(n+4) { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; font-size: 11px; }
+  .personal-leave-page .leave-filters input, .personal-leave-page .leave-filters select { width: 100%; min-width: 0; }
+  .personal-leave-page .leave-table { display: none; }
+  .personal-leave-page .badge { padding: 4px 8px; border: 0; border-radius: 999px; font-size: 11px; }
+  .personal-leave-page .badge[data-status="pending"] { background: #fef3c7; color: #a16207; }
+  .personal-leave-page .badge[data-status="approved"] { background: #dcfce7; color: #15803d; }
+  .personal-leave-page .badge[data-status="rejected"] { background: #fee2e2; color: #b42323; }
+  .personal-leave-page .reference-pagination { flex-wrap: wrap; font-size: 12px; }
+  .personal-leave-page .request-history-grid { grid-template-columns: minmax(0, 1fr); }
+  .personal-attendance-history .table-wrap { display: none; }
+  .personal-attendance-history .reference-history-controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .personal-attendance-history .panel-heading { flex-wrap: wrap; }
+  .calendar-day { padding: 5px; min-height: 72px; }
+  .calendar-day small { font-size: 9px; }
+  .dialog-backdrop { z-index: 270; align-items: end; padding: 10px; }
+  .dialog { width: 100%; max-height: calc(100dvh - 20px); padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); border-radius: 18px; }
+  .dialog .form-grid, .dialog .detail-grid { grid-template-columns: minmax(0, 1fr); }
+  .dialog .form-grid .full { grid-column: auto; }
+  .dialog .reference-modal-heading button { min-width: 44px; min-height: 44px; }
+  .dialog.mobile-more-sheet, .dialog.phone-camera-sheet { border-radius: 22px 22px 12px 12px; }
+  .notification-panel { position: fixed; top: 64px; left: 10px; right: 10px; width: auto; }
+  .notification-body { max-height: calc(100dvh - 220px); }
+  .reference-hr-kpis { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .reference-shell .table-wrap { max-width: 100%; }
+  .reference-shell .detail-item strong { overflow-wrap: anywhere; }
+}
+
+@media (max-width: 600px) {
+ .reference-shell .app-header-menu { right: 0; width: min(240px, calc(100vw - 24px)); }
+ .dialog.mobile-more-sheet { max-height: 85dvh; }
+ .phone-queue { margin: 16px 4px 90px; }
+ .phone-queue .queue-summary { flex-wrap: wrap; gap: 10px; }
+ .phone-queue .queue-item { overflow-wrap: anywhere; }
+ .reference-shell .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+ .mobile-more-links button { display: flex; align-items: center; gap: 12px; padding: 12px; min-height: 44px; width: 100%; border: 0; border-radius: 10px; background: transparent; color: #334155; text-align: left; font: inherit; cursor: pointer; }
+ .mobile-more-links button > span:last-child { margin-left: auto; color: #94a3b8; }
+ html[data-mobile-design="pro"] .phone-profile-services > div > button { padding: 16px; min-height: 64px; }
+}
