@@ -1,5 +1,55 @@
 # WORKLOG — Hệ thống chấm công Marixa
 
+### Bỏ ô VN, thêm bảng thông báo ở chuông — 10/10/2026
+
+- Theo yêu cầu người dùng, bỏ chỉ báo tiếng Việt không có chức năng. Chuông mở bảng nhỏ thay vì chuyển trang: employee thấy yêu cầu cá nhân gần đây và trạng thái; HR/admin thấy hàng đợi chờ duyệt qua API đang có. Hiển thị tối đa 8 mục, thời gian gửi, liên kết xem tất cả, trạng thái loading/empty/error và thử lại.
+- Đóng bằng nút ×, Escape, click ngoài, rời focus hoặc chuyển trang; mở chuông đóng menu tài khoản. Fetch hủy khi đóng bảng, không ghi dữ liệu hoặc tạo bảng thông báo/unread giả. Lint và TypeScript đạt; login HTTP 200, diff không có Markdown bảo vệ thay đổi. Chưa kiểm tra tương tác trực quan bằng trình duyệt do lỗi công cụ đã ghi ở trên.
+
+### Chuyển giao diện laptop theo bản M-ChamCong của người dùng — 10/10/2026
+
+- Người dùng yêu cầu giao diện project hiện tại giống bản tại `D:\working\INTERN MATRIXA\New folder\M-ChamCong\ChamCong`, xác nhận chỉ làm các chức năng hiện có; giữ ưu tiên laptop trước rồi mobile. Project tham chiếu được đọc, không chỉnh sửa. Các file UI trước chuyển đổi được sao lưu tại `artifacts/reference-ui/before/`.
+- Sao chép CSS desktop của header, attendance, home, leave, profile và các phần admin/HR tương ứng vào `reference-desktop.css`, áp dụng từ 901 px; adapter nối class/component Next.js hiện có. Có header logo M, slogan, liên kết yêu cầu và menu tài khoản, sidebar thu gọn theo khu vực và lưu lựa chọn; trang chủ dạng launcher chỉ chứa chức năng thực. Chuyển trang login hai cột và bổ sung hiện/ẩn mật khẩu. Tải local font Be Vietnam Pro/Montserrat và OFL từ Google Fonts.
+- Nghỉ phép có bốn thẻ số liệu từ ledger năm nghiệp vụ, ngày phép năm đang chờ lấy từ day_parts; bảng/list-calendar, filter, phân trang 10 dòng, hộp thoại chi tiết và tạo yêu cầu. Giữ tăng ca, sửa công, hủy đơn; không xóa nội dung form khi API gửi thất bại. Lịch công gom event theo ngày, có lịch và hộp thoại chi tiết; Chấm công có vùng chọn ảnh, vào/ra/trạng thái và tuần hiện tại; Hồ sơ có cột tóm tắt; Admin có clock/tiles cho chức năng thực, HR nhân viên có KPI từ danh sách đang hiển thị và form dialog. Các trang quản lý khác dùng kiểu card/form/table dùng chung của bản mẫu.
+- Các khác biệt chức năng giữ theo project hiện tại: ảnh/GPS tùy chọn và offline vẫn hoạt động; không sao chép yêu cầu bắt buộc ảnh/GPS của bản tham chiếu. Không thêm Lương, Hợp đồng, Bảo hiểm, dịch đa ngôn ngữ hoặc dịch vụ thông báo. Biểu tượng chuông dẫn tới yêu cầu đang có, cờ chỉ biểu thị tiếng Việt. Không chạy migration hoặc ghi dữ liệu cloud; cấu hình Supabase và phân quyền giữ nguyên.
+- Kiểm chứng: `npm run check` đạt lint, TypeScript và 6 test domain; production build thành công, `/login` và font local trả HTTP 200; kiểm tra diff không có Markdown bảo vệ thay đổi. Công cụ trình duyệt gặp lỗi Windows sandbox từ trước nên chưa xác minh trực quan từng pixel hoặc tương tác trên phiên đăng nhập thật trong lượt này. Mobile chưa được chuyển theo bản tham chiếu, chỉ giữ fallback để không cản laptop.
+
+### Khôi phục giao diện ban đầu, ưu tiên laptop — 10/10/2026
+
+- Người dùng yêu cầu khôi phục web trước lượt chỉnh UI để so sánh, hoàn thiện laptop trước rồi mới làm mobile. Khôi phục globals.css, AppShell, trang yêu cầu và select API về bản HEAD trước chỉnh UI; gỡ trang `/home` và hai component mới khỏi source. Giữ sửa lỗi xử lý giờ HH:mm ở form sửa công và giữ cấu hình Supabase local.
+- Lưu đủ bảy file của bản UI vừa chỉnh và manifest commit gốc ở `artifacts/ui-backups/before-laptop-restore-20261010/` để phục hồi/đối chiếu; bộ thiết kế và preview cũ vẫn được giữ riêng. Trang ứng dụng thực tế tiếp tục chạy tại localhost:3000; preview tại port 8765 là bản thiết kế trước khôi phục.
+- Kiểm tra `/my-requests` không có phiên đăng nhập đi tới trang login HTTP 200; diff chỉ còn sửa lỗi giờ và worklog trong tracked files. Typecheck đầu tiên gặp cache validator build cũ còn tham chiếu `/home`; production build sau đó thành công, bao gồm TypeScript và tái tạo types không còn `/home`. Không sửa Markdown được bảo vệ hoặc dữ liệu cloud.
+
+### Kết nối Supabase sau khi người dùng điền cấu hình — 10/10/2026
+
+- Người dùng đã điền ba biến Supabase trong `react/.env.local`; file được Git ignore, không ghi khóa vào log/worklog. Kiểm tra read-only: Auth settings HTTP 200, bảng employees và app_users HTTP 200 và đều có dữ liệu; không chạy migration hoặc sửa dữ liệu cloud.
+- Khởi động lại dev server tại `http://localhost:3000` với quyền mạng để gọi Supabase. Probe login bằng số điện thoại giả trả 401 thay vì lỗi kết nối 503; chưa đăng nhập bằng tài khoản thật hoặc xác nhận mật khẩu của người dùng.
+
+### Xem thử giao diện khi chưa có cấu hình backend — 10/10/2026
+
+- Người dùng xác nhận lấy project từ Git của nhóm và chỉ phụ trách giao diện, không biết vị trí cấu hình Supabase. Kiểm tra `react/` chỉ có `.env.example`; ba biến Supabase chưa được đặt. Không thể xác minh đăng nhập thật khi thiếu cấu hình; không thay xác thực bằng tài khoản giả.
+- Chạy ứng dụng tại `http://localhost:3000` với hostname localhost để kiểm tra CSRF cùng nguồn: POST login từ localhost qua kiểm tra nguồn và trả 422 với input trống; nguồn example.com vẫn bị 403. Chạy bằng 0.0.0.0 trước đó khiến nguồn localhost bị từ chối.
+- Bản xem thử React riêng tại `http://127.0.0.1:8765/code-review/interactive.html` trả 200, không cần đăng nhập, chỉ trang Nghỉ phép với dữ liệu mẫu. Thêm nhãn rõ ràng và chặn thao tác ghi trong mock API; các liên kết trang khác trỏ về ứng dụng thật. Bản này dùng để xem UI, không phải sửa kết nối Supabase hoặc phiên đăng nhập production.
+
+### Triển khai giao diện responsive trực tiếp trong React — 10/10/2026
+
+- Theo chỉ dẫn mới của người dùng, triển khai trong `react/` dựa trên ảnh mobile: header gọn, thanh dưới 5 mục có Chấm công nổi ở giữa, thẻ phép 2 cột, filter xếp dọc và bảng cuộn ngang. Laptop giữ sidebar và bộ lọc nhiều cột. Có trang `/home`; menu tài khoản trên điện thoại vẫn chứa đầy đủ liên kết theo quyền và đăng xuất, đóng được bằng Escape.
+- Trang `/my-requests` có Danh sách/Lịch theo tháng, lọc trạng thái/loại nghỉ/từ khóa/khoảng ngày, chọn ngày xem đơn và xóa bộ lọc. Form nghỉ, tăng ca, sửa công mở qua nút Tạo yêu cầu; giữ chức năng hủy đơn. Số cấp/điều chỉnh, sử dụng ròng và còn lại tính từ ledger năm nghiệp vụ; Đang chờ hiển thị số đơn trong 100 đơn gần nhất, không giả định là số ngày phép năm. API đọc đơn bổ sung ID loại nghỉ, không đổi schema. Sửa lỗi trường time HH:mm bị cắt sai khi gửi sửa công.
+- Kiểm chứng: `npm run check` qua lint, TypeScript và 6 test domain; `npm run build` thành công. Browser kiểm tra trang React thật với API mô phỏng riêng ngoài app: lọc trạng thái, lịch tháng, drilldown theo ngày, reset, mở form/chuyển Sửa công, menu và Escape đều qua. 320/390/768/1440 px không tràn trang ngang; bảng cuộn riêng. Ảnh và harness tái lập ở `artifacts/marixa-design/code-review/` và các script review cùng thư mục cha. Chưa thử gửi/hủy đơn bằng tài khoản thật, không triển khai cloud.
+- Không sửa các file Markdown bảo vệ; không sửa `next.config.ts` hoặc checklist dưới `docs/`.
+
+### Điều chỉnh thiết kế mobile theo ảnh mẫu — 10/10/2026
+
+- Chủ dự án gửi `Screenshot 2026-10-09 144816.png` làm tham chiếu bố cục điện thoại: header gọn, thẻ số liệu hai cột, filter xếp dọc và thanh dưới năm mục với Chấm công nổi ở giữa. Đã áp dụng vào bộ SVG mobile, không sửa mã ứng dụng hoặc laptop.
+- Trang Nghỉ phép mới có nút tạo đơn, bốn thẻ Đã cấp/Đã sử dụng/Đang chờ/Còn lại, tab Danh sách/Lịch, filter trạng thái/loại nghỉ/tìm kiếm/ngày và bảng nhỏ. Số phép minh họa vẫn theo giao dịch cộng tháng; ảnh mẫu không thay thế quy tắc phép năm đã chốt.
+- Đã nhập thành công 9 màn hình revision `mobile-v2` qua API tài sản Figma; giữ bản mobile trước để so sánh. Màn Nghỉ phép: https://www.figma.com/design/e16STulvmo6CtNCw4BUYPG?node-id=7-156. ID revision lưu trong `artifacts/marixa-design/figma-state.json`; cập nhật ZIP/trang preview. Đã xem ảnh kết xuất local riêng trang Nghỉ phép và tổng hợp mobile. Giới hạn MCP Starter và chưa có auto-layout/prototype Figma vẫn giữ nguyên.
+
+## Thiết kế giao diện điện thoại và laptop — 10/10/2026
+
+- Theo yêu cầu thiết kế trong Figma, tạo file `Marixa Workforce · Mobile & Laptop`: https://www.figma.com/design/e16STulvmo6CtNCw4BUYPG. Có ba trang Điện thoại, Laptop, Thành phần; đã tạo biến màu/ngữ nghĩa, khoảng cách, bo góc, kiểu chữ Be Vietnam Pro và tải logo gốc từ `logo.png`.
+- Đã nhập thành công qua API tài sản Figma 18 màn hình SVG: 8 màn hình chính cho cả điện thoại 390×844 và laptop 1440×960 (đăng nhập, chấm công, lịch sử công, đơn cá nhân, tổng quan HR, duyệt yêu cầu, bảng công, ca chung), thêm hai trạng thái điện thoại offline và tạo đơn nghỉ. Dữ liệu là minh họa, không kết nối API nghiệp vụ. ID màn hình và trạng thái lưu ở `artifacts/marixa-design/figma-state.json`.
+- Giới hạn thực tế: Figma MCP gói Starter hết lượt sau khi tạo nền thiết kế; thao tác tạo component và chụp ảnh Figma bị từ chối. API tải tài sản chính thức vẫn hoạt động, nên dùng cây vector nhập SVG để hoàn tất màn hình. Chưa có auto-layout, component instance hay prototype liên kết; chưa xác minh font/kết xuất trực tiếp sau import trong Figma. Không đánh dấu checklist triển khai giao diện hoàn tất.
+- Bản sao và trang xem trước nằm ở `artifacts/marixa-design/`; file ZIP `Marixa-UI-Figma-Import.zip` chứa 18 SVG và font/license. Đã kiểm tra XML cả 18 SVG, tất cả có lớp text; đã xem ảnh kết xuất local cho đủ màn hình và kiểm tra riêng chấm công mobile/tổng quan laptop. Không thay đổi source `react/` hoặc `.NET`, không chạy migration/cloud nghiệp vụ. Không sửa Markdown được bảo vệ trong `docs/`.
+
 File này là điểm bắt đầu cho bất kỳ AI/người làm việc tiếp trên dự án. Cập nhật sau mỗi lượt làm việc có thay đổi thực tế. Ghi sự thật đã kiểm tra; không đánh dấu “xong” khi chưa kiểm chứng.
 
 **Quyền tài liệu hiện hành:** Codex được chỉnh sửa mọi Markdown theo ngoại lệ ngày 10/10/2026 trong [`../AGENTS.md`](../AGENTS.md). Các agent khác chỉ sửa `docs/worklog.md` trong nhóm tài liệu docs. Những đoạn bên dưới mô tả bảo vệ Markdown trước ngoại lệ là lịch sử, không còn áp dụng cho Codex.
@@ -409,3 +459,56 @@ Sau sửa Route Handler, `npm.cmd run check` tiếp tục đạt lint, TypeScrip
 - Kiểm chứng sau ghép: `npm.cmd run check` đạt ESLint, TypeScript và 17/17 test; production build đạt. Chạy tuần tự `verify-session-refresh.mjs`, `verify-phase5-api.mjs`, `verify-phase6-api.mjs`, `verify-phase7.mjs` trên local 3001 và Supabase test, tất cả exit 0. Bao gồm làm mới phiên, điều chỉnh không cộng trùng, snapshot kỳ khóa, bảng công/Excel nhân viên inactive, quyền PDF/font tiếng Việt, operations/cron, backup 19 bảng/3 ảnh/4 mapping Auth và restore counts/digests/checksums/RLS/Auth, retry retention. Không chạy lại toàn bộ kiểm thử thiết bị/giao diện của Phase 8 trong lượt ghép này.
 - `verify-secrets.mjs` kiểm tra 191 file Git-selected working tree và 28 browser asset đạt; số file giảm so với lượt trước vì team đã bỏ thư mục mã nguồn lịch sử. Server kiểm thử 3001 đã dừng; build cuối dùng lại `.env.local` gốc. Không sửa môi trường hoặc thao tác Supabase production.
 - Sau kiểm chứng, dọn đúng mục `stash@{0}`; nội dung gốc vẫn được tag dự phòng giữ lại. Stash list trống, không còn unmerged path; main cùng commit với origin/main, code đã ghép đang ở Changes và chưa commit/push. Không đánh dấu thêm mục nghiệm thu phase trong lượt xử lý Git này. Markdown khôi phục đúng stash; chỉ cập nhật ghi chú commit nền trong plan và bổ sung bản ghi này có chủ đích.
+
+## Giao diện mobile theo bản mẫu — 10/10/2026
+
+Theo yêu cầu mới, chuyển các chức năng đang có trong `react/` sang bố cục điện thoại dựa trên CSS và cấu trúc của bản mẫu `M-ChamCong/ChamCong`: thanh điều hướng dưới, trang chủ hai cột, đồng hồ và dòng thời gian chấm công, hộp xác nhận ảnh/GPS tùy chọn, lịch công dạng thẻ có chi tiết, nghỉ phép với bộ lọc xếp dọc và thẻ đơn, hồ sơ cá nhân và menu chức năng. Chuông thông báo vẫn mở bảng nhỏ; bỏ ô VN như yêu cầu trước. CSS mobile áp dụng đến 900px, bố cục điện thoại đến 600px; CSS laptop vẫn được giữ ở breakpoint riêng. Không bổ sung các chức năng ngoài phạm vi hệ thống hiện tại. Hàng đợi offline vẫn có thể xem, đồng bộ hoặc xóa trên điện thoại khi có dữ liệu chờ.
+
+Kiểm chứng: `npm run check --prefix react` qua lint, TypeScript và 6 kiểm thử tính công; `npm run build --prefix react` thành công; `git diff --check` sạch. Chưa kiểm chứng trực quan từng pixel bằng trình duyệt do công cụ browser Node REPL gặp lỗi helper_unknown_error trong môi trường Windows; không coi đối chiếu trực quan là đã hoàn thành. Không sửa Markdown được bảo vệ trong docs ngoài worklog, không sửa cấu hình/khóa hoặc dữ liệu Supabase.
+
+
+## Đổi mật khẩu trong hộp thoại — 10/10/2026
+
+Các nút đổi mật khẩu trong menu tài khoản, hồ sơ và menu mobile mở Dialog ngay trên trang hiện tại. Dùng chung form với trang đổi mật khẩu bắt buộc sau đăng nhập, giữ API hiện có và xác nhận mật khẩu tối thiểu 12 ký tự. Dialog khóa đóng khi đang lưu, hiển thị lỗi/thành công và xóa ô mật khẩu sau thành công. Trang riêng vẫn phục vụ tài khoản buộc đổi mật khẩu trước khi vào ứng dụng. Lint và TypeScript qua; không gửi thay đổi mật khẩu thật trong kiểm chứng. Chỉ sửa worklog trong docs.
+
+
+## Bỏ điều hướng trùng trong hồ sơ — 10/10/2026
+
+Theo yêu cầu người dùng, bỏ khối Tài khoản & chức năng (Lịch công, Nghỉ phép và yêu cầu, Đổi mật khẩu) trên trang hồ sơ cá nhân mobile. Giữ nút đổi mật khẩu trong thẻ hồ sơ và các đường điều hướng hiện có ở thanh dưới. Kiểm tra lint và TypeScript; không sửa tài liệu được bảo vệ ngoài worklog.
+
+
+## Nhãn tạo đơn đầy đủ — 10/10/2026
+
+Đổi nút và tiêu đề bảng tạo đơn thành Tạo đơn nghỉ phép / tăng ca / sửa công để thể hiện đủ ba chức năng. Tab ghi Đơn nghỉ phép, Đơn tăng ca, Đơn sửa công; nút gửi nghỉ phép cũng ghi đầy đủ. Mô tả trang nhắc đủ ba loại đơn. Không thay đổi nghiệp vụ hoặc API.
+
+
+## Mobile Nhân sự và Admin — 10/10/2026
+
+Theo yêu cầu triển khai tiếp của người dùng, bổ sung bố cục điện thoại cho các chức năng hiện có của Nhân sự/Admin. 10 bảng (nhân viên, lượt chấm, hàng đợi duyệt, snapshot ngày công, điều chỉnh kỳ trước, tài khoản, nhật ký, lịch chính sách, số dư phép và giao dịch phép) có nhãn data-label tương ứng tiêu đề cột và chuyển thành thẻ ở chiều rộng <=600px. Giữ bảng laptop, giữ dữ liệu và callback/API hiện có. Trang tổng quan, cấu hình, sổ phép, bảng công có form một cột, nút chạm 44px, thao tác xuống dòng, chuỗi dài ngắt dòng. Bộ lọc nhân viên, đối soát và nhật ký mở Dialog trên mobile.
+
+Duyệt yêu cầu mobile mở bảng chi tiết có ngày/giờ, lý do, ghi chú và nút duyệt/từ chối; vẫn không tự duyệt đơn của mình. Đối soát chấm công và xem ảnh private dùng Dialog; bảng từ chối bắt buộc lý do. Cấp tài khoản/đặt lại mật khẩu dùng Dialog và ô nhập password tối thiểu 12 ký tự, chặn đóng khi đang ghi. Thanh dưới Admin có Tổng quan, Tài khoản, Nhật ký, Cấu hình, Thêm; HR có Nhân viên, Duyệt công, Bảng công, Duyệt đơn, Thêm. Menu Thêm giữ đường đến các chức năng khác theo quyền. Không tạo các tính năng backend mới, không sửa phân quyền hoặc dữ liệu Supabase. Bảng công/cấu hình dùng được trên điện thoại nhưng việc đối chiếu nhiều dòng và xuất Excel vẫn thuận tiện trên laptop.
+
+Kiểm chứng: check qua lint, TypeScript và 6 kiểm thử nghiệp vụ; production build thành công. Rà soát 10 bảng có số nhãn trùng số cột; git diff --check sạch và docs chỉ thay worklog. Chưa kiểm chứng trực quan trên thiết bị/trình duyệt mobile hoặc gửi các thao tác duyệt, khóa, cấp tài khoản thật.
+
+
+## Giữ nội dung trong chiều rộng điện thoại — 10/10/2026
+
+Người dùng báo trang chủ và menu dưới tràn ngang; yêu cầu mobile chỉ cuộn dọc. Bổ sung phone-width.css tải cuối để khung trang, hero, grid, thẻ, tiêu đề dài, ô nhập, tab, hộp thoại và menu dưới có min-width:0/max-width:100%, chữ xuống dòng. Hero mobile bỏ phần trang trí; màn hình <=380px chuyển launcher/Admin sang một cột, thu nhỏ icon camera để đủ năm mục menu. Không dùng overflow-x:hidden để che nội dung bị tràn. CSS chỉ áp dụng <=600px, giữ laptop. Kiểm chứng build/diff; chưa đo scrollWidth trực tiếp vì kết nối công cụ trình duyệt tiếp tục lỗi helper_unknown_error. Cần xác nhận trực quan lại trên màn hình điện thoại của người dùng.
+
+
+## Làm nổi nút chức năng khác — 10/10/2026
+
+Nâng nút Các chức năng khác trên hồ sơ mobile lên thêm 18px (bottom 100px + safe area), đổi nền xanh/chữ trắng, tăng viền và bóng, giữ chiều rộng trong viewport. Chỉ đổi CSS; kiểm tra diff, không thay đổi thao tác hoặc tài liệu được bảo vệ.
+
+## Hoàn tất merge giao diện team với các phase — 10/10/2026
+
+- Chủ dự án đã commit phần phase tại `057eae1`, sau đó pull hai commit team đến `2c69fe5` và gặp 9 file xung đột. Đây là merge mới của giao diện desktop/mobile; không phải mất stash. Lưu nhánh `backup/pre-ui-merge-20261010` tại đầu local và tag `backup/team-ui-20261010` tại đầu team trước khi xử lý. Các bản dự phòng của lượt khôi phục stash trước vẫn giữ nguyên.
+- Giữ giao diện team: trang chủ `/home`, header/sidebar/mobile navigation, thông báo theo quyền, hiện/ẩn mật khẩu, đổi mật khẩu trong dialog, lịch công theo tháng/ngày, form/bảng responsive và font local. Ghép lại các hành vi đã kiểm chứng của phase: cảnh báo queue theo owner khi logout, lưu IndexedDB trước gửi mạng, retry/backoff/khóa đồng bộ đồng thời, phân biệt pending ảnh và yêu cầu đối soát, ca có ngày hiệu lực, chuyển sang lịch sử/sửa công khi đủ lượt chấm.
+- Giữ xem trước ca và retention cố định 3 tháng; bổ sung nhãn data-label của team vào bảng chính sách/snapshot mà không bỏ loại tăng ca hoặc chi tiết điều chỉnh kỳ trước. HR giữ bộ lọc phòng ban/page trong URL, phân trang 50 dòng, ghép dialog đối soát và xem ảnh của team. Lịch sử cá nhân mới giữ tổng hợp tháng từ snapshot và xem ảnh private trong chi tiết ngày. Logo header dùng `logo.png` theo plan. Worklog giữ nội dung từ cả hai nhánh.
+- Bổ sung `/home` vào matcher proxy để trang chủ mới cũng refresh session trước Server Components. Không đổi nghiệp vụ tính công, migration hoặc schema; API đọc yêu cầu cá nhân nhận thêm thông tin loại phép từ team, giữ scope owner và guard đổi mật khẩu. Không thao tác production.
+- Cập nhật selector/đích trang trong script browser theo giao diện mới, không bỏ kiểm tra nghiệp vụ. `verify-phase3-ui.mjs` dùng URL local cho phép rõ thay vì cố định 3000; lần đầu timeout do trỏ server cũ, sau sửa chạy đầy đủ đạt. Mật khẩu/cờ tạm của tài khoản giả B được khôi phục trong script.
+- `npm.cmd run check`: ESLint, TypeScript và **17/17** unit test đạt. `npm.cmd run build`: đạt; build cuối khôi phục `.env.local` gốc sau khi dừng server kiểm thử cổng 3001.
+- `verify-phase3-ui.mjs`: đăng nhập sai/mất mạng, đăng nhập employee/HR/admin vào `/home`, logout, bảo vệ route, hồ sơ, đổi mật khẩu bắt buộc, quyền menu và trang quản trị đều đạt. `verify-phase4.mjs`: cả bốn tổ hợp ảnh/GPS, retry, riêng tư/hết hạn ảnh, nén/bỏ ảnh và chấm khi GPS bị từ chối đều đạt. `verify-phase5-browser.mjs`: offline/IndexedDB/reload, giữ event khi ảnh lỗi, retry cùng event và quyền RPC đều đạt. Các script cloud dùng fixture giả trên Supabase test và cleanup cuối lượt; tất cả exit 0.
+- `verify-phase8-browser.mjs`: **40 lượt route/viewport** (thêm `/home`, 10 route tại 375/768/1024/1440px) đạt không tràn ngang/lỗi trang và tên điều khiển accessibility; preview ca, bộ lọc qua reload, Tab, Escape dialog ảnh khi có ảnh, mạng chậm đều đạt. Đã xem screenshot admin mobile và hồ sơ desktop. Đây vẫn là Chromium với viewport giả lập, không thay nghiệm thu Safari/iOS/Android thật.
+- `verify-session-refresh.mjs /home`: cookie hết hạn được refresh, cookie mới tới browser và API tiếp theo trả 200/no-store. `verify-secrets.mjs`: **217 file working tree được Git chọn, 29 browser asset** không chứa secret server/test đang dùng; file môi trường vẫn bị ignore. Không khẳng định xóa lịch sử secret cũ.
+- Hoàn tất merge bằng commit local sau kiểm tra diff và đánh dấu toàn bộ xung đột đã giải quyết. Chưa push hoặc deploy; cần Push origin trong GitHub Desktop rồi làm hướng dẫn Vercel test. Không thay trạng thái nghiệm thu các mục cần thiết bị thật/đầu vào vận hành/deploy. Các thay đổi Markdown có chủ đích: ghép worklog, ghi bằng chứng này và cập nhật commit nền trong plan.

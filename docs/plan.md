@@ -175,7 +175,7 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 - 2.6 và 8.3/8.5: còn bài thử ảnh thật trên điện thoại để chốt 200 KB, Safari iOS/Chrome Android và screen reader thực tế. Không thay bằng ảnh PNG fixture hoặc giả lập viewport.
 - 7.3: phần màn hình/version/audit/xem trước đã được triển khai. Admin còn nhập lịch nghỉ/làm bù, vị trí/bán kính thực tế và số dư phép lịch sử nếu có trước vận hành; chưa tự điền giả các đầu vào đó.
 - 9.0: đã đối chiếu điều khoản hiện hành và xác nhận đồ án cá nhân có trong worklog; Hobby chỉ áp dụng theo mục đích đó. 9.1–9.6 chưa đánh dấu: chưa áp migration/khởi tạo admin production, chưa có commit deploy, Vercel URL/Ready/deployment ID, smoke test và backup production.
-- Sau khi khôi phục stash ngày 10/10/2026, working tree đã ghép các phase với code team tại commit `9275317`; chưa phải một commit phát hành mới đã push. Bằng chứng kiểm thử trước khi ghép dựa trên `f59eaea60c91ea85feb8b136731f3a6c5c533f6e`; kiểm tra sau ghép ghi riêng trong worklog. Không đánh dấu nghiệm thu toàn Phase 8/9 chỉ vì local build đạt.
+- Code các phase đã được chủ dự án commit tại `057eae1`, sau đó ghép giao diện team tại `2c69fe5`. Bằng chứng kiểm thử trước khi ghép dựa trên `f59eaea60c91ea85feb8b136731f3a6c5c533f6e`; kiểm tra từng lần ghép ghi riêng trong worklog. Cần push commit merge đã kiểm thử trước khi deploy. Không đánh dấu nghiệm thu toàn Phase 8/9 chỉ vì local build đạt.
 
 ## 3. Tài liệu nhà cung cấp để kiểm tra khi thực hiện
 

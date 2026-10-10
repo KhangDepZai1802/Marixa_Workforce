@@ -1,0 +1,73 @@
+/* Phone layouts for the existing HR and admin features. */
+.staff-mobile-filters { display: none; }
+@media (max-width: 600px) {
+  .staff-mobile-layout .main-content { min-width: 0; }
+  .staff-mobile-layout .page-header { align-items: stretch; gap: 12px; }
+  .staff-mobile-layout .page-header h1 { font-size: 22px; line-height: 1.3; }
+  .staff-mobile-layout .page-header p { font-size: 13px; line-height: 1.6; }
+  .staff-mobile-layout .page-header-action, .staff-mobile-layout .page-header-action .button { width: 100%; }
+  .staff-mobile-layout .panel-heading { flex-wrap: wrap; gap: 12px; }
+  .staff-mobile-layout .panel-heading > div { min-width: 0; }
+  .staff-mobile-layout .panel-heading p { font-size: 12px; line-height: 1.6; }
+  .staff-mobile-layout .form-grid, .staff-mobile-layout .toolbar, .staff-mobile-layout .two-column { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .staff-mobile-layout .form-grid .full { grid-column: auto; }
+  .staff-mobile-layout .toolbar > *, .staff-mobile-layout .toolbar .field { min-width: 0; width: 100%; }
+  .staff-mobile-layout .form-actions, .staff-mobile-layout .inline-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .staff-mobile-layout .form-actions .button, .staff-mobile-layout .inline-actions .button { flex: 1 1 100%; }
+  .staff-mobile-layout .tabs { flex-wrap: wrap; gap: 4px; }
+  .staff-mobile-layout .tab-button { flex: 1 1 80px; min-height: 44px; padding: 9px 6px; font-size: 12px; }
+  .staff-mobile-layout .staff-desktop-filters { display: none; }
+  .staff-mobile-layout .staff-mobile-filters { display: block; margin-bottom: 12px; }
+  .staff-mobile-filters .button { width: 100%; }
+  .dialog .toolbar { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .dialog .toolbar > * { min-width: 0; }
+  .staff-mobile-layout .table-wrap { overflow: visible; border: 0; background: transparent; }
+  .staff-mobile-layout .table-wrap table { display: block; width: 100%; min-width: 0; border: 0; }
+  .staff-mobile-layout .table-wrap thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .staff-mobile-layout .table-wrap tbody { display: grid; gap: 12px; }
+  .staff-mobile-layout .table-wrap tr { display: block; padding: 12px; border: 1px solid #e2e8f0; border-radius: 14px; background: #fff; box-shadow: 0 3px 10px rgb(15 23 42 / 3%); }
+  .staff-mobile-layout .table-wrap td { display: block; width: auto; min-width: 0; padding: 8px 0; border: 0; border-bottom: 1px solid #f1f5f9; white-space: normal; overflow-wrap: anywhere; font-size: 13px; }
+  .staff-mobile-layout .table-wrap td::before { content: attr(data-label); display: block; margin-bottom: 5px; font-size: 11px; font-weight: 600; color: #64748b; }
+  .staff-mobile-layout .table-wrap td:first-child { padding-top: 0; }
+  .staff-mobile-layout .table-wrap td:last-child { border-bottom: 0; padding-bottom: 0; }
+  .staff-mobile-layout .table-wrap td strong { font-size: 14px; }
+  .staff-mobile-layout .table-wrap td small { display: block; margin-top: 4px; font-size: 12px; line-height: 1.5; }
+  .staff-mobile-layout .review-controls { min-width: 0; width: 100%; }
+  .staff-mobile-layout .table-actions { display: flex; gap: 8px; }
+  .staff-mobile-layout .table-actions .button { flex: 1 1 100px; min-height: 44px; font-size: 13px; padding: 10px; }
+  .staff-mobile-layout td select, .staff-mobile-layout .review-controls input { width: 100%; min-height: 44px; font-size: 16px; }
+  .staff-mobile-layout .audit-json { max-width: 100%; max-height: 280px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; }
+  .staff-mobile-layout details summary { padding: 12px 0; cursor: pointer; }
+  .staff-mobile-layout .exception-list > div { display: flex; flex-wrap: wrap; gap: 8px; }
+  .staff-mobile-layout .checklist { flex-wrap: wrap; }
+  .staff-mobile-layout .check-item { min-height: 44px; }
+  .staff-mobile-layout .quick-links a { min-height: 64px; overflow-wrap: anywhere; }
+  .staff-mobile-layout .admhome { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .staff-mobile-layout .admhome-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .staff-mobile-layout .admhome-tile { min-width: 0; padding: 16px 10px; border-radius: 14px; }
+  .staff-mobile-layout .admhome-tile-label { font-size: 14px; }
+  .staff-mobile-layout .admhome-tile-sub { font-size: 11px; line-height: 1.4; }
+}
+
+.staff-phone-review { display: none; }
+@media (max-width: 600px) {
+ .staff-mobile-layout .staff-desktop-review { display: none; }
+ .staff-mobile-layout .staff-phone-review { display: block; width: 100%; }
+ .staff-create-account { width: 100%; }
+ .dialog .review-controls { min-width: 0; }
+ .dialog .review-controls input { min-height: 44px; font-size: 16px; }
+ .dialog .table-actions { display: flex; gap: 8px; margin-top: 12px; }
+ .dialog .table-actions .button { flex: 1; min-height: 44px; }
+ .dialog .form-actions { margin-top: 16px; }
+}
+
+@media (max-width: 600px) {
+ .staff-mobile-layout .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+ .staff-mobile-layout .setting-row { flex-wrap: wrap; gap: 10px; }
+ .staff-mobile-layout .setting-row > span { min-width: 0; overflow-wrap: anywhere; }
+ .staff-mobile-layout .setting-row .button { min-height: 44px; }
+ .staff-mobile-layout .stat-card { min-width: 0; overflow-wrap: anywhere; }
+ .staff-mobile-layout .stat-card strong { font-size: 26px; }
+ .dialog > p { overflow-wrap: anywhere; line-height: 1.6; }
+ .dialog .form-grid { grid-template-columns: minmax(0, 1fr); }
+}

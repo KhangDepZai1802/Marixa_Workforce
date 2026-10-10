@@ -20,6 +20,8 @@ if (env.NEXT_PUBLIC_SUPABASE_URL !== 'https://pkpwcpatuslfjyoivbuf.supabase.co')
 const service = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY,
   { auth: { autoRefreshToken: false, persistSession: false } });
 let temporaryAccount;
+const base = process.env.VERIFY_BASE_URL || 'http://localhost:3001';
+if (!['http://localhost:3000', 'http://localhost:3001'].includes(base)) throw new Error('Local server only.');
 const chrome = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const profile = mkdtempSync(path.join(tmpdir(), 'marixa-phase3-ui-'));
 const port = 9337;
@@ -53,7 +55,7 @@ async function evaluate(expression) {
   return result.result?.value;
 }
 async function navigate(route) {
-  await send('Page.navigate', { url: `http://localhost:3000${route}` });
+  await send('Page.navigate', { url: `${base}${route}` });
   await waitUntil(() => evaluate('document.readyState === "complete"'), `load ${route}`);
 }
 function check(label, condition) {
@@ -76,7 +78,7 @@ try {
   await waitUntil(async () => {
     try { return (await fetch(`http://127.0.0.1:${port}/json/version`)).ok; } catch { return false; }
   }, 'Chrome CDP', 15000);
-  const tab = await (await fetch(`http://127.0.0.1:${port}/json/new?http://localhost:3000/login`,
+  const tab = await (await fetch(`http://127.0.0.1:${port}/json/new?${base}/login`,
     { method: 'PUT' })).json();
   socket = new WebSocket(tab.webSocketDebuggerUrl);
   await new Promise((resolve, reject) => {
@@ -112,12 +114,14 @@ try {
     downloadThroughput: -1, uploadThroughput: -1 });
 
   await fillLogin('0990000101', credentials.passwords['TEST-P2-A']);
-  await waitUntil(() => evaluate('location.pathname === "/today"'), 'employee login', 20000);
+  await waitUntil(() => evaluate('location.pathname === "/home"'), 'employee login', 20000);
   check('Employee reaches private UI after login', true);
   await navigate('/my-profile');
   await waitUntil(() => evaluate('document.body.innerText.includes("Hồ sơ cá nhân") && !document.body.innerText.includes("Đang tải")'), 'profile UI');
   check('Employee profile page renders', true);
-  await evaluate('document.querySelector(".signout").click()');
+  await evaluate('document.querySelector(".app-header-avatar-btn").click()');
+  await waitUntil(() => evaluate('!!document.querySelector("#account-options button.danger")'), 'account menu');
+  await evaluate('document.querySelector("#account-options button.danger").click()');
   await waitUntil(() => evaluate('location.pathname === "/login"'), 'employee logout');
   check('Logout button returns to login', true);
   await navigate('/today');
@@ -125,13 +129,15 @@ try {
   check('Logged-out browser cannot open private UI', true);
 
   await fillLogin('0990000103', credentials.passwords['TEST-P2-HR']);
-  await waitUntil(() => evaluate('location.pathname === "/today"'), 'HR login', 20000);
+  await waitUntil(() => evaluate('location.pathname === "/home"'), 'HR login', 20000);
   check('HR can sign in through UI', true);
   await navigate('/hr/employees');
   await waitUntil(() => evaluate('document.body.innerText.includes("Hồ sơ nhân viên")'), 'HR employees UI');
   check('HR can open employee management UI', true);
   check('HR navigation omits admin accounts', !(await evaluate("!!document.querySelector('a[href=\"/admin/accounts\"]')")));
-  await evaluate('document.querySelector(".signout").click()');
+  await evaluate('document.querySelector(".app-header-avatar-btn").click()');
+  await waitUntil(() => evaluate('!!document.querySelector("#account-options button.danger")'), 'account menu');
+  await evaluate('document.querySelector("#account-options button.danger").click()');
   await waitUntil(() => evaluate('location.pathname === "/login"'), 'HR logout');
 
   const { data: bEmployee } = await service.from('employees').select('id')
@@ -155,9 +161,11 @@ try {
     }
     document.querySelector('form').requestSubmit();
   })()`);
-  await waitUntil(() => evaluate('location.pathname === "/today"'), 'password changed in UI', 20000);
+  await waitUntil(() => evaluate('location.pathname === "/home"'), 'password changed in UI', 20000);
   check('User can change temporary password through UI', true);
-  await evaluate('document.querySelector(".signout").click()');
+  await evaluate('document.querySelector(".app-header-avatar-btn").click()');
+  await waitUntil(() => evaluate('!!document.querySelector("#account-options button.danger")'), 'account menu');
+  await evaluate('document.querySelector("#account-options button.danger").click()');
   await waitUntil(() => evaluate('location.pathname === "/login"'), 'temporary account logout');
   const restoredPassword = await service.auth.admin.updateUserById(bAccount.auth_user_id,
     { password: credentials.passwords['TEST-P2-B'] });
@@ -167,7 +175,7 @@ try {
   temporaryAccount = undefined;
 
   await fillLogin('0990000104', credentials.passwords['TEST-P2-ADMIN']);
-  await waitUntil(() => evaluate('location.pathname === "/today"'), 'admin login', 20000);
+  await waitUntil(() => evaluate('location.pathname === "/home"'), 'admin login', 20000);
   await navigate('/admin/accounts');
   await waitUntil(() => evaluate('document.body.innerText.includes("Tài khoản và phân quyền")'), 'admin accounts UI');
   check('Admin can open account management UI', true);

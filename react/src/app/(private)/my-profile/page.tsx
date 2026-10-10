@@ -1,5 +1,6 @@
 "use client";
 
+import { ChangePasswordButton } from "@/components/change-password";
 import { useEffect, useState } from "react";
 import { EmptyState, LoadingState, Notice, PageHeader, Panel } from "@/components/ui";
 import { apiRequest, type ApiEnvelope } from "@/lib/api-client";
@@ -24,7 +25,9 @@ export default function MyProfilePage() {
     <PageHeader title="Hồ sơ cá nhân" description="Thông tin tài khoản và hồ sơ nhân viên được HR quản lý." />
     {error && <Notice kind="error">{error}</Notice>}
     {loading ? <Panel><LoadingState /></Panel> : !profile?.employee ? <Panel><EmptyState title="Tài khoản chưa gắn hồ sơ nhân viên" description="Hãy liên hệ HR để hoàn tất liên kết hồ sơ." /></Panel> :
-      <div className="profile-grid">
+      <div className="reference-profile-layout">
+        <Panel className="reference-profile-summary"><div className="reference-profile-avatar" aria-hidden="true">{profile.employee.full_name.trim().charAt(0).toUpperCase()}</div><strong>{profile.employee.full_name}</strong><p>{profile.employee.employee_code}</p><p>{profile.employee.job_title || "Nhân viên"}</p><ChangePasswordButton className="button button-secondary" /></Panel>
+        <div className="reference-profile-info">
         <Panel title="Thông tin nhân viên" description="Thông tin cơ bản đang lưu trong hồ sơ.">
           <div className="detail-grid">
             <Detail label="Họ và tên" value={profile.employee.full_name} />
@@ -43,6 +46,7 @@ export default function MyProfilePage() {
         <Panel title="Quy trình chấm công" description="Múi giờ và giờ làm theo cấu hình công ty.">
           <ul className="rule-list"><li>Múi giờ nghiệp vụ: Asia/Ho_Chi_Minh.</li><li>Giờ làm và ngày làm việc theo ca chung do admin cấu hình cho từng ngày hiệu lực.</li><li>Ảnh và GPS là tùy chọn, không làm mất công nếu không có.</li><li>Ngày nghỉ vẫn có thể chấm công; giờ thực tế tự tính tăng ca theo quy định.</li></ul>
         </Panel>
+        </div>
       </div>}
   </>;
 }

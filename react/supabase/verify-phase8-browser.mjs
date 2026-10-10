@@ -31,7 +31,7 @@ try{
   mkdirSync('.artifacts',{recursive:true});
   for(const role of ['admin','employee']){
     await login(role);
-    const routes=role==='admin'?['/admin','/admin/settings','/hr/dashboard','/hr/attendance','/hr/timesheets']:['/today','/my-attendance','/my-requests','/my-profile'];
+    const routes=role==='admin'?['/admin','/admin/settings','/hr/dashboard','/hr/attendance','/hr/timesheets']:['/home','/today','/my-attendance','/my-requests','/my-profile'];
     for(const width of [375,768,1024,1440]){
       await send('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<768});
       for(const route of routes){
@@ -57,10 +57,10 @@ try{
   await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
   assert(await evaluate('document.activeElement!==document.body'),'keyboard tab focus');
   const photo=await evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("Xem ảnh riêng tư"))?.textContent');
-  if(photo){await evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("Xem ảnh riêng tư")).click()');await until(()=>evaluate('!!document.querySelector("dialog[open]")'),'photo modal');
-    assert(await evaluate('!!document.activeElement?.closest("dialog")'),'dialog initial focus');
+  if(photo){await evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent.includes("Xem ảnh riêng tư")).click()');await until(()=>evaluate('!!document.querySelector("dialog[open], [role=dialog]")'),'photo modal');
+    assert(await evaluate('!!document.activeElement?.closest("dialog, [role=dialog]")'),'dialog initial focus');
     await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
-    await until(()=>evaluate('!document.querySelector("dialog[open]")'),'Escape closes modal');
+    await until(()=>evaluate('!document.querySelector("dialog[open], [role=dialog]")'),'Escape closes modal');
   }
   await send('Network.emulateNetworkConditions',{offline:false,latency:300,downloadThroughput:100000,uploadThroughput:50000});
   await navigate('/today');

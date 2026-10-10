@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Button, EmptyState, Field, LoadingState, Notice, PageHeader, Panel, TableWrap } from "@/components/ui";
+import { MobileFilters } from "@/components/mobile-filters";
 import { ApiError, apiRequest, type ApiEnvelope } from "@/lib/api-client";
 import { formatDateTime } from "@/lib/format";
 
@@ -22,8 +23,8 @@ export default function AdminAuditPage() {
     <PageHeader title="Nhật ký hệ thống" description="Nhật ký bất biến hỗ trợ truy vết quyết định và thay đổi tài khoản/cấu hình." action={<Button type="button" variant="secondary" onClick={() => void load(action)} disabled={loading}>Làm mới</Button>} />
     {error && <Notice kind="error">{error}</Notice>}
     <Panel title="Hoạt động gần đây" description={rows.length + " sự kiện đang hiển thị, tối đa 100."}>
-      <form className="toolbar" onSubmit={search}><Field label="Lọc theo thao tác"><input value={action} onChange={e => setAction(e.target.value)} placeholder="Ví dụ account." /></Field><Button type="submit" variant="secondary" disabled={loading}>Lọc</Button></form>
-      {loading ? <LoadingState /> : rows.length === 0 ? <EmptyState title="Chưa có hoạt động phù hợp" /> : <TableWrap><table><thead><tr><th>Thời gian</th><th>Thao tác</th><th>Đối tượng</th><th>Người thao tác</th><th>Lý do / dữ liệu</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td>{formatDateTime(row.created_at)}</td><td><strong>{row.action}</strong></td><td>{row.entity_type}<small>{row.entity_id ?? "—"}</small></td><td>{row.actor_user_id ?? "Tác vụ hệ thống"}</td><td>{row.reason || "—"}<details><summary>Xem thay đổi</summary><pre className="audit-json">{JSON.stringify({ before: row.before_json, after: row.after_json }, null, 2)}</pre></details></td></tr>)}</tbody></table></TableWrap>}
+      <MobileFilters><form className="toolbar" onSubmit={search}><Field label="Lọc theo thao tác"><input value={action} onChange={e => setAction(e.target.value)} placeholder="Ví dụ account." /></Field><Button type="submit" variant="secondary" disabled={loading}>Lọc</Button></form></MobileFilters>
+      {loading ? <LoadingState /> : rows.length === 0 ? <EmptyState title="Chưa có hoạt động phù hợp" /> : <TableWrap><table><thead><tr><th>Thời gian</th><th>Thao tác</th><th>Đối tượng</th><th>Người thao tác</th><th>Lý do / dữ liệu</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td data-label="Thời gian">{formatDateTime(row.created_at)}</td><td data-label="Thao tác"><strong>{row.action}</strong></td><td data-label="Đối tượng">{row.entity_type}<small>{row.entity_id ?? "—"}</small></td><td data-label="Người thao tác">{row.actor_user_id ?? "Tác vụ hệ thống"}</td><td data-label="Lý do / dữ liệu">{row.reason || "—"}<details><summary>Xem thay đổi</summary><pre className="audit-json">{JSON.stringify({ before: row.before_json, after: row.after_json }, null, 2)}</pre></details></td></tr>)}</tbody></table></TableWrap>}
     </Panel>
   </>;
 }

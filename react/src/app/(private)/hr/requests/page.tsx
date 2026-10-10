@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Button, EmptyState, Field, LoadingState, Notice, PageHeader, Panel, TableWrap } from "@/components/ui";
+import { Dialog } from "@/components/dialog";
 import { ApiError, apiRequest, type ApiEnvelope } from "@/lib/api-client";
 import { formatDate, formatDateTime, formatTime } from "@/lib/format";
 
@@ -15,6 +16,7 @@ function personOf(value: RequestItem["employees"]) { return Array.isArray(value)
 export default function HrRequestsPage() {
   const [data, setData] = useState<RequestData>({ leave: [], overtime: [], corrections: [] }); const [kind, setKind] = useState<Kind>("leave");
   const [notes, setNotes] = useState<Record<string, string>>({}); const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(""); const [error, setError] = useState(""); const [message, setMessage] = useState("");
+  const [selected, setSelected] = useState<RequestItem | null>(null);
   const load = useCallback(async () => { try { const result = await apiRequest<ApiEnvelope<RequestData>>("/api/v1/hr/requests"); setError(""); setData(result.data); } catch (cause) { setError(cause instanceof ApiError ? cause.message : "Không tải được hàng đợi duyệt."); } finally { setLoading(false); } }, []);
   useEffect(() => {
     let active = true;
@@ -25,10 +27,11 @@ export default function HrRequestsPage() {
     return () => { active = false; };
   }, []);
   async function decide(item: RequestItem, decision: "approved" | "rejected") {
+    if (busy) return;
     const note = (notes[item.id] ?? "").trim();
     if (decision === "rejected" && note.length < 3) { setError("Nhập ghi chú từ chối từ 3 ký tự trở lên."); return; }
     setBusy(item.id); setError(""); setMessage("");
-    try { await apiRequest("/api/v1/requests/" + (kind === "corrections" ? "correction" : kind) + "/" + item.id + "/decision", { method: "POST", body: JSON.stringify({ decision, note: note || undefined }) }); setMessage("Đã " + (decision === "approved" ? "duyệt" : "từ chối") + " yêu cầu."); await load(); }
+    try { await apiRequest("/api/v1/requests/" + (kind === "corrections" ? "correction" : kind) + "/" + item.id + "/decision", { method: "POST", body: JSON.stringify({ decision, note: note || undefined }) }); setMessage("Đã " + (decision === "approved" ? "duyệt" : "từ chối") + " yêu cầu."); await load(); setSelected(null); }
     catch (cause) { setError(cause instanceof ApiError ? cause.message : "Không lưu được quyết định."); }
     finally { setBusy(""); }
   }
@@ -39,11 +42,12 @@ export default function HrRequestsPage() {
     <Panel title="Hàng đợi duyệt" description="Tối đa 100 yêu cầu đang chờ cho mỗi loại.">
       <div className="tabs" role="tablist" aria-label="Loại yêu cầu">{(Object.keys(title) as Kind[]).map(value => <button key={value} className="tab-button" role="tab" aria-selected={kind === value} type="button" onClick={() => setKind(value)}>{title[value]} ({data[value].length})</button>)}</div>
       {loading ? <LoadingState /> : rows.length === 0 ? <EmptyState title="Không có yêu cầu đang chờ" description="Các yêu cầu mới gửi sẽ xuất hiện ở đây." /> : <TableWrap><table><thead><tr><th>Nhân viên</th><th>Chi tiết</th><th>Lý do</th><th>Gửi lúc</th><th>Quyết định</th></tr></thead><tbody>{rows.map(item => { const person = personOf(item.employees); return <tr key={item.id}>
-        <td><strong>{person?.full_name ?? "Nhân viên"}</strong><small>{person?.employee_code ?? item.employee_id}</small></td>
-        <td>{kind === "leave" ? <>{formatDate(String(item.start_date ?? ""))} – {formatDate(String(item.end_date ?? ""))}<small>{Number(item.total_days ?? 0)} ngày · {String((item.leave_types as { name?: string } | null)?.name ?? "Nghỉ phép")}</small></> : kind === "overtime" ? <>{formatDate(String(item.work_date ?? ""))}<small>{formatTime(String(item.start_at ?? ""))} – {formatTime(String(item.end_at ?? ""))}</small></> : <>{formatDate(String(item.work_date ?? ""))}<small>Vào: {formatTime(String(item.proposed_check_in ?? ""))} · Ra: {formatTime(String(item.proposed_check_out ?? ""))}</small></>}</td>
-        <td>{item.reason || "—"}</td><td>{formatDateTime(item.created_at)}</td>
-        <td>{item.can_decide ? <div className="review-controls"><Field label="Ghi chú quyết định"><input value={notes[item.id] ?? ""} onChange={e => setNotes({ ...notes, [item.id]: e.target.value })} placeholder="Bắt buộc nếu từ chối" maxLength={2000} /></Field><div className="table-actions"><Button type="button" disabled={busy === item.id} onClick={() => void decide(item, "approved")}>Duyệt</Button><Button type="button" variant="danger" disabled={busy === item.id} onClick={() => void decide(item, "rejected")}>Từ chối</Button></div></div> : <span className="muted-text">Không thể tự duyệt yêu cầu này.</span>}</td>
+        <td data-label="Nhân viên"><strong>{person?.full_name ?? "Nhân viên"}</strong><small>{person?.employee_code ?? item.employee_id}</small></td>
+        <td data-label="Chi tiết">{kind === "leave" ? <>{formatDate(String(item.start_date ?? ""))} – {formatDate(String(item.end_date ?? ""))}<small>{Number(item.total_days ?? 0)} ngày · {String((item.leave_types as { name?: string } | null)?.name ?? "Nghỉ phép")}</small></> : kind === "overtime" ? <>{formatDate(String(item.work_date ?? ""))}<small>{formatTime(String(item.start_at ?? ""))} – {formatTime(String(item.end_at ?? ""))}</small></> : <>{formatDate(String(item.work_date ?? ""))}<small>Vào: {formatTime(String(item.proposed_check_in ?? ""))} · Ra: {formatTime(String(item.proposed_check_out ?? ""))}</small></>}</td>
+        <td data-label="Lý do">{item.reason || "—"}</td><td data-label="Gửi lúc">{formatDateTime(item.created_at)}</td>
+        <td data-label="Quyết định"><div className="staff-desktop-review">{item.can_decide ? <div className="review-controls"><Field label="Ghi chú quyết định"><input disabled={Boolean(busy)} value={notes[item.id] ?? ""} onChange={e => setNotes({ ...notes, [item.id]: e.target.value })} placeholder="Bắt buộc nếu từ chối" maxLength={2000} /></Field><div className="table-actions"><Button type="button" disabled={busy === item.id} onClick={() => void decide(item, "approved")}>Duyệt</Button><Button type="button" variant="danger" disabled={busy === item.id} onClick={() => void decide(item, "rejected")}>Từ chối</Button></div></div> : <span className="muted-text">Không thể tự duyệt yêu cầu này.</span>}</div>{item.can_decide && <Button type="button" className="staff-phone-review" disabled={Boolean(busy)} onClick={() => { setError(""); setSelected(item); }}>Xem & duyệt yêu cầu</Button>}{!item.can_decide && <span className="staff-phone-review muted-text">Không thể tự duyệt yêu cầu này.</span>}</td>
       </tr>; })}</tbody></table></TableWrap>}
     </Panel>
+    {selected && <Dialog title={"Duyệt đơn " + title[kind].toLowerCase()} busy={Boolean(busy)} onClose={() => setSelected(null)}><p><strong>{personOf(selected.employees)?.full_name ?? "Nhân viên"}</strong></p><p>{kind === "leave" ? `${formatDate(String(selected.start_date ?? ""))} – ${formatDate(String(selected.end_date ?? ""))} · ${Number(selected.total_days ?? 0)} ngày` : `${formatDate(String(selected.work_date ?? ""))} · ${kind === "overtime" ? "Từ " + formatTime(String(selected.start_at ?? "")) + " đến " + formatTime(String(selected.end_at ?? "")) : "Vào: " + formatTime(String(selected.proposed_check_in ?? "")) + " · Ra: " + formatTime(String(selected.proposed_check_out ?? ""))}`}</p><p>Lý do: {selected.reason || "—"}</p>{error && <Notice kind="error">{error}</Notice>}{selected.can_decide ? <div className="review-controls"><Field label="Ghi chú quyết định"><input disabled={Boolean(busy)} value={notes[selected.id] ?? ""} onChange={e => setNotes({ ...notes, [selected.id]: e.target.value })} placeholder="Bắt buộc nếu từ chối" maxLength={2000} /></Field><div className="table-actions"><Button type="button" disabled={busy === selected.id} onClick={() => void decide(selected, "approved")}>Duyệt</Button><Button type="button" variant="danger" disabled={busy === selected.id} onClick={() => void decide(selected, "rejected")}>Từ chối</Button></div></div> : <span className="muted-text">Không thể tự duyệt yêu cầu này.</span>}</Dialog>}
   </>;
 }
