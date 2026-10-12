@@ -38,6 +38,7 @@ export function formatMinutes(value: number | null | undefined): string {
 }
 
 export const statusLabels: Record<string, string> = {
+  inactive: "Ngừng làm việc", expired: "Đã hết hạn", online: "Trực tuyến", offline: "Ngoại tuyến",
   active: "Đang hoạt động", disabled: "Đã khóa", pending: "Chờ duyệt", pending_review: "Chờ HR đối soát",
   approved: "Đã duyệt", rejected: "Từ chối", cancelled: "Đã hủy", open: "Đang mở",
   hr_reviewed: "HR đã kiểm tra", locked: "Đã khóa kỳ", needs_review: "Cần kiểm tra", reviewed: "Đã kiểm tra",
@@ -47,3 +48,14 @@ export const statusLabels: Record<string, string> = {
 export function labelStatus(status: string | null | undefined): string {
   return status ? statusLabels[status] ?? status : "—";
 }
+
+const exceptionLabels: Record<string, string> = {
+  incomplete_attendance: "Thiếu mốc vào hoặc ra",
+  invalid_attendance_interval: "Thứ tự giờ vào / ra chưa hợp lệ",
+  attendance_overlaps_approved_leave: "Chấm công trùng thời gian nghỉ phép",
+  missing_attendance: "Chưa có chấm công",
+  offline_sync_review: "Mốc đồng bộ cần kiểm tra",
+  photo_pending: "Ảnh đang chờ tải",
+  photo_failed: "Ảnh tải chưa thành công",
+};
+export function labelException(value: string) { return exceptionLabels[value] ?? value; }

@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Dialog } from "@/components/dialog";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { ApiError, apiRequest, type ApiEnvelope } from "@/lib/api-client";
 import { businessDate, formatDate, formatDateTime, formatTime } from "@/lib/format";
-import { Button, EmptyState, Notice, Panel, StatusBadge } from "@/components/ui";
+import { Button, Field, LoadingState, Notice, PageHeader, Panel, StatusBadge } from "@/components/ui";
 import { countUnassignedQueuedAttendance, listQueuedAttendance, removeQueuedAttendance, saveQueuedAttendance, syncQueuedAttendance, type QueuedAttendance } from "./offline-queue";
 
 type AttendanceEvent = { id: string; kind: "check_in" | "check_out"; occurred_at: string; work_date: string; source: string; evidence_status: string; location_flag: string | null };
@@ -25,7 +25,7 @@ async function compressPhoto(file: File): Promise<Blob> {
       source = bitmap; width = bitmap.width; height = bitmap.height;
     } else {
       objectUrl = URL.createObjectURL(file);
-      const image = new Image();
+      const image = new window.Image();
       image.src = objectUrl;
       await image.decode();
       source = image; width = image.naturalWidth; height = image.naturalHeight;
@@ -68,6 +68,7 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   const [queue, setQueue] = useState<QueuedAttendance[]>([]);
   const [unassignedCount, setUnassignedCount] = useState(0);
   const [photo, setPhoto] = useState<Blob | null>(null);
+  const [processingPhoto, setProcessingPhoto] = useState(false);
   const [photoName, setPhotoName] = useState("");
   const [includeLocation, setIncludeLocation] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -78,7 +79,13 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   const [error, setError] = useState("");
   const [conflict, setConflict] = useState(false);
   const [message, setMessage] = useState("");
-  const [mobileCapture, setMobileCapture] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState("");
+  const previewRef = useRef("");
+  useEffect(() => () => { if (previewRef.current) URL.revokeObjectURL(previewRef.current); }, []);
+  function clearPhoto() {
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+    previewRef.current = ""; setPhotoPreview(""); setPhoto(null); setPhotoName("");
+  }
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     const first = window.setTimeout(() => setNow(new Date()), 0);
@@ -163,15 +170,21 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   async function choosePhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    setPhoto(null); setPhotoName(""); setError("");
+    clearPhoto(); setError("");
     if (!file) return;
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { setError("Ảnh cần ở định dạng JPG, PNG hoặc WebP."); return; }
-    try { setPhoto(await compressPhoto(file)); setPhotoName(file.name); }
+    setProcessingPhoto(true);
+    try {
+      const blob = await compressPhoto(file);
+      setPhoto(blob); setPhotoName(file.name);
+      previewRef.current = URL.createObjectURL(blob); setPhotoPreview(previewRef.current);
+    }
     catch (cause) { setError(cause instanceof Error ? cause.message : "Không xử lý được ảnh."); }
+    finally { setProcessingPhoto(false); }
   }
 
   async function submitAttendance() {
-    if (!nextKind || busy) return;
+    if (!nextKind || busy || processingPhoto) return;
     if (!employeeId) { setError("Không xác định được hồ sơ nhân viên. Hãy đăng nhập lại."); return; }
     setBusy(true); setError(""); setConflict(false); setMessage("");
     try {
@@ -193,7 +206,7 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
 
       if (!navigator.onLine) {
         setMessage(`Đã lưu trên thiết bị. Ứng dụng sẽ đồng bộ khi có mạng.${locationNote}`);
-        await refresh(); setMobileCapture(false);
+        await refresh();
         return;
       }
 
@@ -212,14 +225,14 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
           catch (cause) {
             await saveQueuedAttendance({ ...item, status: "event_synced_photo_pending" });
             setMessage(`Đã ghi nhận giờ chấm. Ảnh đang chờ đồng bộ${cause instanceof Error ? `: ${cause.message}` : "."}${locationNote}`);
-            await refresh(); setMobileCapture(false);
+            await refresh();
             return;
           }
         }
         await removeQueuedAttendance(key);
         setMessage(`Đã ghi nhận ${item.kind === "check_in" ? "giờ vào" : "giờ ra"} lúc ${formatTime(result.data.occurred_at)}.${locationNote}`);
-        setPhoto(null); setPhotoName("");
-        await refresh(); setMobileCapture(false);
+        clearPhoto();
+        await refresh();
       } catch (cause) {
         if (cause instanceof ApiError && cause.status < 500) {
           await saveQueuedAttendance({ ...item, requires_attention: true, status: "requires_attention", last_error: cause.message });
@@ -240,60 +253,46 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
     await refresh();
   }
 
-  return <div className="reference-attendance">
-    {!online && <Notice kind="warning">Bạn đang offline. Lượt chấm mới được lưu trên thiết bị và chưa được máy chủ xác nhận.</Notice>}
-    {unassignedCount > 0 && <Notice kind="warning">Thiết bị còn {unassignedCount} lượt chấm từ phiên bản cũ chưa xác định được tài khoản. Các lượt này không được tự đồng bộ để tránh ghi nhầm công; hãy liên hệ HR để đối soát.</Notice>}
+  return <div className="workspace-home">
+    <PageHeader title="Chấm công" description={formatDate(today) + " · Giờ Việt Nam"} action={<Button type="button" variant="secondary" disabled={busy || processingPhoto || loading} onClick={() => void refresh()}>Làm mới</Button>} />
+    {!online && <Notice kind="warning">Bạn đang mất mạng. Lượt chấm được lưu trên thiết bị và sẽ gửi khi kết nối trở lại.</Notice>}
+    {unassignedCount > 0 && <Notice kind="warning">Thiết bị còn {unassignedCount} lượt chấm từ phiên bản cũ chưa xác định được tài khoản. Hãy liên hệ HR để đối soát.</Notice>}
     {error && <Notice kind="error">{error}</Notice>}
-    {conflict && <p><Link className="text-button" href="/my-requests">Gửi yêu cầu sửa công</Link></p>}
+    {conflict && <Link className="text-button" href="/my-requests?tab=correction">Gửi yêu cầu sửa công</Link>}
     {message && <Notice kind={message.startsWith("Đã ghi nhận") || message.startsWith("Đã đồng bộ") ? "success" : "info"}>{message}</Notice>}
-    <section className="phone-attendance">
-      <header className="phone-attendance-heading"><h1>Chấm công của tôi</h1><span>Theo dõi ca làm hôm nay</span></header>
-      <div className="phone-clock-card"><p>{now ? new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" }).format(now) : formatDate(today)}</p><strong className="phone-live-clock">{now ? new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hourCycle: "h23", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(now) : "—"}</strong><div>◷ Ca làm hôm nay</div><b>{policy ? `${policy.start_time.slice(0, 5)}–${policy.end_time.slice(0, 5)}` : policyUnavailable ? "Chưa tải được ca làm" : "Chưa có ca hiệu lực"}</b></div>
-      <div className="phone-attendance-body"><div className="phone-status-row"><span aria-hidden="true">⌖</span><div><strong>Vị trí chấm công</strong><small>{includeLocation ? "Lấy vị trí khi xác nhận" : "Vị trí là tùy chọn"}</small></div></div><div className="phone-status-row"><span aria-hidden="true">⌁</span><div><strong>{online ? "Kết nối sẵn sàng" : "Không có kết nối mạng"}</strong><small className={online ? "phone-online" : ""}>{online ? "Thiết bị đang trực tuyến" : "Lượt chấm sẽ được lưu trên thiết bị"}</small></div></div><section className="phone-timeline"><h2>Dòng thời gian hôm nay</h2>{loading ? <p role="status">Đang tải…</p> : !checkIn ? <p>Chưa có lượt chấm hôm nay</p> : <><div><i /><span>Vào ca</span><b>{formatTime("occurred_at" in checkIn ? checkIn.occurred_at : checkIn.device_occurred_at)}</b></div>{checkOut && <div><i /><span>Ra ca</span><b>{formatTime("occurred_at" in checkOut ? checkOut.occurred_at : checkOut.device_occurred_at)}</b></div>}<p>{localToday.length ? "Có lượt chấm đang chờ đồng bộ" : "Lượt chấm đã được máy chủ ghi nhận"}</p></>}</section></div>
-      <div className="phone-check-action">{nextKind ? <button type="button" disabled={loading || busy} onClick={() => { setError(""); setMobileCapture(true); }}>▣ {nextKind === "check_in" ? "Chấm vào" : "Chấm ra"}</button> : <Link className="button button-primary" href="/my-attendance">Xem lịch sử chấm công</Link>}</div>
-    </section>
-    {queue.length > 0 && <div className="phone-attendance phone-queue">      <Panel title="Đồng bộ trên thiết bị" description="Event offline được giữ trong IndexedDB cho đến khi máy chủ xác nhận.">
-        <div className="queue-summary"><strong>{queue.length}</strong><span>lượt đang chờ</span><Button type="button" variant="secondary" disabled={!online || syncing || queue.length === 0} onClick={() => void sync(true)}>{syncing ? "Đang đồng bộ…" : "Đồng bộ ngay"}</Button></div>
-        {queue.length > 0 ? <div className="queue-list">{queue.map((item) => <div className="queue-item" key={item.idempotency_key}>
-          <div><strong>{item.kind === "check_in" ? "Chấm vào" : "Chấm ra"} · {formatDateTime(item.device_occurred_at)}</strong><small>{item.requires_attention ? "Có xung đột; hãy gửi yêu cầu sửa công." : item.last_error ?? "Đã lưu trên thiết bị, chờ xác nhận máy chủ."}</small></div>
-          <button className="text-button" type="button" onClick={() => discardQueue(item.idempotency_key)}>Xóa</button>
-        </div>)}</div> : <EmptyState title="Không có lượt chấm chờ" description="Lượt chấm được giữ ở đây nếu mạng bị gián đoạn." />}
-      </Panel></div>}
-    {mobileCapture && <Dialog title={nextKind === "check_out" ? "Chấm ra" : "Chấm vào"} className="phone-camera-sheet" busy={busy} onClose={() => setMobileCapture(false)}><p>Ảnh và vị trí là tùy chọn. Xác nhận để ghi nhận giờ chấm công.</p><label className="reference-photo-label"><input className="reference-photo-input" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={busy} onChange={choosePhoto} />{photoName ? `Ảnh sẵn sàng: ${photoName}` : "Chọn hoặc chụp ảnh của bạn"}</label><div className="reference-attendance-options"><label className="check-item"><input type="checkbox" checked={includeLocation} disabled={busy} onChange={event => setIncludeLocation(event.target.checked)} />Ghi vị trí (tùy chọn)</label>{photo && <Button type="button" variant="ghost" disabled={busy} onClick={() => { setPhoto(null); setPhotoName(""); }}>Bỏ ảnh</Button>}</div>{error && <Notice kind="error">{error}</Notice>}<button type="button" className="phone-camera-confirm" disabled={!nextKind || busy || loading} onClick={submitAttendance}>{busy ? "Đang ghi nhận…" : "Xác nhận chấm công"}</button></Dialog>}
-    <div className="desktop-attendance-content">
     <div className="today-layout">
-      <Panel title="Chấm công" description={nextKind === "check_out" ? "Ghi nhận giờ ra ca của bạn." : nextKind ? "Ghi nhận giờ vào ca của bạn." : "Đã chấm công hôm nay. Cảm ơn bạn!"} action={<span className={`connection-pill ${online ? "connection-online" : "connection-offline"}`}>{online ? "Có kết nối" : "Đang offline"}</span>}>
-        <p className="subtle-note">{policy ? `Ca chung có hiệu lực: ${policy.start_time.slice(0, 5)}–${policy.lunch_start.slice(0, 5)} và ${policy.lunch_end.slice(0, 5)}–${policy.end_time.slice(0, 5)}.` : policyUnavailable ? "Không tải được ca chung hôm nay. Hãy thử làm mới trang." : "Chưa có ca chung hiệu lực hôm nay."}</p>
-        <label className="reference-photo-label"><input className="reference-photo-input" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={choosePhoto} /><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M3 7h5l2-3h4l2 3h5v14H3Z" /><circle cx="12" cy="14" r="4" /></svg>{photoName ? `Ảnh sẵn sàng: ${photoName}` : "Chọn hoặc chụp ảnh của bạn (tùy chọn)"}</label>
-        <div className="reference-attendance-options"><label className="check-item"><input type="checkbox" checked={includeLocation} onChange={event => setIncludeLocation(event.target.checked)} />Ghi vị trí nếu thiết bị cho phép (tùy chọn)</label>{photo && <Button type="button" variant="ghost" onClick={() => { setPhoto(null); setPhotoName(""); }}>Bỏ ảnh đã chọn</Button>}</div>
-        <div className="attendance-action">
-          {nextKind ? <Button type="button" className="button-large" disabled={busy || loading} onClick={submitAttendance}>
-            {busy ? "Đang ghi nhận…" : nextKind === "check_in" ? "Chấm vào" : nextKind === "check_out" ? "Chấm ra" : "Đã đủ lượt chấm hôm nay"}
-          </Button> : <Link className="button button-primary button-large" href="/my-attendance">Xem lịch sử chấm công</Link>}
-          {!nextKind && <Link className="text-button" href="/my-requests">Gửi yêu cầu sửa công</Link>}
-          <span className="attendance-next">{nextKind ? `Giờ chấm được ghi nhận khi xác nhận${checkTime ? ` · mốc lịch ${checkTime}` : ""}` : "Bạn đã chấm đủ vào và ra."}</span>
-        </div>
-        <p className="subtle-note">Ảnh và GPS là tùy chọn. Bạn vẫn có thể chấm công khi không có ảnh hoặc vị trí.</p>
-        <div className="reference-attendance-status">
-          <div><span>Vào ca</span><strong>{checkIn ? formatTime("occurred_at" in checkIn ? checkIn.occurred_at : checkIn.device_occurred_at) : "—"}</strong><small>{checkIn && !("id" in checkIn) ? "Đang chờ đồng bộ" : ""}</small></div>
-          <div><span>Ra ca</span><strong>{checkOut ? formatTime("occurred_at" in checkOut ? checkOut.occurred_at : checkOut.device_occurred_at) : "—"}</strong><small>{checkOut && !("id" in checkOut) ? "Đang chờ đồng bộ" : ""}</small></div>
-          <div><span>Hôm nay</span><strong>{checkOut ? "Đã hoàn tất" : checkIn ? "Đang trong ca" : "Chưa vào ca"}</strong><small>{formatDate(today)}</small></div>
-        </div>
-        <div className="reference-week-header"><h2>Tuần này</h2><span>{new Set(weekEvents.map(event => event.work_date)).size} ngày đã chấm</span></div>
-        <div className="reference-week">{["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((label, index) => { const date = new Date(`${weekStart}T00:00:00Z`); date.setUTCDate(date.getUTCDate() + index); const iso = date.toISOString().slice(0, 10); return <Link key={label} href={`/my-attendance?month=${iso.slice(0, 7)}`} aria-current={iso === today ? "date" : undefined} data-checked={weekEvents.some(event => event.work_date === iso)}><strong>{date.getUTCDate()}</strong><span>{label}</span></Link>; })}</div>
+      <Panel>
+        <div className="attendance-overview"><div><small>Hôm nay · {formatDate(today)}</small><strong>{now ? new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hourCycle: "h23", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(now) : "—"}</strong></div><span className="badge">{online ? "Có kết nối" : "Đang offline"}</span></div>
+        {loading ? <LoadingState label="Đang tải giờ chấm…" /> : <div className="attendance-punches">
+          <div><span>Vào ca</span><strong>{checkIn ? formatTime("occurred_at" in checkIn ? checkIn.occurred_at : checkIn.device_occurred_at) : "—"}</strong><small>{checkIn ? "id" in checkIn ? "Đã ghi nhận" : "Chờ đồng bộ" : "Chưa chấm vào"}</small></div>
+          <div><span>Ra ca</span><strong>{checkOut ? formatTime("occurred_at" in checkOut ? checkOut.occurred_at : checkOut.device_occurred_at) : "—"}</strong><small>{checkOut ? "id" in checkOut ? "Đã ghi nhận" : "Chờ đồng bộ" : "Chưa chấm ra"}</small></div>
+        </div>}
+        <p className="subtle-note">{policy ? `Ca chung: ${policy.start_time.slice(0, 5)}–${policy.end_time.slice(0, 5)} · Nghỉ ${policy.lunch_start.slice(0, 5)}–${policy.lunch_end.slice(0, 5)}` : policyUnavailable ? "Chưa tải được ca chung. Chọn Làm mới để thử lại." : "Chưa có ca chung hiệu lực hôm nay."}</p>
+        {nextKind && <details className="attendance-options"><summary>Thêm ảnh hoặc vị trí (tùy chọn)</summary>
+          <Field label="Ảnh chấm công" hint="Chụp hoặc chọn ảnh JPG, PNG, WebP. Ảnh được nén trước khi gửi."><input type="file" accept="image/jpeg,image/png,image/webp" capture="user" disabled={busy || processingPhoto} onChange={choosePhoto} /></Field>
+          {photoPreview && <div className="photo-preview"><Image src={photoPreview} width={80} height={80} alt="Ảnh chấm công đã chọn" unoptimized /><div><strong>Ảnh sẵn sàng</strong><p className="subtle-note">{photoName}</p><Button type="button" variant="ghost" disabled={busy} onClick={clearPhoto}>Bỏ ảnh đã chọn</Button></div></div>}
+          <label className="check-item"><input type="checkbox" checked={includeLocation} disabled={busy} onChange={event => setIncludeLocation(event.target.checked)} />Ghi vị trí nếu thiết bị cho phép</label>
+        </details>}
+        {processingPhoto && <p role="status">Đang xử lý ảnh…</p>}
+        {nextKind ? <Button type="button" className="button-large attendance-submit" disabled={busy || processingPhoto || loading || !employeeId} onClick={submitAttendance}>{busy ? "Đang ghi nhận…" : nextKind === "check_in" ? "Chấm vào" : "Chấm ra"}</Button> : <Link className="button button-secondary attendance-submit" href="/my-attendance">Xem lịch sử chấm công</Link>}
+        <p className="subtle-note">{nextKind ? `Giờ chấm được ghi nhận khi bấm nút${checkTime ? ` · mốc lịch ${checkTime}` : ""}. Không bắt buộc ảnh hoặc vị trí.` : "Bạn đã có giờ vào và giờ ra hôm nay."}</p>
+        {!nextKind && <Link className="text-button" href="/my-requests?tab=correction">Cần sửa giờ chấm?</Link>}
+        {!employeeId && <Notice kind="warning">Tài khoản chưa được liên kết hồ sơ nhân viên. Liên hệ quản trị viên để chấm công.</Notice>}
       </Panel>
-
-      <Panel title="Đồng bộ trên thiết bị" description="Event offline được giữ trong IndexedDB cho đến khi máy chủ xác nhận.">
-        <div className="queue-summary"><strong>{queue.length}</strong><span>lượt đang chờ</span><Button type="button" variant="secondary" disabled={!online || syncing || queue.length === 0} onClick={() => void sync(true)}>{syncing ? "Đang đồng bộ…" : "Đồng bộ ngay"}</Button></div>
-        {queue.length > 0 ? <div className="queue-list">{queue.map((item) => <div className="queue-item" key={item.idempotency_key}>
-          <div><strong>{item.kind === "check_in" ? "Chấm vào" : "Chấm ra"} · {formatDateTime(item.device_occurred_at)}</strong><small>{item.requires_attention ? "Lượt chấm cần đối soát; hãy gửi yêu cầu sửa công." : item.status === "event_synced_photo_pending" ? "Đã ghi nhận giờ chấm; ảnh đang chờ đồng bộ." : item.last_error ?? "Đã lưu trên thiết bị, chờ xác nhận máy chủ."}</small>{item.requires_attention && <Link className="text-button" href="/my-requests">Gửi yêu cầu sửa công</Link>}</div>
-          <button className="text-button" type="button" onClick={() => discardQueue(item.idempotency_key)}>Xóa</button>
-        </div>)}</div> : <EmptyState title="Không có lượt chấm chờ" description="Lượt chấm được giữ ở đây nếu mạng bị gián đoạn." />}
-      </Panel>
+      <div className="today-side">
+        <Panel title="Tuần này" description={new Set(weekEvents.map(event => event.work_date)).size + " ngày có lượt chấm đã đồng bộ"}>
+          <div className="reference-week">{["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((label, index) => {
+            const date = new Date(`${weekStart}T00:00:00Z`); date.setUTCDate(date.getUTCDate() + index); const iso = date.toISOString().slice(0, 10);
+            const checked = weekEvents.some(event => event.work_date === iso);
+            return <div key={label} className={`${iso === today ? "today" : ""} ${checked ? "checked" : ""}`}><small>{label}</small><strong>{date.getUTCDate()}</strong><span aria-label={checked ? "Đã chấm" : "Chưa có lượt chấm"}>{checked ? "✓" : "—"}</span></div>;
+          })}</div>
+          <Link className="text-button" href={`/my-attendance?month=${today.slice(0, 7)}`}>Xem lịch công tháng →</Link>
+        </Panel>
+        <Panel title="Đồng bộ trên thiết bị" description={queue.length ? `${queue.length} lượt đang chờ xử lý` : "Không có lượt chấm chờ đồng bộ"}>
+          {queue.length ? <><div className="queue-summary"><Button type="button" variant="secondary" disabled={!online || syncing} onClick={() => void sync(true)}>{syncing ? "Đang đồng bộ…" : "Đồng bộ ngay"}</Button></div><div className="queue-list">{queue.map(item => <div className="queue-item" key={item.idempotency_key}><strong>{item.kind === "check_in" ? "Chấm vào" : "Chấm ra"} · {formatDateTime(item.device_occurred_at)}</strong><p>{item.requires_attention ? "Lượt chấm cần đối soát; hãy gửi yêu cầu sửa công." : item.status === "event_synced_photo_pending" ? "Đã ghi nhận giờ chấm; ảnh đang chờ đồng bộ." : item.last_error ?? "Đã lưu trên thiết bị, chờ xác nhận máy chủ."}</p><div className="inline-actions">{item.requires_attention && <Link className="text-button" href="/my-requests?tab=correction">Gửi yêu cầu sửa công</Link>}<button className="text-button" type="button" onClick={() => void discardQueue(item.idempotency_key)}>Xóa</button></div></div>)}</div></> : <p className="muted-text">Khi mất mạng, lượt chấm sẽ được giữ tại đây cho đến khi gửi thành công.</p>}
+        </Panel>
+      </div>
     </div>
-    <Panel title="Lượt chấm hôm nay" description="Lượt chấm ngoài văn phòng vẫn được ghi nhận; nhãn vị trí chỉ để HR tham khảo.">
-      {loading ? <p className="table-loading">Đang tải…</p> : events.length === 0 ? <EmptyState title="Chưa có lượt chấm từ máy chủ" description={queue.length ? "Dữ liệu trong hàng đợi chưa được tính là đã đồng bộ." : "Khi chấm vào hoặc ra, lịch sử sẽ hiển thị tại đây."} /> : <div className="table-wrap"><table><thead><tr><th>Loại</th><th>Giờ ghi nhận</th><th>Nguồn</th><th>Ảnh</th><th>Vị trí</th></tr></thead><tbody>{events.map((event) => <tr key={event.id}><td>{event.kind === "check_in" ? "Chấm vào" : "Chấm ra"}</td><td>{formatDateTime(event.occurred_at)}</td><td>{event.source === "offline" ? "Đồng bộ offline" : "Trực tuyến"}</td><td><StatusBadge value={event.evidence_status === "pending" ? "pending_upload" : event.evidence_status} /></td><td>{event.location_flag === "outside" ? "Ngoài văn phòng" : event.location_flag === "inside" ? "Trong văn phòng" : event.location_flag === "inaccurate" ? "GPS chưa chính xác" : "Không có vị trí"}</td></tr>)}</tbody></table></div>}
-    </Panel>
-    </div>
+    {events.length > 0 && <Panel title="Lượt chấm đã ghi nhận"><div className="table-wrap"><table><thead><tr><th>Loại</th><th>Giờ ghi nhận</th><th>Nguồn</th><th>Ảnh</th><th>Vị trí</th></tr></thead><tbody>{events.map(event => <tr key={event.id}><td data-label="Loại">{event.kind === "check_in" ? "Chấm vào" : "Chấm ra"}</td><td data-label="Giờ ghi nhận">{formatDateTime(event.occurred_at)}</td><td data-label="Nguồn">{event.source === "offline" ? "Đồng bộ offline" : "Trực tuyến"}</td><td data-label="Ảnh"><StatusBadge value={event.evidence_status === "pending" ? "pending_upload" : event.evidence_status} /></td><td data-label="Vị trí">{event.location_flag === "outside" ? "Ngoài văn phòng" : event.location_flag === "inside" ? "Trong văn phòng" : event.location_flag === "inaccurate" ? "GPS chưa chính xác" : "Không có vị trí"}</td></tr>)}</tbody></table></div></Panel>}
   </div>;
 }

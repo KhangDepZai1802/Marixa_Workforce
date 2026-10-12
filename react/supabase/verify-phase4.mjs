@@ -126,12 +126,13 @@ async function verifyBrowser(user) {
     }
     await send('Page.navigate', { url: `${base}/today` });
     try {
-      await waitUntil(() => evaluate('location.pathname === "/today" && !![...document.querySelectorAll(".desktop-attendance-content button")].find(b => b.textContent.includes("Chấm ra"))'), 'check-out button');
+      await waitUntil(() => evaluate('location.pathname === "/today" && !![...document.querySelectorAll("main button")].find(b => b.textContent.includes("Chấm ra"))'), 'check-out button');
     } catch (error) {
       const state = await evaluate('({ path: location.pathname, text: document.body.innerText.slice(0, 500) })');
       throw new Error(`${error.message}; browser state: ${JSON.stringify(state)}`);
     }
     check('Browser shows check-out after check-in', true);
+    await evaluate('document.querySelector(".attendance-options").open=true');
     await evaluate(`(() => {
       const bytes = Uint8Array.from(atob(${JSON.stringify(Buffer.from(png).toString('base64'))}), c => c.charCodeAt(0));
       const transfer = new DataTransfer();
@@ -140,14 +141,14 @@ async function verifyBrowser(user) {
       input.files = transfer.files;
       input.dispatchEvent(new Event('change', { bubbles: true }));
     })()`);
-    await waitUntil(() => evaluate('document.body.innerText.includes("Ảnh sẵn sàng:")'), 'photo compression');
+    await waitUntil(() => evaluate('document.body.innerText.includes("Ảnh sẵn sàng")'), 'photo compression');
     check('Browser compresses optional photo', true);
-    await evaluate('[...document.querySelectorAll(".desktop-attendance-content button")].find(b => b.textContent.includes("Bỏ ảnh")).click()');
-    await waitUntil(() => evaluate('!document.body.innerText.includes("Ảnh sẵn sàng:")'), 'remove optional photo');
+    await evaluate('[...document.querySelectorAll("main button")].find(b => b.textContent.includes("Bỏ ảnh")).click()');
+    await waitUntil(() => evaluate('!document.body.innerText.includes("Ảnh sẵn sàng")'), 'remove optional photo');
     check('Browser allows removing selected photo', true);
     await send('Browser.setPermission', { permission: { name: 'geolocation' }, setting: 'denied', origin: base });
     await evaluate('document.querySelector("input[type=checkbox]").click()');
-    await evaluate('[...document.querySelectorAll(".desktop-attendance-content button")].find(b => b.textContent.includes("Chấm ra")).click()');
+    await evaluate('[...document.querySelectorAll("main button")].find(b => b.textContent.includes("Chấm ra")).click()');
     await waitUntil(() => evaluate('document.body?.innerText.includes("Không có vị trí")'), 'GPS denial notice');
     try {
       await waitUntil(() => evaluate('document.body?.innerText.includes("Xem lịch sử chấm công") && document.body?.innerText.includes("Đã ghi nhận giờ ra")'), 'completed-state history action');

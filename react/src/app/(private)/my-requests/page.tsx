@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button, EmptyState, Field, Notice, PageHeader, Panel, StatusBadge } from "@/components/ui";
 import { ApiError, apiRequest, type ApiEnvelope } from "@/lib/api-client";
+import { useQueryState } from "@/lib/use-query-state";
 import { Dialog } from "@/components/dialog";
 import { LeaveHistory, type LeaveRequest } from "@/components/leave-history";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -23,7 +24,11 @@ function dayParts(from: string, to: string, part: string) {
 
 export default function MyRequestsPage() {
   const [composerOpen, setComposerOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>("leave");
+  const { params, updateQuery } = useQueryState();
+  const tab: Tab = params.get("tab") === "overtime" ? "overtime" : params.get("tab") === "correction" ? "correction" : "leave";
+  const setTab = (value: Tab) => updateQuery({ tab: value, page: null });
+  const [cancelling, setCancelling] = useState<{ type: Tab; id: string } | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
   const [types, setTypes] = useState<LeaveType[]>([]);
   const [requests, setRequests] = useState<RequestsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,6 +96,7 @@ export default function MyRequestsPage() {
     event.preventDefault();
     if (!leaveTypeId || !startDate || !endDate || endDate < startDate) { setError("Hãy chọn loại nghỉ và khoảng ngày hợp lệ."); return; }
     if (startDate !== endDate && leavePart !== "full") { setError("Đơn nhiều ngày chỉ hỗ trợ nghỉ cả ngày. Hãy gửi đơn nửa ngày riêng."); return; }
+    if (dayParts(startDate, endDate, leavePart).length > 31) { setError("Một đơn hỗ trợ tối đa 31 ngày. Hãy chia thành các đơn ngắn hơn."); return; }
     const sent = await submit("/api/v1/leave-requests", { leave_type_id: leaveTypeId, start_date: startDate, end_date: endDate, day_parts: dayParts(startDate, endDate, leavePart), reason: leaveReason });
     if (sent) { setLeaveReason(""); setComposerOpen(false); }
   }
@@ -109,21 +115,27 @@ export default function MyRequestsPage() {
     if (sent) { setCorrectionReason(""); setComposerOpen(false); }
   }
 
-  async function cancelRequest(type: "leave" | "overtime" | "correction", id: string) {
-    const reason = window.prompt("Lý do hủy yêu cầu (tối thiểu 3 ký tự):");
-    if (!reason) return;
-    await submit(`/api/v1/requests/${type}/${id}/cancel`, { reason });
+  function cancelRequest(type: Tab, id: string) { setCancelReason(""); setError(""); setCancelling({ type, id }); }
+  async function confirmCancel(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!cancelling) return;
+    const sent = await submit(`/api/v1/requests/${cancelling.type}/${cancelling.id}/cancel`, { reason: cancelReason.trim() });
+    if (sent) { setCancelling(null); setMessage("Đã hủy yêu cầu."); }
   }
 
+  const requestCount = tab === "overtime" ? requests?.overtime.length ?? 0 : requests?.corrections.length ?? 0;
+  const pageCount = Math.max(1, Math.ceil(requestCount / 10));
+  const page = Math.min(pageCount, Math.max(1, Number(params.get("page")) || 1));
   return <div className="personal-leave-page">
-    <PageHeader title="Nghỉ phép" description="Tạo và theo dõi đơn nghỉ phép, tăng ca và sửa công của bạn" action={<Button type="button" aria-expanded={composerOpen} onClick={() => setComposerOpen(open => !open)}>+ Tạo đơn nghỉ phép / tăng ca / sửa công</Button>} />
+    <PageHeader title="Đơn từ của tôi" description="Tạo và theo dõi đơn nghỉ phép, tăng ca và sửa công của bạn" action={<Button type="button" aria-expanded={composerOpen} onClick={() => setComposerOpen(open => !open)}>Tạo yêu cầu</Button>} />
     {error && <Notice kind="error">{error}</Notice>}{message && <Notice kind="success">{message}</Notice>}
-    <div className="stats-grid leave-stats">
-      <div className="stat-card"><span>Phép năm</span><strong>{requests ? leaveStats.granted.toLocaleString("vi-VN") + " ngày" : "—"}</strong></div>
+    {tab === "leave" && <div className="stats-grid leave-stats">
+      <div className="stat-card"><span>Đã được cấp</span><strong>{requests ? leaveStats.granted.toLocaleString("vi-VN") + " ngày" : "—"}</strong></div>
       <div className="stat-card"><span>Đã sử dụng</span><strong>{requests ? leaveStats.used.toLocaleString("vi-VN") + " ngày" : "—"}</strong></div>
-      <div className="stat-card"><span>Đang chờ</span><strong>{requests ? leaveStats.pending.toLocaleString("vi-VN") + " ngày" : "—"}</strong></div>
-      <div className="stat-card stat-cyan"><span>Còn lại</span><strong>{requests ? leaveStats.balance.toLocaleString("vi-VN") + " ngày" : "—"}</strong></div>
-    </div>
+      <div className="stat-card"><span>Đang chờ duyệt</span><strong>{requests ? leaveStats.pending.toLocaleString("vi-VN") + " ngày" : "—"}</strong><small>Chưa trừ vào số dư</small></div>
+      <div className="stat-card stat-cyan"><span>Số dư hiện tại</span><strong>{requests ? leaveStats.balance.toLocaleString("vi-VN") + " ngày" : "—"}</strong></div>
+    </div>}
+    <nav className="tabs" aria-label="Loại đơn của tôi">{([["leave", "Nghỉ phép"], ["overtime", "Tăng ca"], ["correction", "Sửa công"]] as [Tab, string][]).map(([value, label]) => <button type="button" key={value} className={`tab-button ${tab === value ? "active" : ""}`} aria-current={tab === value ? "page" : undefined} onClick={() => setTab(value)}>{label}</button>)}</nav>
     {composerOpen && <Dialog title="Tạo đơn nghỉ phép / tăng ca / sửa công" busy={busy} onClose={() => setComposerOpen(false)}>
       {error && <Notice kind="error">{error}</Notice>}
       <div className="tabs" role="tablist" aria-label="Loại yêu cầu">
@@ -148,10 +160,12 @@ export default function MyRequestsPage() {
         <Field label="Lý do"><textarea required minLength={3} maxLength={2000} value={correctionReason} onChange={(event) => setCorrectionReason(event.target.value)} /></Field>
       </div><div className="form-actions"><Button type="submit" disabled={busy}>{busy ? "Đang gửi…" : "Gửi yêu cầu sửa công"}</Button></div></form>}
     </Dialog>}
-    <LeaveHistory rows={requests?.leave ?? []} types={types} loading={loading} busy={busy} onCancel={id => { void cancelRequest("leave", id); }} />
-    <div className="request-history-grid supplemental-requests">
-      <Panel title="Tăng ca" description="Tăng ca ngày thường cần duyệt trước khi tính.">{loading ? <div className="loading-state">Đang tải…</div> : requests?.overtime.length ? <div className="request-list">{requests.overtime.map((item) => <article className="request-card" key={item.id}><div className="request-top"><strong>{formatDate(item.work_date)}</strong><StatusBadge value={item.status} /></div><p>{formatDateTime(item.start_at)} – {formatDateTime(item.end_at)}</p><small>{item.reason}</small>{item.review_note && <small className="review-note">Ghi chú: {item.review_note}</small>}{item.status === "pending" && <Button type="button" variant="danger" onClick={() => cancelRequest("overtime", item.id)}>Hủy yêu cầu</Button>}</article>)}</div> : <EmptyState title="Chưa có yêu cầu tăng ca" />}</Panel>
-      <Panel title="Sửa công" description="Event gốc được giữ nguyên; duyệt tạo bản điều chỉnh riêng.">{loading ? <div className="loading-state">Đang tải…</div> : requests?.corrections.length ? <div className="request-list">{requests.corrections.map((item) => <article className="request-card" key={item.id}><div className="request-top"><strong>{formatDate(item.work_date)}</strong><StatusBadge value={item.status} /></div><p>Vào: {item.proposed_check_in ? formatDateTime(item.proposed_check_in) : "Không đổi"} · Ra: {item.proposed_check_out ? formatDateTime(item.proposed_check_out) : "Không đổi"}</p><small>{item.reason}</small>{item.review_note && <small className="review-note">Ghi chú: {item.review_note}</small>}{item.status === "pending" && <Button type="button" variant="danger" onClick={() => cancelRequest("correction", item.id)}>Hủy yêu cầu</Button>}</article>)}</div> : <EmptyState title="Chưa có yêu cầu sửa công" />}</Panel>
-    </div>
+    {tab === "leave" && <LeaveHistory rows={requests?.leave ?? []} types={types} loading={loading} busy={busy} onCancel={id => { cancelRequest("leave", id); }} />}
+    <>
+      {tab === "overtime" && <Panel title="Tăng ca" description="Tăng ca ngày thường cần duyệt trước khi tính.">{loading ? <div className="loading-state">Đang tải…</div> : requests?.overtime.length ? <div className="request-list">{requests.overtime.slice((page - 1) * 10, page * 10).map((item) => <article className="request-card" key={item.id}><div className="request-top"><strong>{formatDate(item.work_date)}</strong><StatusBadge value={item.status} /></div><p>{formatDateTime(item.start_at)} – {formatDateTime(item.end_at)}</p><small>{item.reason}</small>{item.review_note && <small className="review-note">Ghi chú: {item.review_note}</small>}{item.status === "pending" && <Button type="button" variant="danger" onClick={() => cancelRequest("overtime", item.id)}>Hủy yêu cầu</Button>}</article>)}</div> : <EmptyState title="Chưa có yêu cầu tăng ca" />}</Panel>}
+      {tab === "correction" && <Panel title="Sửa công" description="Giữ lịch sử chấm gốc; giờ đề nghị có hiệu lực sau khi được duyệt.">{loading ? <div className="loading-state">Đang tải…</div> : requests?.corrections.length ? <div className="request-list">{requests.corrections.slice((page - 1) * 10, page * 10).map((item) => <article className="request-card" key={item.id}><div className="request-top"><strong>{formatDate(item.work_date)}</strong><StatusBadge value={item.status} /></div><p>Vào: {item.proposed_check_in ? formatDateTime(item.proposed_check_in) : "Không đổi"} · Ra: {item.proposed_check_out ? formatDateTime(item.proposed_check_out) : "Không đổi"}</p><small>{item.reason}</small>{item.review_note && <small className="review-note">Ghi chú: {item.review_note}</small>}{item.status === "pending" && <Button type="button" variant="danger" onClick={() => cancelRequest("correction", item.id)}>Hủy yêu cầu</Button>}</article>)}</div> : <EmptyState title="Chưa có yêu cầu sửa công" />}</Panel>}
+    </>
+    {tab !== "leave" && !loading && requestCount > 10 && <footer className="reference-pagination"><span>{requestCount} yêu cầu gần nhất · trang {page} / {pageCount}</span><div><Button type="button" variant="secondary" disabled={page === 1} onClick={() => updateQuery({ page: String(page - 1) })}>Trước</Button><Button type="button" variant="secondary" disabled={page === pageCount} onClick={() => updateQuery({ page: String(page + 1) })}>Sau</Button></div></footer>}
+    {cancelling && <Dialog title="Hủy yêu cầu" busy={busy} onClose={() => setCancelling(null)}><p>Yêu cầu sẽ chuyển sang trạng thái đã hủy. Vui lòng ghi rõ lý do.</p>{error && <Notice kind="error">{error}</Notice>}<form onSubmit={confirmCancel}><Field label="Lý do hủy"><textarea required minLength={3} maxLength={2000} value={cancelReason} onChange={event => setCancelReason(event.target.value)} /></Field><div className="form-actions"><Button type="button" variant="secondary" disabled={busy} onClick={() => setCancelling(null)}>Giữ yêu cầu</Button><Button type="submit" variant="danger" disabled={busy}>{busy ? "Đang hủy…" : "Xác nhận hủy"}</Button></div></form></Dialog>}
   </div>;
 }

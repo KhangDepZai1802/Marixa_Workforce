@@ -15,7 +15,7 @@ export function Dialog({ title, onClose, children, busy = false, className = "" 
     function keyboard(event: KeyboardEvent) {
       if (event.key === "Escape" && !busyRef.current) closeRef.current();
       if (event.key !== "Tab") return;
-      const controls = [...(ref.current?.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex="0"]') ?? [])];
+      const controls = [...(ref.current?.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex="0"]') ?? [])].filter(control => control.getClientRects().length > 0 && control.getAttribute("aria-hidden") !== "true");
       const first = controls[0], last = controls[controls.length - 1];
       if (!first) { event.preventDefault(); return; }
       if (event.shiftKey && (document.activeElement === first || document.activeElement === ref.current)) { event.preventDefault(); last.focus(); }

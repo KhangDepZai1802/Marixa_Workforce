@@ -38,14 +38,14 @@ export function OperationsPanel() {
   }
   const latest = data?.runs[0];
   const stale = !latest || checkedAt - Date.parse(latest.started_at) > 48 * 60 * 60 * 1000;
-  return <Panel title="Vận hành và dung lượng" description="Dung lượng Storage lấy từ metadata của project; kiểm tra hạn mức thực tế trong Supabase Usage."
+  return <Panel title="Vận hành và dung lượng" description="Theo dõi dung lượng dữ liệu, ảnh và kết quả bảo trì gần nhất."
     action={<Button variant="secondary" disabled={busy} onClick={() => void load()}>Làm mới</Button>}>
     {error && <Notice kind="error">{error}</Notice>}{message && <Notice kind="success">{message}</Notice>}
     {!data && !error && <LoadingState />}
     {data && <>
       <div className="stats-grid stats-grid-three">
-        <StatCard label="Database / 500 MB" value={usage(data.database_bytes, data.limits.database_bytes)} />
-        <StatCard label="Storage / 1 GB" value={usage(data.storage_bytes, data.limits.storage_bytes)} tone="cyan" />
+        <StatCard label="Cơ sở dữ liệu / 500 MB" value={usage(data.database_bytes, data.limits.database_bytes)} />
+        <StatCard label="Ảnh lưu trữ / 1 GB" value={usage(data.storage_bytes, data.limits.storage_bytes)} tone="cyan" />
         <StatCard label="Ảnh hết hạn còn chờ dọn" value={data.expired_remaining} tone="gold" />
       </div>
       {([['Database', data.database_bytes / data.limits.database_bytes], ['Storage', data.storage_bytes / data.limits.storage_bytes]] as const)
@@ -54,10 +54,10 @@ export function OperationsPanel() {
         </Notice>)}
       {(stale || latest?.status !== "succeeded") && <Notice kind="warning">Chưa có lần bảo trì thành công gần đây. Kiểm tra Cron/Logs hoặc chạy lại bên dưới.</Notice>}
       <p>Ảnh chờ tải: {data.photo_pending} · Ảnh lỗi: {data.photo_failed} · Đồng bộ cần đối soát: {data.sync_review}.</p>
-      <p>Queue chưa gửi nằm trên từng thiết bị; nhân viên kiểm tra ở trang Chấm công. Lỗi API được tra theo mã yêu cầu trong Vercel Logs.</p>
+      <p>Lượt chấm chưa gửi được giữ trên thiết bị của nhân viên và xem tại trang Chấm công.</p>
       <Button disabled={busy} onClick={() => void run()}>{busy ? "Đang bảo trì…" : "Dọn ảnh hết hạn và cập nhật phép tháng"}</Button>
       <TableWrap><table><thead><tr><th>Lần chạy</th><th>Kết quả</th><th>Ảnh đã dọn</th><th>Phép cộng</th></tr></thead><tbody>
-        {data.runs.map(run => <tr key={run.id}><td>{formatDateTime(run.started_at)}</td><td>{run.status === "succeeded" ? "Thành công" : run.status === "failed" ? "Thất bại" : "Chưa hoàn tất"}<small>{run.error_code}</small></td><td>{run.deleted_count}</td><td>{run.accrued_count}</td></tr>)}
+        {data.runs.map(run => <tr key={run.id}><td data-label="Lần chạy">{formatDateTime(run.started_at)}</td><td data-label="Kết quả">{run.status === "succeeded" ? "Thành công" : run.status === "failed" ? "Thất bại" : "Chưa hoàn tất"}<small>{run.error_code}</small></td><td data-label="Ảnh đã dọn">{run.deleted_count}</td><td data-label="Phép cộng">{run.accrued_count}</td></tr>)}
       </tbody></table></TableWrap>
     </>}
   </Panel>;

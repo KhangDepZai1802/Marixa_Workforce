@@ -25,9 +25,9 @@ Các kiểm thử cloud trong `verify-release.mjs` chỉ nhận project test và
 
 ## 3. Tạo project Vercel lần đầu
 
-1. Mở [Vercel Dashboard](https://vercel.com/dashboard), đăng nhập bằng GitHub quản trị repository.
-2. Chọn **Add New → Project**.
-3. Ở **Import Git Repository**, chọn `Marixa_Workforce` → **Import**. Nếu không thấy: chọn cấu hình GitHub App, cấp quyền cho đúng repository rồi quay lại.
+1. Theo yêu cầu chủ dự án, dùng **tài khoản Vercel đăng nhập bằng Gmail/email hiện có**. Dashboard đã mở ở workspace **KhangDeploy**; tiếp tục trong workspace này, không yêu cầu đổi cách đăng nhập Vercel.
+2. Ở góc trên bên phải, chọn **Create New → Project** (một số giao diện ghi **Add New → Project**).
+3. Ở **Import Git Repository**, chọn tài khoản GitHub `KhangDepZai1802`, tìm `Marixa_Workforce` → **Import**. Nếu chưa có kết nối GitHub, chọn **Connect GitHub** và cấp quyền lấy repository cho tài khoản Vercel hiện tại. Nếu đã kết nối nhưng thiếu repository, mở **Configure GitHub App**, cho phép truy cập `Marixa_Workforce`, lưu rồi quay lại. Đây là bước kết nối nguồn code; tiếp tục dùng tài khoản Vercel Gmail/email. [Kết nối tài khoản](https://vercel.com/docs/accounts).
 4. Đặt **Project Name**: `marixa-attendance-test` (nếu trùng, thêm hậu tố của bạn).
 5. **Framework Preset**: `Next.js`.
 6. **Root Directory → Edit**: chọn **`react`**, lưu. Đây là bước quan trọng: không chọn root repository, không chọn `Marixa-ChamCong/web`.

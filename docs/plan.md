@@ -177,6 +177,19 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 - 9.0: đã đối chiếu điều khoản hiện hành và xác nhận đồ án cá nhân có trong worklog; Hobby chỉ áp dụng theo mục đích đó. 9.1–9.6 chưa đánh dấu: chưa áp migration/khởi tạo admin production, chưa có commit deploy, Vercel URL/Ready/deployment ID, smoke test và backup production.
 - Code các phase đã được chủ dự án commit tại `057eae1`, sau đó ghép giao diện team tại `2c69fe5`. Bằng chứng kiểm thử trước khi ghép dựa trên `f59eaea60c91ea85feb8b136731f3a6c5c533f6e`; kiểm tra từng lần ghép ghi riêng trong worklog. Cần push commit merge đã kiểm thử trước khi deploy. Không đánh dấu nghiệm thu toàn Phase 8/9 chỉ vì local build đạt.
 
+## Thiết kế lại UI Marixa — 12/10/2026
+
+Quyết định mới của chủ dự án: làm đủ employee/HR/admin; Codex tự đánh giá UX; xanh lam đậm làm màu chính, cyan/vàng nhấn nhẹ theo logo; trang chủ hiển thị việc cần làm theo vai trò. Chi tiết và giới hạn kiểm chứng ở [UI_REDESIGN_AUDIT.md](UI_REDESIGN_AUDIT.md).
+
+- [x] Đọc mã nguồn hiện hành, các luồng nghiệp vụ, migration và script; lập Business Preservation Matrix và UI Constraint Matrix trước sửa.
+- [x] Cập nhật skill `ui-ux-pro-max` từ repository được chỉ định, giữ backup bản cũ; chuyển master tham khảo sang ngữ cảnh Marixa.
+- [x] Triển khai hệ màu/chữ/layout dùng chung, điều hướng PC/laptop/điện thoại và trang chủ theo vai trò; thiết kế lại các màn cá nhân/HR/admin.
+- [x] Giữ queue/owner/idempotency, tính công, ledger, snapshot và guard; sửa giới hạn hiển thị lịch sử tháng, quyền nút duyệt và trạng thái giữ form khi lưu lỗi.
+- [x] ESLint/TypeScript/17 unit test và production build đạt; 315 lượt Chromium dùng fixture cục bộ đạt, có ảnh và kiểm thử tương tác/offline. Sau sửa vùng bấm, 45 lượt chọn lọc và 2 lịch 360px đạt.
+- [x] Theo chỉ đạo tiếp theo của chủ dự án, dùng nguyên `.env.local` với `lasdnfytejntonjfkspv` để smoke test tích hợp thật: 31/33 kiểm tra đạt, dọn xong 3 tài khoản thử; không coi là nghiệm thu đầy đủ.
+- [ ] Xử lý chênh lệch schema/migration và policy Storage ảnh hết hạn trên project hiện tại rồi chạy lại hồi quy. Khóa hiện tại hợp lệ (Auth/REST 200); 401 trước đó là khi gọi sang project test khác. Chi tiết trong worklog ngày 12/10/2026.
+- [ ] Nghiệm thu Safari/iOS/Chrome Android và screen reader trên thiết bị thật; giữ nguyên các mục 8.3/8.5 chưa hoàn tất.
+
 ## 3. Tài liệu nhà cung cấp để kiểm tra khi thực hiện
 
 - [Supabase SSR Auth](https://supabase.com/docs/guides/auth/server-side) và [RLS/grants](https://supabase.com/docs/guides/database/postgres/row-level-security).

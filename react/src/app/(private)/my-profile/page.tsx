@@ -4,6 +4,7 @@ import { ChangePasswordButton } from "@/components/change-password";
 import { useEffect, useState } from "react";
 import { EmptyState, LoadingState, Notice, PageHeader, Panel } from "@/components/ui";
 import { apiRequest, type ApiEnvelope } from "@/lib/api-client";
+import { roleLabels, type Role } from "@/lib/navigation";
 
 type Profile = {
   account: { role: string; status: string; must_change_password: boolean } | null;
@@ -40,11 +41,11 @@ export default function MyProfilePage() {
           </div>
         </Panel>
         <Panel title="Tài khoản truy cập" description="Quyền truy cập do admin cấp và quản lý.">
-          <div className="detail-grid"><Detail label="Vai trò" value={profile.account?.role ?? "—"} /><Detail label="Trạng thái tài khoản" value={profile.account?.status === "active" ? "Đang hoạt động" : profile.account?.status} /></div>
-          <div className="notice" style={{ marginTop: 16 }}>Thông tin thay đổi hồ sơ vui lòng gửi HR. Nếu cần reset mật khẩu, liên hệ quản trị viên.</div>
+          <div className="detail-grid"><Detail label="Vai trò" value={roleLabels[profile.account?.role as Role] ?? "Chưa xác định"} /><Detail label="Trạng thái tài khoản" value={profile.account?.status === "active" ? "Đang hoạt động" : profile.account?.status} /></div>
+          <div className="notice" style={{ marginTop: 16 }}>Thông tin thay đổi hồ sơ vui lòng gửi HR. Nếu cần đặt lại mật khẩu, liên hệ quản trị viên.</div>
         </Panel>
         <Panel title="Quy trình chấm công" description="Múi giờ và giờ làm theo cấu hình công ty.">
-          <ul className="rule-list"><li>Múi giờ nghiệp vụ: Asia/Ho_Chi_Minh.</li><li>Giờ làm và ngày làm việc theo ca chung do admin cấu hình cho từng ngày hiệu lực.</li><li>Ảnh và GPS là tùy chọn, không làm mất công nếu không có.</li><li>Ngày nghỉ vẫn có thể chấm công; giờ thực tế tự tính tăng ca theo quy định.</li></ul>
+          <ul className="rule-list"><li>Giờ Việt Nam (UTC+7).</li><li>Giờ làm và ngày làm việc theo ca chung do admin cấu hình cho từng ngày hiệu lực.</li><li>Ảnh và GPS là tùy chọn, không làm mất công nếu không có.</li><li>Ngày nghỉ vẫn có thể chấm công; giờ thực tế tự tính tăng ca theo quy định.</li></ul>
         </Panel>
         </div>
       </div>}

@@ -1,4 +1,5 @@
 import { createRequestId, jsonApiResponse, jsonError } from "@/server/api/http";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { getActor } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -15,9 +16,17 @@ export async function GET() {
   ]);
   if (leave.error || overtime.error || corrections.error) return jsonError(500, "REQUESTS_READ_FAILED", "Không thể tải hàng đợi duyệt.", requestId);
   const ownEmployeeId = actor.employeeId;
+  const ids = [...new Set([...(leave.data ?? []), ...(overtime.data ?? []), ...(corrections.data ?? [])].map(item => item.employee_id))];
+  // Read only the role needed for the existing RPC approval route. Never expose accounts.
+  const accounts = ids.length ? await createSupabaseServiceClient().from("app_users")
+    .select("employee_id,role").in("employee_id", ids).eq("status", "active") : { data: [], error: null };
+  if (accounts.error) return jsonError(500, "REQUESTS_READ_FAILED", "Không thể kiểm tra người duyệt. Hãy thử lại.", requestId);
+  const roles = new Map((accounts.data ?? []).map(item => [item.employee_id, item.role]));
+  const canDecide = (employeeId: string) => employeeId !== ownEmployeeId && roles.has(employeeId)
+    && !(roles.get(employeeId) === "hr" && actor.role !== "admin");
   return jsonApiResponse({ data: {
-    leave: (leave.data ?? []).map(item => ({ ...item, can_decide: item.employee_id !== ownEmployeeId && !(actor.role === "hr" && item.employee_id === ownEmployeeId) })),
-    overtime: (overtime.data ?? []).map(item => ({ ...item, can_decide: item.employee_id !== ownEmployeeId })),
-    corrections: (corrections.data ?? []).map(item => ({ ...item, can_decide: item.employee_id !== ownEmployeeId })),
+    leave: (leave.data ?? []).map(item => ({ ...item, can_decide: canDecide(item.employee_id) })),
+    overtime: (overtime.data ?? []).map(item => ({ ...item, can_decide: canDecide(item.employee_id) })),
+    corrections: (corrections.data ?? []).map(item => ({ ...item, can_decide: canDecide(item.employee_id) })),
   }, request_id: requestId });
 }

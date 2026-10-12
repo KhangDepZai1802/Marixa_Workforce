@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Button, EmptyState, Field, LoadingState, Notice, PageHeader, Panel, TableWrap } from "@/components/ui";
+import { useQueryState } from "@/lib/use-query-state";
 import { Dialog } from "@/components/dialog";
 import { ApiError, apiRequest, type ApiEnvelope } from "@/lib/api-client";
 import { formatDate, formatDateTime, formatTime } from "@/lib/format";
@@ -14,7 +15,9 @@ const title: Record<Kind, string> = { leave: "Nghỉ phép", overtime: "Tăng ca
 function personOf(value: RequestItem["employees"]) { return Array.isArray(value) ? value[0] ?? null : value; }
 
 export default function HrRequestsPage() {
-  const [data, setData] = useState<RequestData>({ leave: [], overtime: [], corrections: [] }); const [kind, setKind] = useState<Kind>("leave");
+  const [data, setData] = useState<RequestData>({ leave: [], overtime: [], corrections: [] }); const { params, updateQuery } = useQueryState();
+  const kind: Kind = params.get("tab") === "overtime" ? "overtime" : params.get("tab") === "corrections" ? "corrections" : "leave";
+  const setKind = (value: Kind) => updateQuery({ tab: value, page: null });
   const [notes, setNotes] = useState<Record<string, string>>({}); const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(""); const [error, setError] = useState(""); const [message, setMessage] = useState("");
   const [selected, setSelected] = useState<RequestItem | null>(null);
   const load = useCallback(async () => { try { const result = await apiRequest<ApiEnvelope<RequestData>>("/api/v1/hr/requests"); setError(""); setData(result.data); } catch (cause) { setError(cause instanceof ApiError ? cause.message : "Không tải được hàng đợi duyệt."); } finally { setLoading(false); } }, []);
@@ -35,9 +38,12 @@ export default function HrRequestsPage() {
     catch (cause) { setError(cause instanceof ApiError ? cause.message : "Không lưu được quyết định."); }
     finally { setBusy(""); }
   }
-  const rows = data[kind] ?? [];
+  const allRows = data[kind] ?? [];
+  const pageCount = Math.max(1, Math.ceil(allRows.length / 10));
+  const page = Math.max(1, Math.min(pageCount, Number(params.get("page")) || 1));
+  const rows = allRows.slice((page - 1) * 10, page * 10);
   return <>
-    <PageHeader title="Duyệt yêu cầu" description="Quyết định được ghi nhận qua API và lưu nhật ký nghiệp vụ. Bạn không thể tự duyệt yêu cầu của chính mình." action={<Button type="button" variant="secondary" onClick={() => void load()} disabled={loading}>Làm mới</Button>} />
+    <PageHeader title="Duyệt yêu cầu" description="Xem nội dung trước khi quyết định. Đơn của HR do admin xử lý; không tự duyệt đơn của mình." action={<Button type="button" variant="secondary" onClick={() => void load()} disabled={loading}>Làm mới</Button>} />
     {error && <Notice kind="error">{error}</Notice>}{message && <Notice kind="success">{message}</Notice>}
     <Panel title="Hàng đợi duyệt" description="Tối đa 100 yêu cầu đang chờ cho mỗi loại.">
       <div className="tabs" role="tablist" aria-label="Loại yêu cầu">{(Object.keys(title) as Kind[]).map(value => <button key={value} className="tab-button" role="tab" aria-selected={kind === value} type="button" onClick={() => setKind(value)}>{title[value]} ({data[value].length})</button>)}</div>
@@ -45,9 +51,10 @@ export default function HrRequestsPage() {
         <td data-label="Nhân viên"><strong>{person?.full_name ?? "Nhân viên"}</strong><small>{person?.employee_code ?? item.employee_id}</small></td>
         <td data-label="Chi tiết">{kind === "leave" ? <>{formatDate(String(item.start_date ?? ""))} – {formatDate(String(item.end_date ?? ""))}<small>{Number(item.total_days ?? 0)} ngày · {String((item.leave_types as { name?: string } | null)?.name ?? "Nghỉ phép")}</small></> : kind === "overtime" ? <>{formatDate(String(item.work_date ?? ""))}<small>{formatTime(String(item.start_at ?? ""))} – {formatTime(String(item.end_at ?? ""))}</small></> : <>{formatDate(String(item.work_date ?? ""))}<small>Vào: {formatTime(String(item.proposed_check_in ?? ""))} · Ra: {formatTime(String(item.proposed_check_out ?? ""))}</small></>}</td>
         <td data-label="Lý do">{item.reason || "—"}</td><td data-label="Gửi lúc">{formatDateTime(item.created_at)}</td>
-        <td data-label="Quyết định"><div className="staff-desktop-review">{item.can_decide ? <div className="review-controls"><Field label="Ghi chú quyết định"><input disabled={Boolean(busy)} value={notes[item.id] ?? ""} onChange={e => setNotes({ ...notes, [item.id]: e.target.value })} placeholder="Bắt buộc nếu từ chối" maxLength={2000} /></Field><div className="table-actions"><Button type="button" disabled={busy === item.id} onClick={() => void decide(item, "approved")}>Duyệt</Button><Button type="button" variant="danger" disabled={busy === item.id} onClick={() => void decide(item, "rejected")}>Từ chối</Button></div></div> : <span className="muted-text">Không thể tự duyệt yêu cầu này.</span>}</div>{item.can_decide && <Button type="button" className="staff-phone-review" disabled={Boolean(busy)} onClick={() => { setError(""); setSelected(item); }}>Xem & duyệt yêu cầu</Button>}{!item.can_decide && <span className="staff-phone-review muted-text">Không thể tự duyệt yêu cầu này.</span>}</td>
+        <td data-label="Quyết định"><Button type="button" variant="secondary" disabled={Boolean(busy)} onClick={() => { setError(""); setSelected(item); }}>Xem chi tiết</Button>{!item.can_decide && <small>Yêu cầu này cần người duyệt khác.</small>}</td>
       </tr>; })}</tbody></table></TableWrap>}
+      {allRows.length > 10 && <div className="reference-pagination"><span>Trang {page} / {pageCount} · {allRows.length} yêu cầu</span><div><Button variant="secondary" disabled={page === 1} onClick={() => updateQuery({ page: String(page - 1) })}>Trước</Button><Button variant="secondary" disabled={page === pageCount} onClick={() => updateQuery({ page: String(page + 1) })}>Sau</Button></div></div>}
     </Panel>
-    {selected && <Dialog title={"Duyệt đơn " + title[kind].toLowerCase()} busy={Boolean(busy)} onClose={() => setSelected(null)}><p><strong>{personOf(selected.employees)?.full_name ?? "Nhân viên"}</strong></p><p>{kind === "leave" ? `${formatDate(String(selected.start_date ?? ""))} – ${formatDate(String(selected.end_date ?? ""))} · ${Number(selected.total_days ?? 0)} ngày` : `${formatDate(String(selected.work_date ?? ""))} · ${kind === "overtime" ? "Từ " + formatTime(String(selected.start_at ?? "")) + " đến " + formatTime(String(selected.end_at ?? "")) : "Vào: " + formatTime(String(selected.proposed_check_in ?? "")) + " · Ra: " + formatTime(String(selected.proposed_check_out ?? ""))}`}</p><p>Lý do: {selected.reason || "—"}</p>{error && <Notice kind="error">{error}</Notice>}{selected.can_decide ? <div className="review-controls"><Field label="Ghi chú quyết định"><input disabled={Boolean(busy)} value={notes[selected.id] ?? ""} onChange={e => setNotes({ ...notes, [selected.id]: e.target.value })} placeholder="Bắt buộc nếu từ chối" maxLength={2000} /></Field><div className="table-actions"><Button type="button" disabled={busy === selected.id} onClick={() => void decide(selected, "approved")}>Duyệt</Button><Button type="button" variant="danger" disabled={busy === selected.id} onClick={() => void decide(selected, "rejected")}>Từ chối</Button></div></div> : <span className="muted-text">Không thể tự duyệt yêu cầu này.</span>}</Dialog>}
+    {selected && <Dialog title={"Duyệt đơn " + title[kind].toLowerCase()} busy={Boolean(busy)} onClose={() => setSelected(null)}><p><strong>{personOf(selected.employees)?.full_name ?? "Nhân viên"}</strong></p><p>{kind === "leave" ? `${formatDate(String(selected.start_date ?? ""))} – ${formatDate(String(selected.end_date ?? ""))} · ${Number(selected.total_days ?? 0)} ngày` : `${formatDate(String(selected.work_date ?? ""))} · ${kind === "overtime" ? "Từ " + formatTime(String(selected.start_at ?? "")) + " đến " + formatTime(String(selected.end_at ?? "")) : "Vào: " + formatTime(String(selected.proposed_check_in ?? "")) + " · Ra: " + formatTime(String(selected.proposed_check_out ?? ""))}`}</p><p>Lý do: {selected.reason || "—"}</p>{error && <Notice kind="error">{error}</Notice>}{selected.can_decide ? <div className="review-controls"><Field label="Ghi chú quyết định"><input disabled={Boolean(busy)} value={notes[selected.id] ?? ""} onChange={e => setNotes({ ...notes, [selected.id]: e.target.value })} placeholder="Bắt buộc nếu từ chối" maxLength={2000} /></Field><div className="table-actions"><Button type="button" disabled={busy === selected.id} onClick={() => void decide(selected, "approved")}>Duyệt</Button><Button type="button" variant="danger" disabled={busy === selected.id} onClick={() => void decide(selected, "rejected")}>Từ chối</Button></div></div> : <span className="muted-text">Yêu cầu này cần người duyệt khác.</span>}</Dialog>}
   </>;
 }

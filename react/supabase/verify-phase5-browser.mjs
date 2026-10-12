@@ -77,18 +77,19 @@ try {
   await send('Page.enable'); await send('Network.enable'); await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false });
   for (const cookie of cookies) { const at = cookie.indexOf('='); await send('Network.setCookie', { name: cookie.slice(0, at), value: cookie.slice(at + 1), url: base }); }
   await navigate('/today');
-  try { await until(() => evaluate('!![...document.querySelectorAll(".desktop-attendance-content button")].find(b => b.textContent.includes("Chấm vào") && !b.disabled)'), 'enabled check-in button'); } catch (error) { throw new Error(error.message + "; URL=" + await evaluate("location.href") + "; UI=" + await evaluate("document.body.innerText.slice(0,1600)")); }
+  try { await until(() => evaluate('!![...document.querySelectorAll("main button")].find(b => b.textContent.includes("Chấm vào") && !b.disabled)'), 'enabled check-in button'); } catch (error) { throw new Error(error.message + "; URL=" + await evaluate("location.href") + "; UI=" + await evaluate("document.body.innerText.slice(0,1600)")); }
   await send('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 });
   await until(() => evaluate('navigator.onLine === false'), 'browser offline state');
   const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YhJ2ioAAAAASUVORK5CYII=';
+  await evaluate('document.querySelector(".attendance-options").open=true');
   await evaluate(`(() => {
     const bytes = Uint8Array.from(atob(${JSON.stringify(png)}), c => c.charCodeAt(0));
     const transfer = new DataTransfer(); transfer.items.add(new File([bytes], 'offline.png', { type: 'image/png' }));
     const input = document.querySelector('input[type=file]'); input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
   })()`);
-  await until(() => evaluate('document.body.innerText.includes("Ảnh sẵn sàng:")'), 'photo ready');
-  await evaluate('[...document.querySelectorAll(".desktop-attendance-content button")].find(b => b.textContent.includes("Chấm vào")).click()');
+  await until(() => evaluate('document.body.innerText.includes("Ảnh sẵn sàng")'), 'photo ready');
+  await evaluate('[...document.querySelectorAll("main button")].find(b => b.textContent.includes("Chấm vào")).click()');
   try { await until(() => evaluate('document.body.innerText.includes("Đã lưu trên thiết bị")'), 'IndexedDB commit notice'); }
   catch (error) { throw new Error(`${error.message}; UI=${JSON.stringify(await evaluate('document.body.innerText.slice(0,900)'))}`); }
   const key = await evaluate(`(async () => {
@@ -100,11 +101,11 @@ try {
   await send('Network.setBlockedURLs', { urls: [`${base}/api/v1/attendance/events*`] });
   await send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
   await navigate('/today');
-  try { await until(() => evaluate('document.body.innerText.includes("1\\nlượt đang chờ")'), 'queue survives reload'); }
+  try { await until(() => evaluate('document.body.innerText.includes("1 lượt đang chờ")'), 'queue survives reload'); }
   catch (error) { throw new Error(`${error.message}; UI=${JSON.stringify(await evaluate('document.body.innerText.slice(0,950)'))}`); }
   check('queue survives reload before server confirmation', true);
   await send('Network.setBlockedURLs', { urls: [`${base}/api/v1/attendance/events/*/photo`] });
-  await evaluate('[...document.querySelectorAll(".desktop-attendance-content button")].find(b => b.textContent.includes("Đồng bộ ngay")).click()');
+  await evaluate('[...document.querySelectorAll("main button")].find(b => b.textContent.includes("Đồng bộ ngay")).click()');
   await until(async () => {
     const rows = need(await service.from('attendance_events').select('id,work_date,evidence_status').eq('employee_id', employeeId), 'read event');
     if (!rows.length) return false;
@@ -114,7 +115,7 @@ try {
   await until(() => evaluate('document.body.innerText.includes("ảnh đang chờ đồng bộ")'), 'photo stays queued');
   check('event persists while photo upload fails', true);
   await send('Network.setBlockedURLs', { urls: [] });
-  await evaluate('(() => { const button=[...document.querySelectorAll(".desktop-attendance-content button")].find(b => b.textContent.includes("Đồng bộ ngay") && !b.disabled); if(button) button.click(); })()');
+  await evaluate('(() => { const button=[...document.querySelectorAll("main button")].find(b => b.textContent.includes("Đồng bộ ngay") && !b.disabled); if(button) button.click(); })()');
   await until(() => evaluate('document.body.innerText.includes("Không có lượt chấm chờ")'), 'photo retry completes');
   const event = need(await service.from('attendance_events').select('id,evidence_status').eq('id', eventId).single(), 'read synced event');
   const photo = need(await service.from('attendance_photos').select('id,storage_path').eq('attendance_event_id', eventId).single(), 'read synced photo');
