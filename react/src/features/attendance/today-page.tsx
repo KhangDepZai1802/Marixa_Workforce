@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import NextImage from "next/image";
 import { Dialog } from "@/components/dialog";
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { ApiError, apiRequest, type ApiEnvelope } from "@/lib/api-client";
@@ -68,7 +69,6 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   const [queue, setQueue] = useState<QueuedAttendance[]>([]);
   const [unassignedCount, setUnassignedCount] = useState(0);
   const [photo, setPhoto] = useState<Blob | null>(null);
-  const [photoName, setPhotoName] = useState("");
   const [includeLocation, setIncludeLocation] = useState(false);
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -79,12 +79,21 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   const [conflict, setConflict] = useState(false);
   const [message, setMessage] = useState("");
   const [mobileCapture, setMobileCapture] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraBusy, setCameraBusy] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     const first = window.setTimeout(() => setNow(new Date()), 0);
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => { window.clearTimeout(first); window.clearInterval(timer); };
   }, []);
+
+  const photoObjectUrl = useMemo(() => photo ? URL.createObjectURL(photo) : null, [photo]);
+  useEffect(() => () => { if (photoObjectUrl) URL.revokeObjectURL(photoObjectUrl); }, [photoObjectUrl]);
+  useEffect(() => () => { streamRef.current?.getTracks().forEach(track => track.stop()); streamRef.current = null; }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -160,15 +169,118 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   const nextKind = !checkIn ? "check_in" : !checkOut ? "check_out" : null;
   const checkTime = useMemo(() => policy ? (nextKind === "check_in" ? policy.start_time : policy.end_time).slice(0, 5) : null, [nextKind, policy]);
 
+  // --- Camera / photo handling ------------------------------------------------
+  useEffect(() => {
+    if (!cameraOpen) return;
+    let cancelled = false;
+    (async () => {
+      setCameraBusy(true); setCameraError("");
+      const devices = navigator.mediaDevices;
+      if (!devices?.getUserMedia) {
+        cancelled = false;
+        setCameraBusy(false);
+        setCameraError("Thiết bị này không hỗ trợ camera trực tiếp. Hãy dùng “Chọn từ thư viện” bên dưới.");
+        return;
+      }
+      try {
+        const stream = await devices.getUserMedia({
+          video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+        streamRef.current = stream;
+        const video = videoRef.current;
+        if (video) { video.srcObject = stream; await video.play(); }
+        setCameraBusy(false);
+      } catch (cause) {
+        if (cancelled) return;
+        stopCamera();
+        setCameraBusy(false);
+        const name = cause instanceof DOMException ? cause.name : "";
+        setCameraError(name === "NotAllowedError"
+          ? "Chưa được cấp quyền camera. Hãy cho phép quyền truy cập rồi thử lại, hoặc dùng “Chọn từ thư viện”."
+          : name === "NotFoundError"
+            ? "Không tìm thấy camera. Hãy dùng “Chọn từ thư viện” bên dưới."
+            : "Không truy cập được camera. Hãy dùng “Chọn từ thư viện” bên dưới.");
+      }
+    })();
+    return () => { cancelled = true; stopCamera(); };
+  }, [cameraOpen]);
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach(track => track.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }
+
+  async function capturePhoto() {
+    const video = videoRef.current;
+    const stream = streamRef.current;
+    if (!video || !stream) return;
+    const width = video.videoWidth || 1280;
+    const height = video.videoHeight || 720;
+    const canvas = document.createElement("canvas");
+    canvas.width = width; canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) { setCameraError("Không xử lý được khung hình."); return; }
+    const facing = stream.getVideoTracks()[0]?.getSettings?.().facingMode;
+    context.save();
+    if (facing === "user") { context.translate(width, 0); context.scale(-1, 1); }
+    context.drawImage(video, 0, 0, width, height);
+    context.restore();
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+    stopCamera(); setCameraOpen(false);
+    if (!blob) { setCameraError("Không chụp được ảnh. Hãy thử lại."); return; }
+    applyPhotoBlob(blob);
+  }
+
+  function applyPhotoBlob(blob: Blob) {
+    setError("");
+    const file = new File([blob], `attendance-capture-${Date.now()}.jpg`, { type: "image/jpeg" });
+    compressPhoto(file).then(next => setPhoto(next)).catch(cause => {
+      setError(cause instanceof Error ? cause.message : "Không xử lý được ảnh.");
+    });
+  }
+
   async function choosePhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    setPhoto(null); setPhotoName(""); setError("");
+    setPhoto(null); setError("");
     if (!file) return;
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { setError("Ảnh cần ở định dạng JPG, PNG hoặc WebP."); return; }
-    try { setPhoto(await compressPhoto(file)); setPhotoName(file.name); }
+    try { setPhoto(await compressPhoto(file)); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "Không xử lý được ảnh."); }
   }
+
+  function clearPhoto() { setPhoto(null); setError(""); }
+
+  const cameraSupported = typeof navigator !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
+
+  const photoControl = photoObjectUrl ? (
+    <div className="photo-capture-control">
+      <div className="photo-capture-preview">
+        <div className="photo-capture-media">
+          <NextImage src={photoObjectUrl} alt="Ảnh chấm công đã chụp" fill unoptimized sizes="320px" style={{ objectFit: "cover" }} />
+          <button type="button" className="photo-remove-overlay" aria-label="Bỏ ảnh" onClick={clearPhoto}>×</button>
+        </div>
+        <span className="photo-capture-caption">Ảnh đã sẵn sàng</span>
+      </div>
+      <div className="photo-capture-actions">
+        {cameraSupported && <Button type="button" variant="secondary" onClick={() => setCameraOpen(true)}>Chụp lại</Button>}
+        <label className="photo-choose-file">Chọn khác<input className="reference-photo-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={choosePhoto} /></label>
+      </div>
+    </div>
+  ) : (
+    <div className="photo-capture-control">
+      {cameraSupported
+        ? <button type="button" className="photo-capture-open" onClick={() => setCameraOpen(true)}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M3 7h5l2-3h4l2 3h5v14H3Z" /><circle cx="12" cy="14" r="4" /></svg>
+            Chụp ảnh (tùy chọn)
+          </button>
+        : <p className="subtle-note">Thiết bị không hỗ trợ camera trực tiếp. Hãy chọn ảnh từ thư viện.</p>}
+      <label className="photo-choose-file">Chọn từ thư viện<input className="reference-photo-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={choosePhoto} /></label>
+    </div>
+  );
 
   async function submitAttendance() {
     if (!nextKind || busy) return;
@@ -218,7 +330,7 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
         }
         await removeQueuedAttendance(key);
         setMessage(`Đã ghi nhận ${item.kind === "check_in" ? "giờ vào" : "giờ ra"} lúc ${formatTime(result.data.occurred_at)}.${locationNote}`);
-        setPhoto(null); setPhotoName("");
+        clearPhoto();
         await refresh(); setMobileCapture(false);
       } catch (cause) {
         if (cause instanceof ApiError && cause.status < 500) {
@@ -259,13 +371,27 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
           <button className="text-button" type="button" onClick={() => discardQueue(item.idempotency_key)}>Xóa</button>
         </div>)}</div> : <EmptyState title="Không có lượt chấm chờ" description="Lượt chấm được giữ ở đây nếu mạng bị gián đoạn." />}
       </Panel></div>}
-    {mobileCapture && <Dialog title={nextKind === "check_out" ? "Chấm ra" : "Chấm vào"} className="phone-camera-sheet" busy={busy} onClose={() => setMobileCapture(false)}><p>Ảnh và vị trí là tùy chọn. Xác nhận để ghi nhận giờ chấm công.</p><label className="reference-photo-label"><input className="reference-photo-input" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={busy} onChange={choosePhoto} />{photoName ? `Ảnh sẵn sàng: ${photoName}` : "Chọn hoặc chụp ảnh của bạn"}</label><div className="reference-attendance-options"><label className="check-item"><input type="checkbox" checked={includeLocation} disabled={busy} onChange={event => setIncludeLocation(event.target.checked)} />Ghi vị trí (tùy chọn)</label>{photo && <Button type="button" variant="ghost" disabled={busy} onClick={() => { setPhoto(null); setPhotoName(""); }}>Bỏ ảnh</Button>}</div>{error && <Notice kind="error">{error}</Notice>}<button type="button" className="phone-camera-confirm" disabled={!nextKind || busy || loading} onClick={submitAttendance}>{busy ? "Đang ghi nhận…" : "Xác nhận chấm công"}</button></Dialog>}
+    {mobileCapture && <Dialog title={nextKind === "check_out" ? "Chấm ra" : "Chấm vào"} className="phone-camera-sheet" busy={busy} onClose={() => setMobileCapture(false)}><p>Ảnh và vị trí là tùy chọn. Xác nhận để ghi nhận giờ chấm công.</p>{photoControl}<div className="reference-attendance-options"><label className="check-item"><input type="checkbox" checked={includeLocation} disabled={busy} onChange={event => setIncludeLocation(event.target.checked)} />Ghi vị trí (tùy chọn)</label></div>{error && <Notice kind="error">{error}</Notice>}<button type="button" className="phone-camera-confirm" disabled={!nextKind || busy || loading} onClick={submitAttendance}>{busy ? "Đang ghi nhận…" : "Xác nhận chấm công"}</button></Dialog>}
+
+    {cameraOpen && <div className="dialog-backdrop" onClick={event => { if (event.target === event.currentTarget) { stopCamera(); setCameraOpen(false); } }}><div className="dialog camera-dialog" role="dialog" aria-modal="true" aria-label="Chụp ảnh chấm công">
+        <header className="reference-modal-heading"><h2>Chụp ảnh chấm công</h2><button type="button" aria-label="Đóng" onClick={() => { stopCamera(); setCameraOpen(false); }}>×</button></header>
+        <div className="camera-frame">
+          <video ref={videoRef} autoPlay playsInline muted className="camera-video" />
+          {cameraBusy && <p className="camera-hint" role="status">Đang bật camera…</p>}
+          {cameraError && <p className="camera-hint camera-error">{cameraError}</p>}
+        </div>
+        <div className="camera-actions">
+          <Button type="button" className="camera-capture" disabled={cameraBusy || cameraError !== "" || !streamRef.current} onClick={() => void capturePhoto()}>Chụp ảnh</Button>
+          <Button type="button" variant="ghost" onClick={() => { stopCamera(); setCameraOpen(false); }}>{photoObjectUrl ? "Hủy" : "Đóng"}</Button>
+        </div>
+      </div></div>}
+
     <div className="desktop-attendance-content">
     <div className="today-layout">
       <Panel title="Chấm công" description={nextKind === "check_out" ? "Ghi nhận giờ ra ca của bạn." : nextKind ? "Ghi nhận giờ vào ca của bạn." : "Đã chấm công hôm nay. Cảm ơn bạn!"} action={<span className={`connection-pill ${online ? "connection-online" : "connection-offline"}`}>{online ? "Có kết nối" : "Đang offline"}</span>}>
         <p className="subtle-note">{policy ? `Ca chung có hiệu lực: ${policy.start_time.slice(0, 5)}–${policy.lunch_start.slice(0, 5)} và ${policy.lunch_end.slice(0, 5)}–${policy.end_time.slice(0, 5)}.` : policyUnavailable ? "Không tải được ca chung hôm nay. Hãy thử làm mới trang." : "Chưa có ca chung hiệu lực hôm nay."}</p>
-        <label className="reference-photo-label"><input className="reference-photo-input" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={choosePhoto} /><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M3 7h5l2-3h4l2 3h5v14H3Z" /><circle cx="12" cy="14" r="4" /></svg>{photoName ? `Ảnh sẵn sàng: ${photoName}` : "Chọn hoặc chụp ảnh của bạn (tùy chọn)"}</label>
-        <div className="reference-attendance-options"><label className="check-item"><input type="checkbox" checked={includeLocation} onChange={event => setIncludeLocation(event.target.checked)} />Ghi vị trí nếu thiết bị cho phép (tùy chọn)</label>{photo && <Button type="button" variant="ghost" onClick={() => { setPhoto(null); setPhotoName(""); }}>Bỏ ảnh đã chọn</Button>}</div>
+        {photoControl}
+        <div className="reference-attendance-options"><label className="check-item"><input type="checkbox" checked={includeLocation} onChange={event => setIncludeLocation(event.target.checked)} />Ghi vị trí nếu thiết bị cho phép (tùy chọn)</label></div>
         <div className="attendance-action">
           {nextKind ? <Button type="button" className="button-large" disabled={busy || loading} onClick={submitAttendance}>
             {busy ? "Đang ghi nhận…" : nextKind === "check_in" ? "Chấm vào" : nextKind === "check_out" ? "Chấm ra" : "Đã đủ lượt chấm hôm nay"}
