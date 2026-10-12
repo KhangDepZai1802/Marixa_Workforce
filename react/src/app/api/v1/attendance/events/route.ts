@@ -54,10 +54,12 @@ export async function POST(request: Request) {
     return jsonError(403, "QUEUE_OWNER_MISMATCH", "Lượt chấm đang lưu thuộc tài khoản khác. Hãy đăng nhập lại đúng tài khoản.", requestId);
 
   const supabase = await createSupabaseServerClient();
-  const { data: employee, error: employeeError } = await supabase.from("employees").select("status").eq("id", actor.employeeId).maybeSingle();
+  const [{ data: employee, error: employeeError }, { data: existing, error: existingError }] = await Promise.all([
+    supabase.from("employees").select("status").eq("id", actor.employeeId).maybeSingle(),
+    supabase.from("attendance_events").select("*").eq("idempotency_key", parsed.data.idempotency_key).maybeSingle(),
+  ]);
   if (employeeError) return jsonError(500, "EMPLOYEE_READ_FAILED", "Không thể xác nhận hồ sơ nhân viên.", requestId);
   if (employee?.status !== "active") return jsonError(403, "EMPLOYEE_INACTIVE", "Hồ sơ nhân viên không còn hoạt động.", requestId);
-  const { data: existing, error: existingError } = await supabase.from("attendance_events").select("*").eq("idempotency_key", parsed.data.idempotency_key).maybeSingle();
   if (existingError) return jsonError(500, "ATTENDANCE_READ_FAILED", "Không thể kiểm tra lượt chấm đã gửi.", requestId);
   if (existing) {
     if (existing.employee_id !== actor.employeeId) return jsonError(409, "IDEMPOTENCY_KEY_CONFLICT", "Khóa đồng bộ đã được dùng.", requestId);

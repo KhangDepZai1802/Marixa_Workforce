@@ -16,7 +16,7 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (url && key && request.cookies.getAll().some(cookie => cookie.name.startsWith("sb-"))) {
+  if (!request.nextUrl.pathname.startsWith("/api/") && url && key && request.cookies.getAll().some(cookie => cookie.name.startsWith("sb-"))) {
     const supabase = createServerClient(url, key, { cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: values => {
@@ -25,9 +25,12 @@ export async function proxy(request: NextRequest) {
         values.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
       },
     } });
-    // Refresh once before Server Components (which cannot write response cookies).
-    // Route handlers still validate getUser() and the live account role/status.
-    await supabase.auth.getClaims();
+    // Refresh before Server Components (which cannot write response cookies).
+    // Never authorize from this untrusted session: private layouts still call
+    // getActor(), which verifies getUser() and reads live account permissions.
+    // API handlers can refresh their own cookies and validate getUser() plus the
+    // live account role/status. Checking here too adds a duplicate Auth round trip.
+    await supabase.auth.getSession();
   }
   response.headers.set("Cache-Control", "private, no-store");
   return response;

@@ -7,6 +7,7 @@ import { ApiError, apiRequest, type ApiEnvelope } from "@/lib/api-client";
 import { formatDate } from "@/lib/format";
 import { useQueryState } from "@/lib/use-query-state";
 import { useResource } from "@/lib/use-resource";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { Dialog } from "@/components/dialog";
 
 type Employee = { id: string; employee_code: string; full_name: string; work_email: string; phone: string | null; department: string | null; job_title: string | null; hire_date: string | null; status: string };
@@ -25,9 +26,10 @@ const ROW_LABEL: Record<ImportRowResult["status"], string> = {
 export default function HrEmployeesPage() {
   const { params, updateQuery } = useQueryState();
   const query = params.get("q") ?? "";
+  const search = useDebouncedValue(query);
   const page = Math.max(1, Number(params.get("page")) || 1);
-  const resource = useResource<Employee[]>("/api/v1/hr/employees?" + new URLSearchParams({ q: query, page: String(page), page_size: "20" }));
-  const rows = resource.data ?? [], loading = resource.loading;
+  const resource = useResource<Employee[]>("/api/v1/hr/employees?" + new URLSearchParams({ q: search, page: String(page), page_size: "20" }));
+  const rows = resource.data ?? [], loading = resource.loading || search !== query;
   const pageCount = Math.max(1, Math.ceil((resource.page?.total ?? 0) / 20));
   const [form, setForm] = useState<EmployeeForm>(blank); const [editing, setEditing] = useState<Employee | null>(null);
   const [showForm, setShowForm] = useState(false); const [saving, setSaving] = useState(false);

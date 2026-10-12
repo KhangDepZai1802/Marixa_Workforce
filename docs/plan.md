@@ -190,6 +190,14 @@ Quyết định mới của chủ dự án: làm đủ employee/HR/admin; Codex 
 - [ ] Xử lý chênh lệch schema/migration và policy Storage ảnh hết hạn trên project hiện tại rồi chạy lại hồi quy. Khóa hiện tại hợp lệ (Auth/REST 200); 401 trước đó là khi gọi sang project test khác. Chi tiết trong worklog ngày 12/10/2026.
 - [ ] Nghiệm thu Safari/iOS/Chrome Android và screen reader trên thiết bị thật; giữ nguyên các mục 8.3/8.5 chưa hoàn tất.
 
+## Tối ưu tốc độ Vercel — 12/10/2026
+
+- [x] Đo GET công khai tại `https://marixa-workforce.vercel.app`: API đang xử lý ở `iad1`; ghi độ trễ và phạm vi đo trong worklog.
+- [x] Bỏ điều hướng server khi đổi bộ lọc/tab/phân trang phía client; debounce tìm nhân viên; bỏ xác thực/truy vấn trùng và tải lại không cần thiết sau chấm công.
+- [x] Kiểm chứng production cục bộ bằng fixture: tab không gọi server, một truy vấn cho một đợt gõ, hàng đợi rỗng không tải trùng, chấm thành công không GET lại; guard và cookie refresh vẫn hoạt động.
+- [x] Chủ dự án xác nhận ngày 12/10/2026: Supabase mà bản Vercel hiện dùng đặt tại Singapore; cấu hình function `sin1` phù hợp.
+- [ ] Deploy bản sửa lên Vercel, xác nhận function chuyển sang `sin1` theo cấu hình mới và đo lại thao tác đã đăng nhập trên website thật.
+
 ## 3. Tài liệu nhà cung cấp để kiểm tra khi thực hiện
 
 - [Supabase SSR Auth](https://supabase.com/docs/guides/auth/server-side) và [RLS/grants](https://supabase.com/docs/guides/database/postgres/row-level-security).

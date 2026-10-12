@@ -8,7 +8,9 @@ export async function GET() {
   if (actor.mustChangePassword) return jsonError(403, "PASSWORD_CHANGE_REQUIRED", "Vui lòng đổi mật khẩu trước khi tiếp tục.", requestId);
   const { createSupabaseServerClient } = await import("@/lib/supabase/server");
   const supabase = await createSupabaseServerClient();
-  const { data: account } = await supabase.from("app_users").select("employee_id, role, status, must_change_password").eq("auth_user_id", actor.userId).single();
-  const employee = account?.employee_id ? await supabase.from("employees").select("id, employee_code, full_name, work_email, phone, department, job_title, status").eq("id", account.employee_id).maybeSingle() : null;
+  // getActor has already read and validated this account in the same request.
+  const account = { employee_id: actor.employeeId, role: actor.role, status: "active", must_change_password: actor.mustChangePassword };
+  const employee = actor.employeeId ? await supabase.from("employees").select("id, employee_code, full_name, work_email, phone, department, job_title, status").eq("id", actor.employeeId).maybeSingle() : null;
+  if (employee?.error) return jsonError(500, "PROFILE_READ_FAILED", "Không thể tải hồ sơ nhân viên.", requestId);
   return jsonApiResponse({ data: { account, employee: employee?.data ?? null }, request_id: requestId });
 }

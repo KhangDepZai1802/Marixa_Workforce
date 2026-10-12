@@ -1,6 +1,13 @@
 # Deploy Marixa lên Vercel — từng bước
 
-Cập nhật 10/10/2026. Ứng dụng ở `react/`; API là Next.js Route Handlers. Chủ dự án xác nhận chưa tạo project Vercel và hiện tiếp tục dùng Supabase **test**. Hướng dẫn này không có nghĩa Phase 9 đã được nghiệm thu.
+Cập nhật 12/10/2026. Ứng dụng ở `react/`; API là Next.js Route Handlers. Chủ dự án đã cung cấp website đang chạy tại `https://marixa-workforce.vercel.app/`. Các bước tạo project bên dưới là hướng dẫn thiết lập ban đầu; chưa có bằng chứng nghiệm thu đầy đủ Phase 9 hoặc đối chiếu biến môi trường trên Vercel.
+
+## Áp dụng bản tối ưu tốc độ ngày 12/10/2026
+
+- `react/vercel.json` đặt `regions: ["sin1"]` (Singapore). GET kiểm tra bản đang chạy trả `x-vercel-id: hkg1::iad1::...`, tức request đi qua Hong Kong nhưng function chạy ở Mỹ. Cấu hình mới chỉ áp dụng sau deployment mới; bấm Redeploy một commit cũ chưa chứa thay đổi sẽ không đưa bản sửa lên.
+- Chủ dự án xác nhận ngày 12/10/2026: Supabase mà bản Vercel hiện dùng đặt tại Singapore. Cấu hình `sin1` đưa function về cùng khu vực database, theo [hướng dẫn Vercel](https://vercel.com/docs/functions/configuring-functions/region).
+- Đưa commit chứa bản sửa lên branch Vercel đang theo dõi, chờ deployment Ready. Kiểm tra header request API có `sin1`, rồi thử tìm nhân viên, đổi tab/phân trang, chấm công và đăng nhập lại sau khi phiên hết hạn. Không dùng kết quả API chưa đăng nhập để kết luận tốc độ truy vấn dữ liệu đã đăng nhập.
+- Hồi quy cục bộ: từ `react/`, chạy `npm.cmd run check`, rồi đặt `UI_PRODUCTION=1`, `UI_ROLES=hr`, `UI_ROUTES=/home,/today,/hr/employees` và chạy `node scripts/verify-ui-redesign.mjs`. Script dùng Auth/API giả tại localhost, không chạm Supabase thật. Chế độ production tạo `.next` với cấu hình fixture; sau khi chạy phải bỏ ba biến kiểm thử và chạy `npm.cmd run build` để trở lại cấu hình `.env.local` của máy.
 
 ## 1. Chọn đúng môi trường
 

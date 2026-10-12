@@ -151,7 +151,13 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
     const onOffline = () => setOnline(false);
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
-    const initialSyncTimer = window.setTimeout(() => { if (navigator.onLine && employeeId) void sync(); }, 0);
+    const initialSyncTimer = window.setTimeout(() => {
+      if (navigator.onLine && employeeId) {
+        void listQueuedAttendance(employeeId).then(pending => {
+          if (active && pending.some(item => !item.requires_attention)) void sync();
+        }).catch(() => { /* Initial load already reports IndexedDB errors. */ });
+      }
+    }, 0);
     return () => { active = false; window.clearTimeout(onlineTimer); window.clearTimeout(initialSyncTimer); window.removeEventListener("online", onOnline); window.removeEventListener("offline", onOffline); };
   }, [refresh, sync, today, weekStart, employeeId]);
 
@@ -241,20 +247,30 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
             latitude: item.latitude, longitude: item.longitude, accuracy_m: item.accuracy_m, photo_expected: Boolean(photo),
           }),
         });
+        // Render the event confirmed by the server without a second read of
+        // attendance and work policy before releasing the submit button.
+        const recordEvent = (event: AttendanceEvent) => {
+          setEvents(current => [...current.filter(row => row.id !== event.id), event].filter(row => row.work_date === today));
+          setWeekEvents(current => [...current.filter(row => row.id !== event.id), event]);
+        };
+        recordEvent(result.data);
         if (photo) {
           const form = new FormData(); form.set("photo", photo, `attendance-${item.kind}.webp`);
-          try { await apiRequest(`/api/v1/attendance/events/${result.data.id}/photo`, { method: "POST", body: form }); }
+          try {
+            await apiRequest(`/api/v1/attendance/events/${result.data.id}/photo`, { method: "POST", body: form });
+            recordEvent({ ...result.data, evidence_status: "ready" });
+          }
           catch (cause) {
             await saveQueuedAttendance({ ...item, status: "event_synced_photo_pending" });
             setMessage(`Đã ghi nhận giờ chấm. Ảnh đang chờ đồng bộ${cause instanceof Error ? `: ${cause.message}` : "."}${locationNote}`);
-            await refresh();
+            setQueue(await listQueuedAttendance(employeeId));
             return;
           }
         }
         await removeQueuedAttendance(key);
         setMessage(`Đã ghi nhận ${item.kind === "check_in" ? "giờ vào" : "giờ ra"} lúc ${formatTime(result.data.occurred_at)}.${locationNote}`);
         clearPhoto();
-        await refresh();
+        setQueue(await listQueuedAttendance(employeeId));
       } catch (cause) {
         if (cause instanceof ApiError && cause.status < 500) {
           await saveQueuedAttendance({ ...item, requires_attention: true, status: "requires_attention", last_error: cause.message });
