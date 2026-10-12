@@ -12,6 +12,7 @@ const artifacts=path.resolve('.artifacts/ui-redesign');
 mkdirSync(artifacts,{recursive:true});
 const profile=mkdtempSync(path.join(tmpdir(),'marixa-ui-redesign-'));
 let role='employee', socket, next, chrome, sequence=0, failPath='', emptyPath='', apiDelay=0, allowAttendance=false, savedEvent=null, savedKey='', postCount=0;
+let completedPunches=null, allowEmployeeImport=false;
 const pending=new Map(), failures=[], report=[];
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const mock=createServer((req,res)=>{
@@ -42,7 +43,7 @@ try {
  next=spawn(process.execPath,['node_modules/next/dist/bin/next','dev','--hostname','127.0.0.1','--port','3011'],{windowsHide:true,stdio:['ignore','pipe','pipe'],env:{...process.env,NEXT_PUBLIC_APP_URL:base,NEXT_PUBLIC_SUPABASE_URL:'http://127.0.0.1:'+mockPort,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'local-ui-fixture',SUPABASE_SECRET_KEY:'local-ui-fixture'}});
  next.stdout.pipe(log);next.stderr.pipe(log);
  await until(async()=>{try{return (await fetch(base+'/login')).status===200;}catch{return false;}},'local Next server',90000);
- chrome=spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',['--headless=new','--disable-gpu','--no-sandbox','--no-first-run','--remote-debugging-port='+debugPort,'--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:'ignore'});
+ chrome=spawn('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',['--headless=new','--disable-gpu','--no-sandbox','--no-first-run','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--remote-debugging-port='+debugPort,'--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:'ignore'});
  await until(async()=>{try{return (await fetch('http://127.0.0.1:'+debugPort+'/json/version')).ok;}catch{return false;}},'Chrome');
  const tab=await (await fetch('http://127.0.0.1:'+debugPort+'/json/new?about:blank',{method:'PUT'})).json();
  socket=new WebSocket(tab.webSocketDebuggerUrl);
@@ -63,9 +64,14 @@ try {
     await send('Fetch.fulfillRequest',{requestId,responseCode:postCount===1?201:200,responseHeaders:[{name:'Content-Type',value:'application/json'}],body:Buffer.from(JSON.stringify({data:savedEvent})).toString('base64')});return;
    }
    if(allowAttendance && request.method==='POST' && url.pathname.endsWith('/photo')){savedEvent.evidence_status='ready';await send('Fetch.fulfillRequest',{requestId,responseCode:201,responseHeaders:[{name:'Content-Type',value:'application/json'}],body:Buffer.from(JSON.stringify({data:savedEvent})).toString('base64')});return;}
+   if(allowEmployeeImport && request.method==='POST' && url.pathname==='/api/v1/hr/employees/import.xlsx') {
+    const data={total:2,created:1,updated:0,skipped:0,errors:1,rows:[{rowNumber:2,employeeCode:'NVTEST',fullName:'Nhân viên thử',status:'created',issues:[]},{rowNumber:3,employeeCode:'INVALID',fullName:'Dòng lỗi',status:'error',issues:['Email sai định dạng']}]};
+    await send('Fetch.fulfillRequest',{requestId,responseCode:200,responseHeaders:[{name:'Content-Type',value:'application/json'}],body:Buffer.from(JSON.stringify({data})).toString('base64')});return;
+   }
    if(request.method!=='GET') throw new Error('Unplanned mutation blocked: '+url.pathname);
    const data=url.pathname===emptyPath?{data:[],page:{number:1,size:25,total:0}}:fixture(request.url,role);
    if(savedEvent && ['/api/v1/attendance/events','/api/v1/me/attendance'].includes(url.pathname))data.data.push(savedEvent);
+   if(completedPunches && url.pathname==='/api/v1/attendance/events') data.data=completedPunches;
    await send('Fetch.fulfillRequest',{requestId,responseCode:200,responseHeaders:[{name:'Content-Type',value:'application/json'},{name:'Cache-Control',value:'no-store'}],body:Buffer.from(JSON.stringify(data)).toString('base64')});
   }catch(error){if(/Invalid InterceptionId|Invalid state|session.*closed/i.test(error.message))return;failures.push(error.message);await send('Fetch.fulfillRequest',{requestId,responseCode:500,body:Buffer.from('{}').toString('base64')}).catch(()=>{});}
  });
@@ -124,15 +130,40 @@ try {
  failPath='/api/v1/hr/employees';await navigate('/hr/employees');assert(await evaluate('!!document.querySelector("[role=alert]")'),'Error state');failPath='';await clickText('Làm mới');await until(()=>evaluate('!document.querySelector(".notice-error")&&!document.querySelector(".loading-state")'),'Retry recovery');
  // Delayed API still settles without blank content.
  apiDelay=500;await navigate('/home');apiDelay=0;await checkLayout('slow API');
+ // The merged Excel UI presents partial success and per-row errors on phones.
+ await setRole('hr');await viewport(360);await navigate('/hr/employees');allowEmployeeImport=true;
+ await evaluate(`(()=>{const transfer=new DataTransfer();transfer.items.add(new File(['synthetic request'],'employees.xlsx'));const el=document.querySelector('input[type=file]');el.files=transfer.files;el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+ await until(()=>evaluate('document.querySelector("[role=dialog]")?.textContent.includes("Email sai định dạng")'),'Excel row errors');
+ assert(await evaluate('document.querySelector("[role=dialog]")?.textContent.includes("Đã tạo")'),'Excel partial success');
+ await checkLayout('Excel import result');await screenshot('hr-import-result-360');await escape();allowEmployeeImport=false;
+ // UTC punches crossing only part of lunch must display net minutes in Vietnam time.
+ await setRole('employee');
+ completedPunches=['05:30:30','06:15:59'].map((time,i)=>({id:'merge-punch-'+i,employee_id:people[0].id,kind:i?'check_out':'check_in',work_date:today,occurred_at:today+'T'+time+'Z',source:'online',evidence_status:'not_provided',location_flag:'unknown'}));
+ await navigate('/today');
+ assert.equal(await evaluate('document.querySelector(".attendance-worked strong")?.textContent'),'0 giờ 15 phút','Partial lunch excluded; UTC converted; seconds floored');
+ completedPunches=null;
  // IndexedDB survives reload, and an image retry attaches to the same event.
  await setRole('employee');await viewport(390);await navigate('/today');
  await evaluate('document.querySelector(".attendance-options").open=true');
+ // Exercise browser getUserMedia, capture/compression, release, cancellation and denied permission.
+ await evaluate(`(()=>{window.originalGetUserMedia=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);window.cameraTracks=[];navigator.mediaDevices.getUserMedia=async constraints=>{const stream=await window.originalGetUserMedia(constraints);window.cameraTracks.push(...stream.getTracks());return stream;};})()`);
+ await clickText('Chụp ảnh bằng camera');await until(()=>evaluate('[...document.querySelectorAll("[role=dialog] button")].some(b=>b.textContent==="Chụp ảnh"&&!b.disabled)'),'Camera ready');
+ await checkLayout('Camera on phone');await screenshot('employee-camera-390');await clickText('Chụp ảnh','[role=dialog] button');
+ await until(()=>evaluate('!document.querySelector("[role=dialog]")&&!!document.querySelector(".photo-preview img")'),'Camera capture preview');
+ assert(await evaluate('window.cameraTracks.length>0&&window.cameraTracks.every(t=>t.readyState==="ended")'),'Camera released after capture');
+ await clickText('Bỏ ảnh đã chọn');await clickText('Chụp ảnh bằng camera');
+ await until(()=>evaluate('window.cameraTracks.some(t=>t.readyState==="live")'),'Camera reopen');await escape();
+ assert(await evaluate('window.cameraTracks.every(t=>t.readyState==="ended")'),'Camera released after Escape');
+ await evaluate('navigator.mediaDevices.getUserMedia=()=>Promise.reject(new DOMException("Permission denied","NotAllowedError"))');await clickText('Chụp ảnh bằng camera');
+ await until(()=>evaluate('document.querySelector("[role=dialog]")?.textContent.includes("Chưa được cấp quyền camera")'),'Camera denied message');await escape();
+ await evaluate('navigator.mediaDevices.getUserMedia=window.originalGetUserMedia');
  await evaluate(`(()=>{const canvas=document.createElement('canvas');canvas.width=24;canvas.height=24;const c=canvas.getContext('2d');c.fillStyle='#1647c8';c.fillRect(0,0,24,24);return new Promise(resolve=>canvas.toBlob(blob=>{const transfer=new DataTransfer();transfer.items.add(new File([blob],'optional-photo.png',{type:'image/png'}));const el=document.querySelector('input[type=file]');el.files=transfer.files;el.dispatchEvent(new Event('change',{bubbles:true}));resolve();},'image/png'));})()`);
  await until(()=>evaluate('!!document.querySelector(".photo-preview img")'),'Photo preview');
  await send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
  await until(()=>evaluate('!navigator.onLine'),'Offline');
  await clickText('Chấm vào','main button');
  await until(()=>evaluate('document.body.innerText.includes("Đã lưu trên thiết bị")'),'Local queue save');
+ assert(await evaluate('document.querySelector(".reference-week .today")?.classList.contains("checked")'),'Offline day counted in weekly summary');
  const readQueue=`(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('marixa-attendance-queue',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});const rows=await new Promise((resolve,reject)=>{const r=db.transaction('events','readonly').objectStore('events').getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});db.close();return rows.map(r=>({key:r.idempotency_key,owner:r.employee_id,photoSize:r.photo?.size,status:r.status}));})()`;
  const queued=await evaluate(readQueue);assert.equal(queued.length,1);assert.equal(queued[0].owner,people[0].id);assert(queued[0].photoSize>0&&queued[0].photoSize<=200000);
  failPath='/api/v1/attendance/events';allowAttendance=true;
@@ -146,6 +177,7 @@ try {
  await screenshot('employee-offline-recovered');allowAttendance=false;
  assert.equal(failures.length,0,failures.join('\n'));
  console.log('PASS interactions: mobile menu, focus, settings preview/draft, filters, review detail, confirmations, empty/error/retry, slow API, offline owner/key/photo/reload/retry');
+ console.log('PASS merge features: Excel result/errors, UTC partial lunch, camera capture/release/cancel/permission denied, offline weekly count');
  writeFileSync(path.join(artifacts,process.env.UI_ROLES||process.env.UI_ROUTES?'report-subset.json':'report.json'),JSON.stringify({environment:'Local synthetic UI fixtures. Not a Supabase/RLS/device test.',matrix:report,interactions:'pass',offlineQueue:'Owner/key/photo retained across reload; photo failure and retry reuse same event in local fixture.'},null,2));
  writeGallery(artifacts);
 } catch(error) {

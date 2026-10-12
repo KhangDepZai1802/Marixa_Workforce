@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { CameraCapture } from "@/components/camera-capture";
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { ApiError, apiRequest, type ApiEnvelope } from "@/lib/api-client";
-import { businessDate, formatDate, formatDateTime, formatTime } from "@/lib/format";
+import { BUSINESS_TIME_ZONE, businessDate, formatDate, formatDateTime, formatMinutes, formatTime } from "@/lib/format";
+import { calculateAttendanceDay } from "@/lib/domain/timesheet";
 import { Button, Field, LoadingState, Notice, PageHeader, Panel, StatusBadge } from "@/components/ui";
 import { countUnassignedQueuedAttendance, listQueuedAttendance, removeQueuedAttendance, saveQueuedAttendance, syncQueuedAttendance, type QueuedAttendance } from "./offline-queue";
 
@@ -69,6 +71,7 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   const [unassignedCount, setUnassignedCount] = useState(0);
   const [photo, setPhoto] = useState<Blob | null>(null);
   const [processingPhoto, setProcessingPhoto] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [photoName, setPhotoName] = useState("");
   const [includeLocation, setIncludeLocation] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -166,6 +169,31 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   const checkOut = events.find((event) => event.kind === "check_out") ?? localToday.find((event) => event.kind === "check_out");
   const nextKind = !checkIn ? "check_in" : !checkOut ? "check_out" : null;
   const checkTime = useMemo(() => policy ? (nextKind === "check_in" ? policy.start_time : policy.end_time).slice(0, 5) : null, [nextKind, policy]);
+  const totalWorked = useMemo(() => {
+    if (!checkIn || !checkOut || !policy) return null;
+    const result = calculateAttendanceDay({
+      checkIn: new Date("occurred_at" in checkIn ? checkIn.occurred_at : checkIn.device_occurred_at),
+      checkOut: new Date("occurred_at" in checkOut ? checkOut.occurred_at : checkOut.device_occurred_at),
+      policy: { start: policy.start_time, lunchStart: policy.lunch_start, lunchEnd: policy.lunch_end, end: policy.end_time, lateGraceMinutes: policy.late_grace_minutes },
+      timeZone: BUSINESS_TIME_ZONE, isWorkday: false, approvedLeave: [], approvedOvertime: [],
+    });
+    // Reuse the net elapsed-time calculation; this display does not grant payroll or overtime.
+    return result.complete ? result.overtimeMinutes : null;
+  }, [checkIn, checkOut, policy]);
+  const checkedDates = new Set(weekEvents.map(event => event.work_date));
+  for (const item of queue) {
+    const date = businessDate(new Date(item.device_occurred_at));
+    if (date >= weekStart && date <= today) checkedDates.add(date);
+  }
+
+  async function preparePhoto(file: File) {
+    setProcessingPhoto(true);
+    try {
+      const blob = await compressPhoto(file);
+      clearPhoto(); setPhoto(blob); setPhotoName(file.name); setError("");
+      previewRef.current = URL.createObjectURL(blob); setPhotoPreview(previewRef.current);
+    } finally { setProcessingPhoto(false); }
+  }
 
   async function choosePhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -173,14 +201,8 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
     clearPhoto(); setError("");
     if (!file) return;
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { setError("Ảnh cần ở định dạng JPG, PNG hoặc WebP."); return; }
-    setProcessingPhoto(true);
-    try {
-      const blob = await compressPhoto(file);
-      setPhoto(blob); setPhotoName(file.name);
-      previewRef.current = URL.createObjectURL(blob); setPhotoPreview(previewRef.current);
-    }
+    try { await preparePhoto(file); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "Không xử lý được ảnh."); }
-    finally { setProcessingPhoto(false); }
   }
 
   async function submitAttendance() {
@@ -254,6 +276,7 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   }
 
   return <div className="workspace-home">
+    {cameraOpen && <CameraCapture onCapture={preparePhoto} onClose={() => setCameraOpen(false)} />}
     <PageHeader title="Chấm công" description={formatDate(today) + " · Giờ Việt Nam"} action={<Button type="button" variant="secondary" disabled={busy || processingPhoto || loading} onClick={() => void refresh()}>Làm mới</Button>} />
     {!online && <Notice kind="warning">Bạn đang mất mạng. Lượt chấm được lưu trên thiết bị và sẽ gửi khi kết nối trở lại.</Notice>}
     {unassignedCount > 0 && <Notice kind="warning">Thiết bị còn {unassignedCount} lượt chấm từ phiên bản cũ chưa xác định được tài khoản. Hãy liên hệ HR để đối soát.</Notice>}
@@ -267,9 +290,11 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
           <div><span>Vào ca</span><strong>{checkIn ? formatTime("occurred_at" in checkIn ? checkIn.occurred_at : checkIn.device_occurred_at) : "—"}</strong><small>{checkIn ? "id" in checkIn ? "Đã ghi nhận" : "Chờ đồng bộ" : "Chưa chấm vào"}</small></div>
           <div><span>Ra ca</span><strong>{checkOut ? formatTime("occurred_at" in checkOut ? checkOut.occurred_at : checkOut.device_occurred_at) : "—"}</strong><small>{checkOut ? "id" in checkOut ? "Đã ghi nhận" : "Chờ đồng bộ" : "Chưa chấm ra"}</small></div>
         </div>}
+        {checkOut && <div className="attendance-worked"><span>Tổng giờ đã chấm</span><strong>{totalWorked === null ? "—" : formatMinutes(totalWorked)}</strong><small>Đã trừ khoảng nghỉ theo ca. Công thường và tăng ca xem trong bảng công tháng.{localToday.length > 0 ? " Có lượt chấm đang chờ đồng bộ." : ""}</small></div>}
         <p className="subtle-note">{policy ? `Ca chung: ${policy.start_time.slice(0, 5)}–${policy.end_time.slice(0, 5)} · Nghỉ ${policy.lunch_start.slice(0, 5)}–${policy.lunch_end.slice(0, 5)}` : policyUnavailable ? "Chưa tải được ca chung. Chọn Làm mới để thử lại." : "Chưa có ca chung hiệu lực hôm nay."}</p>
         {nextKind && <details className="attendance-options"><summary>Thêm ảnh hoặc vị trí (tùy chọn)</summary>
-          <Field label="Ảnh chấm công" hint="Chụp hoặc chọn ảnh JPG, PNG, WebP. Ảnh được nén trước khi gửi."><input type="file" accept="image/jpeg,image/png,image/webp" capture="user" disabled={busy || processingPhoto} onChange={choosePhoto} /></Field>
+          <Button type="button" variant="secondary" disabled={busy || processingPhoto} onClick={() => setCameraOpen(true)}>{photo ? "Chụp lại ảnh" : "Chụp ảnh bằng camera"}</Button>
+          <Field label="Chọn ảnh từ thư viện" hint="Ảnh JPG, PNG, WebP được nén trước khi gửi."><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || processingPhoto} onChange={choosePhoto} /></Field>
           {photoPreview && <div className="photo-preview"><Image src={photoPreview} width={80} height={80} alt="Ảnh chấm công đã chọn" unoptimized /><div><strong>Ảnh sẵn sàng</strong><p className="subtle-note">{photoName}</p><Button type="button" variant="ghost" disabled={busy} onClick={clearPhoto}>Bỏ ảnh đã chọn</Button></div></div>}
           <label className="check-item"><input type="checkbox" checked={includeLocation} disabled={busy} onChange={event => setIncludeLocation(event.target.checked)} />Ghi vị trí nếu thiết bị cho phép</label>
         </details>}
@@ -280,10 +305,10 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
         {!employeeId && <Notice kind="warning">Tài khoản chưa được liên kết hồ sơ nhân viên. Liên hệ quản trị viên để chấm công.</Notice>}
       </Panel>
       <div className="today-side">
-        <Panel title="Tuần này" description={new Set(weekEvents.map(event => event.work_date)).size + " ngày có lượt chấm đã đồng bộ"}>
+        <Panel title="Tuần này" description={checkedDates.size + " ngày đã chấm · gồm lượt đang chờ đồng bộ"}>
           <div className="reference-week">{["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((label, index) => {
             const date = new Date(`${weekStart}T00:00:00Z`); date.setUTCDate(date.getUTCDate() + index); const iso = date.toISOString().slice(0, 10);
-            const checked = weekEvents.some(event => event.work_date === iso);
+            const checked = checkedDates.has(iso);
             return <div key={label} className={`${iso === today ? "today" : ""} ${checked ? "checked" : ""}`}><small>{label}</small><strong>{date.getUTCDate()}</strong><span aria-label={checked ? "Đã chấm" : "Chưa có lượt chấm"}>{checked ? "✓" : "—"}</span></div>;
           })}</div>
           <Link className="text-button" href={`/my-attendance?month=${today.slice(0, 7)}`}>Xem lịch công tháng →</Link>
