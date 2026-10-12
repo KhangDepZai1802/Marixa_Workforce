@@ -123,8 +123,9 @@
   .reference-login-btn { width: 100%; }
   .reference-profile-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 20px; align-items: start; }
   .reference-profile-summary .panel-heading { display: none; }
-  .reference-attendance-status { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .reference-attendance-status { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .reference-attendance-status strong { font-family: "Montserrat", "Be Vietnam Pro", sans-serif; font-size: 40px; font-weight: 800; }
+  .reference-attendance-status > div:nth-child(3) strong { font-size: 24px; }
   .reference-attendance-status > div:last-child strong { font-size: 18px; }
   .reference-attendance .today-layout { display: block; }
   .reference-attendance .today-layout > .panel:first-child { border-radius: 16px; padding: 24px; }
@@ -162,6 +163,9 @@
   .reference-shell .sidebar { display: none; }
   .reference-shell .sidebar-open { display: block; position: fixed; z-index: 18; top: 72px; right: 0; left: 0; height: calc(100dvh - 72px); overflow-y: auto; }
   .reference-attendance-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reference-attendance-status strong { font-size: 28px; }
+  .reference-attendance-status > div:nth-child(3) strong { font-size: 20px; }
+  .reference-attendance-status > div:last-child strong { font-size: 16px; }
   .reference-profile-summary { margin-bottom: 16px; }
   .home-grid { display: grid; gap: 12px; }
   .home-card { display: grid; gap: 6px; border: 1px solid #e8edf2; border-radius: 12px; background: white; padding: 18px; text-decoration: none; }

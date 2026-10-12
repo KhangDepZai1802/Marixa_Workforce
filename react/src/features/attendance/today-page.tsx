@@ -57,6 +57,44 @@ function getLocation(): Promise<{ latitude: number; longitude: number; accuracy_
   ));
 }
 
+function parseHMS(value: string | undefined): number | null {
+  if (!value) return null;
+  const match = value.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (!match) return null;
+  return (Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3] ?? "0")) / 3600;
+}
+
+function sameLocalDay(a: string, b: string): boolean {
+  const da = new Date(a); const db = new Date(b);
+  return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
+}
+
+/** Working hours (in hours) for a completed check-in + check-out day, net of the
+ *  policy's lunch break when the break falls inside the worked window. */
+function totalWorkedHours(inAt: string, outAt: string, policy: WorkPolicy | null): number | null {
+  const startH = parseHMS(inAt);
+  const endH = parseHMS(outAt);
+  if (startH === null || endH === null || !sameLocalDay(inAt, outAt)) return null;
+  if (endH < startH) return null;
+  let hours = endH - startH;
+  if (policy) {
+    const lunchStart = parseHMS(policy.lunch_start);
+    const lunchEnd = parseHMS(policy.lunch_end);
+    if (lunchStart !== null && lunchEnd !== null && lunchEnd > lunchStart && lunchStart >= startH && lunchEnd <= endH) {
+      hours -= lunchEnd - lunchStart;
+    }
+  }
+  return Math.max(0, hours);
+}
+
+function formatWorkedHours(hours: number): string {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0 && m === 0) return "0 giờ 00 phút";
+  return `${h} giờ ${String(m).padStart(2, "0")} phút`;
+}
+
 export function TodayPage({ employeeId }: { employeeId: string }) {
   const today = businessDate();
   const weekStartDate = new Date(`${today}T00:00:00Z`);
@@ -168,6 +206,22 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   const checkOut = events.find((event) => event.kind === "check_out") ?? localToday.find((event) => event.kind === "check_out");
   const nextKind = !checkIn ? "check_in" : !checkOut ? "check_out" : null;
   const checkTime = useMemo(() => policy ? (nextKind === "check_in" ? policy.start_time : policy.end_time).slice(0, 5) : null, [nextKind, policy]);
+  const eventTime = (event: AttendanceEvent | QueuedAttendance) => ("occurred_at" in event ? event.occurred_at : event.device_occurred_at);
+  const totalWorked = useMemo(
+    () => (checkIn && checkOut ? totalWorkedHours(eventTime(checkIn), eventTime(checkOut), policy) : null),
+    [checkIn, checkOut, policy],
+  );
+  const checkedDates = useMemo(() => {
+    const dates = new Set<string>();
+    for (const event of weekEvents) dates.add(event.work_date);
+    for (const item of queue) {
+      if (item.device_occurred_at && businessDate(new Date(item.device_occurred_at)) >= weekStart) {
+        dates.add(businessDate(new Date(item.device_occurred_at)));
+      }
+    }
+    return dates;
+  }, [weekEvents, queue, weekStart]);
+  const checkedDayCount = useMemo(() => checkedDates.size, [checkedDates]);
 
   // --- Camera / photo handling ------------------------------------------------
   useEffect(() => {
@@ -361,7 +415,7 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
     <section className="phone-attendance">
       <header className="phone-attendance-heading"><h1>Chấm công của tôi</h1><span>Theo dõi ca làm hôm nay</span></header>
       <div className="phone-clock-card"><p>{now ? new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" }).format(now) : formatDate(today)}</p><strong className="phone-live-clock">{now ? new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hourCycle: "h23", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(now) : "—"}</strong><div>◷ Ca làm hôm nay</div><b>{policy ? `${policy.start_time.slice(0, 5)}–${policy.end_time.slice(0, 5)}` : policyUnavailable ? "Chưa tải được ca làm" : "Chưa có ca hiệu lực"}</b></div>
-      <div className="phone-attendance-body"><div className="phone-status-row"><span aria-hidden="true">⌖</span><div><strong>Vị trí chấm công</strong><small>{includeLocation ? "Lấy vị trí khi xác nhận" : "Vị trí là tùy chọn"}</small></div></div><div className="phone-status-row"><span aria-hidden="true">⌁</span><div><strong>{online ? "Kết nối sẵn sàng" : "Không có kết nối mạng"}</strong><small className={online ? "phone-online" : ""}>{online ? "Thiết bị đang trực tuyến" : "Lượt chấm sẽ được lưu trên thiết bị"}</small></div></div><section className="phone-timeline"><h2>Dòng thời gian hôm nay</h2>{loading ? <p role="status">Đang tải…</p> : !checkIn ? <p>Chưa có lượt chấm hôm nay</p> : <><div><i /><span>Vào ca</span><b>{formatTime("occurred_at" in checkIn ? checkIn.occurred_at : checkIn.device_occurred_at)}</b></div>{checkOut && <div><i /><span>Ra ca</span><b>{formatTime("occurred_at" in checkOut ? checkOut.occurred_at : checkOut.device_occurred_at)}</b></div>}<p>{localToday.length ? "Có lượt chấm đang chờ đồng bộ" : "Lượt chấm đã được máy chủ ghi nhận"}</p></>}</section></div>
+      <div className="phone-attendance-body"><div className="phone-status-row"><span aria-hidden="true">⌖</span><div><strong>Vị trí chấm công</strong><small>{includeLocation ? "Lấy vị trí khi xác nhận" : "Vị trí là tùy chọn"}</small></div></div><div className="phone-status-row"><span aria-hidden="true">⌁</span><div><strong>{online ? "Kết nối sẵn sàng" : "Không có kết nối mạng"}</strong><small className={online ? "phone-online" : ""}>{online ? "Thiết bị đang trực tuyến" : "Lượt chấm sẽ được lưu trên thiết bị"}</small></div></div><section className="phone-timeline"><h2>Dòng thời gian hôm nay</h2>{loading ? <p role="status">Đang tải…</p> : !checkIn ? <p>Chưa có lượt chấm hôm nay</p> : <><div><i /><span>Vào ca</span><b>{formatTime("occurred_at" in checkIn ? checkIn.occurred_at : checkIn.device_occurred_at)}</b></div>{checkOut && <div><i /><span>Ra ca</span><b>{formatTime("occurred_at" in checkOut ? checkOut.occurred_at : checkOut.device_occurred_at)}</b></div>}{checkOut && totalWorked !== null && <div><i /><span>Tổng giờ</span><b>{formatWorkedHours(totalWorked)}</b></div>}<p>{localToday.length ? "Có lượt chấm đang chờ đồng bộ" : "Lượt chấm đã được máy chủ ghi nhận"}</p></>}</section></div>
       <div className="phone-check-action">{nextKind ? <button type="button" disabled={loading || busy} onClick={() => { setError(""); setMobileCapture(true); }}>▣ {nextKind === "check_in" ? "Chấm vào" : "Chấm ra"}</button> : <Link className="button button-primary" href="/my-attendance">Xem lịch sử chấm công</Link>}</div>
     </section>
     {queue.length > 0 && <div className="phone-attendance phone-queue">      <Panel title="Đồng bộ trên thiết bị" description="Event offline được giữ trong IndexedDB cho đến khi máy chủ xác nhận.">
@@ -403,10 +457,11 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
         <div className="reference-attendance-status">
           <div><span>Vào ca</span><strong>{checkIn ? formatTime("occurred_at" in checkIn ? checkIn.occurred_at : checkIn.device_occurred_at) : "—"}</strong><small>{checkIn && !("id" in checkIn) ? "Đang chờ đồng bộ" : ""}</small></div>
           <div><span>Ra ca</span><strong>{checkOut ? formatTime("occurred_at" in checkOut ? checkOut.occurred_at : checkOut.device_occurred_at) : "—"}</strong><small>{checkOut && !("id" in checkOut) ? "Đang chờ đồng bộ" : ""}</small></div>
+          <div><span>Tổng giờ</span><strong>{totalWorked !== null ? formatWorkedHours(totalWorked) : "—"}</strong><small>{checkOut ? "trừ giờ nghỉ theo ca" : "hiển thị sau khi chấm ra"}</small></div>
           <div><span>Hôm nay</span><strong>{checkOut ? "Đã hoàn tất" : checkIn ? "Đang trong ca" : "Chưa vào ca"}</strong><small>{formatDate(today)}</small></div>
         </div>
-        <div className="reference-week-header"><h2>Tuần này</h2><span>{new Set(weekEvents.map(event => event.work_date)).size} ngày đã chấm</span></div>
-        <div className="reference-week">{["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((label, index) => { const date = new Date(`${weekStart}T00:00:00Z`); date.setUTCDate(date.getUTCDate() + index); const iso = date.toISOString().slice(0, 10); return <Link key={label} href={`/my-attendance?month=${iso.slice(0, 7)}`} aria-current={iso === today ? "date" : undefined} data-checked={weekEvents.some(event => event.work_date === iso)}><strong>{date.getUTCDate()}</strong><span>{label}</span></Link>; })}</div>
+        <div className="reference-week-header"><h2>Tuần này</h2><span>{checkedDayCount} ngày đã chấm</span></div>
+        <div className="reference-week">{["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((label, index) => { const date = new Date(`${weekStart}T00:00:00Z`); date.setUTCDate(date.getUTCDate() + index); const iso = date.toISOString().slice(0, 10); return <Link key={label} href={`/my-attendance?month=${iso.slice(0, 7)}`} aria-current={iso === today ? "date" : undefined} data-checked={checkedDates.has(iso)}><strong>{date.getUTCDate()}</strong><span>{label}</span></Link>; })}</div>
       </Panel>
 
       <Panel title="Đồng bộ trên thiết bị" description="Event offline được giữ trong IndexedDB cho đến khi máy chủ xác nhận.">
