@@ -56,6 +56,10 @@ async function clickText(text,scope='button'){const clicked=await evaluate(`(()=
 async function escape(){await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await until(()=>evaluate('!document.querySelector("[role=dialog]")'),'Escape');}
 async function screenshot(name){await evaluate('document.querySelector("nextjs-portal")?.setAttribute("style","display:none")');const shot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(path.join(artifacts,name+'.png'),Buffer.from(shot.data,'base64'));}
 async function checkLayout(label){assert(await evaluate('document.documentElement.scrollWidth <= innerWidth + 1'),'Horizontal overflow '+label);const errors=await evaluate('[...document.querySelectorAll(".notice-error")].map(e=>e.textContent)');assert.equal(errors.length,0,'UI errors '+label+': '+errors.join(' '));const ax=await send('Accessibility.getFullAXTree');const unnamed=ax.nodes.filter(n=>!n.ignored&&['button','textbox','combobox'].includes(n.role?.value)&&!n.name?.value?.trim());assert.equal(unnamed.length,0,'Unnamed controls '+label);}
+const mockGps = `window.gpsCalls=0;navigator.geolocation.getCurrentPosition=(success,error,options)=>{window.gpsCalls++;window.gpsOptions=options;success({coords:{latitude:10.77,longitude:106.69,accuracy:10}});};`;
+async function chooseFixturePhoto(type='image/png',invalid=false) {
+ await evaluate(`(async()=>{const canvas=document.createElement('canvas');canvas.width=24;canvas.height=24;canvas.getContext('2d').fillRect(0,0,24,24);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));const transfer=new DataTransfer();transfer.items.add(new File([${invalid ? "'invalid image'" : 'blob'}],'evidence.png',{type:${JSON.stringify(type)}}));const el=document.querySelector('[role=dialog] input[type=file]');el.files=transfer.files;el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+}
 async function setRole(value){role=value;await send('Network.clearBrowserCookies');await send('Network.setCookie',{name:'sb-127-auth-token',value:'base64-'+Buffer.from(JSON.stringify(session(role))).toString('base64url'),url:base});}
 try {
  await new Promise((resolve,reject)=>{mock.once('error',reject);mock.listen(mockPort,'127.0.0.1',resolve);});
@@ -100,9 +104,13 @@ try {
   await apiProbe('/api/v1/me',200,{Cookie:cookies});
  }
  const punchKey='00000000-0000-4000-8000-000000000997';
- const submitProbe=()=>fetch(base+'/api/v1/attendance/events',{method:'POST',headers:{Cookie:cookie,Origin:base,'Content-Type':'application/json'},body:JSON.stringify({kind:'check_in',idempotency_key:punchKey,queue_owner_id:people[0].id})});
+ const submitProbe=(evidence={photo_expected:true,latitude:10.77,longitude:106.69,accuracy_m:10})=>fetch(base+'/api/v1/attendance/events',{method:'POST',headers:{Cookie:cookie,Origin:base,'Content-Type':'application/json'},body:JSON.stringify({kind:'check_in',idempotency_key:punchKey,queue_owner_id:people[0].id,...evidence})});
+ assert.equal((await submitProbe({})).status,422,'Photo required');
+ assert.equal((await submitProbe({photo_expected:true})).status,422,'GPS required');
+ assert.equal((await submitProbe({photo_expected:true,latitude:10})).status,422,'Partial GPS rejected');
  const created=await submitProbe();assert.equal(created.status,201);const firstEvent=(await created.json()).data;
  upstreamRequests.length=0;const replay=await submitProbe();assert.equal(replay.status,200);assert.equal((await replay.json()).data.id,firstEvent.id);
+ assert.equal((await submitProbe({})).status,200,'Existing events still replay without new evidence');
  assert(!upstreamRequests.includes('/rest/v1/rpc/create_attendance_event'),'Replay does not write a second event');
  employeeStatus='inactive';assert.equal((await submitProbe()).status,403);employeeStatus='active';
  apiEvents.set(punchKey,{...firstEvent,employee_id:people[1].id});assert.equal((await submitProbe()).status,409);apiEvents.clear();
@@ -126,7 +134,7 @@ try {
    if(allowAttendance && url.pathname==='/api/v1/attendance/events' && request.method==='POST') {
     const body=JSON.parse(request.postData);assert.equal(body.queue_owner_id,people[0].id);
     if(!savedEvent){savedKey=body.idempotency_key;savedEvent={id:'00000000-0000-4000-8000-000000000999',employee_id:people[0].id,kind:body.kind,work_date:today,occurred_at:body.device_occurred_at,device_occurred_at:body.device_occurred_at,received_at:new Date().toISOString(),source:body.source,evidence_status:body.photo_expected?'pending':'not_provided',location_flag:'unknown'};}
-    assert.equal(body.idempotency_key,savedKey);postCount++;
+    assert.equal(body.idempotency_key,savedKey);assert.equal(body.photo_expected,true);assert.equal(body.latitude,10.77);assert.equal(body.longitude,106.69);assert.equal(body.accuracy_m,10);postCount++;
     await send('Fetch.fulfillRequest',{requestId,responseCode:postCount===1?201:200,responseHeaders:[{name:'Content-Type',value:'application/json'}],body:Buffer.from(JSON.stringify({data:savedEvent})).toString('base64')});return;
    }
    if(allowAttendance && request.method==='POST' && url.pathname.endsWith('/photo')){savedEvent.evidence_status='ready';await send('Fetch.fulfillRequest',{requestId,responseCode:201,responseHeaders:[{name:'Content-Type',value:'application/json'}],body:Buffer.from(JSON.stringify({data:savedEvent})).toString('base64')});return;}
@@ -205,12 +213,17 @@ try {
  console.log('PASS performance: empty attendance queue performs one event and one policy read');
  performanceReport.emptyQueue={eventReadsPerMount:1,policyReadsPerMount:1};
  allowAttendance=true;networkRequests.length=0;
- await clickText('Chấm vào','main button');
+ await evaluate(mockGps);await clickText('Chấm vào','main button');
+ assert.equal(postCount,0,'Opening camera does not submit');
+ await chooseFixturePhoto();await until(()=>evaluate('!!document.querySelector(".photo-preview img")'),'Required photo ready');
+ await clickText('Xác nhận chấm vào');
  await until(()=>evaluate('document.body.innerText.includes("Đã ghi nhận giờ vào")&&[...document.querySelectorAll("main button")].some(b=>b.textContent==="Chấm ra"&&!b.disabled)'),'Confirmed punch without extra reads');
  assert.equal(postCount,1,'One online event submission');
  assert.equal(networkRequests.filter(r=>r.method==='GET'&&r.url.includes('/api/')).length,0,'Successful punch does not refetch event/policy');
  console.log('PASS performance: online punch confirms immediately from POST response, zero follow-up GETs');
  performanceReport.onlinePunch={posts:1,followupReads:0};
+ assert.deepEqual(await evaluate('window.gpsOptions'),{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+ await clickText('Chấm ra','main button');assert(!(await evaluate('!!document.querySelector(".photo-preview img")')),'Checkout requires a new photo');await escape();
  allowAttendance=false;savedEvent=null;savedKey='';postCount=0;
  // Calendar days remain usable touch targets at the narrowest supported width.
  await viewport(360);
@@ -245,28 +258,40 @@ try {
  completedPunches=null;
  // IndexedDB survives reload, and an image retry attaches to the same event.
  await setRole('employee');await viewport(390);await navigate('/today');
- await evaluate('document.querySelector(".attendance-options").open=true');
+ assert(!(await evaluate('!!document.querySelector(".attendance-options,input[type=file]")')),'No optional evidence controls on page');
  // Exercise browser getUserMedia, capture/compression, release, cancellation and denied permission.
  await evaluate(`(()=>{window.originalGetUserMedia=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);window.cameraTracks=[];navigator.mediaDevices.getUserMedia=async constraints=>{const stream=await window.originalGetUserMedia(constraints);window.cameraTracks.push(...stream.getTracks());return stream;};})()`);
- await clickText('Chụp ảnh bằng camera');await until(()=>evaluate('[...document.querySelectorAll("[role=dialog] button")].some(b=>b.textContent==="Chụp ảnh"&&!b.disabled)'),'Camera ready');
+ await clickText('Chấm vào','main button');await until(()=>evaluate('[...document.querySelectorAll("[role=dialog] button")].some(b=>b.textContent==="Chụp ảnh"&&!b.disabled)'),'Camera ready');
  await checkLayout('Camera on phone');await screenshot('employee-camera-390');await clickText('Chụp ảnh','[role=dialog] button');
- await until(()=>evaluate('!document.querySelector("[role=dialog]")&&!!document.querySelector(".photo-preview img")'),'Camera capture preview');
+ await until(()=>evaluate('!!document.querySelector("[role=dialog] .photo-preview img")'),'Camera capture preview');
  assert(await evaluate('window.cameraTracks.length>0&&window.cameraTracks.every(t=>t.readyState==="ended")'),'Camera released after capture');
- await clickText('Bỏ ảnh đã chọn');await clickText('Chụp ảnh bằng camera');
+ await clickText('Chụp lại');
  await until(()=>evaluate('window.cameraTracks.some(t=>t.readyState==="live")'),'Camera reopen');await escape();
  assert(await evaluate('window.cameraTracks.every(t=>t.readyState==="ended")'),'Camera released after Escape');
- await evaluate('navigator.mediaDevices.getUserMedia=()=>Promise.reject(new DOMException("Permission denied","NotAllowedError"))');await clickText('Chụp ảnh bằng camera');
- await until(()=>evaluate('document.querySelector("[role=dialog]")?.textContent.includes("Chưa được cấp quyền camera")'),'Camera denied message');await escape();
+ await evaluate('navigator.mediaDevices.getUserMedia=()=>Promise.reject(new DOMException("Permission denied","NotAllowedError"))');await clickText('Chấm vào','main button');
+ await until(()=>evaluate('document.querySelector("[role=dialog]")?.textContent.includes("Chưa được cấp quyền camera")'),'Camera denied message');
  await evaluate('navigator.mediaDevices.getUserMedia=window.originalGetUserMedia');
- await evaluate(`(()=>{const canvas=document.createElement('canvas');canvas.width=24;canvas.height=24;const c=canvas.getContext('2d');c.fillStyle='#1647c8';c.fillRect(0,0,24,24);return new Promise(resolve=>canvas.toBlob(blob=>{const transfer=new DataTransfer();transfer.items.add(new File([blob],'optional-photo.png',{type:'image/png'}));const el=document.querySelector('input[type=file]');el.files=transfer.files;el.dispatchEvent(new Event('change',{bubbles:true}));resolve();},'image/png'));})()`);
- await until(()=>evaluate('!!document.querySelector(".photo-preview img")'),'Photo preview');
+ await chooseFixturePhoto('text/plain');await until(()=>evaluate('document.querySelector("[role=dialog]")?.textContent.includes("Ảnh cần ở định dạng")'),'Reject non-image');
+ await chooseFixturePhoto('image/png',true);await until(()=>evaluate('!!document.querySelector("[role=dialog] .notice-error")&&!document.querySelector(".photo-preview img")'),'Reject corrupt image');
+ await chooseFixturePhoto();await until(()=>evaluate('!!document.querySelector(".photo-preview img")'),'Library works after camera denied');
+ // A GPS failure keeps the photo, writes no event/queue and can be retried.
+ const postsBeforeGps=postCount;
+ for(const code of [1,2,3]) {
+   await evaluate(`navigator.geolocation.getCurrentPosition=(success,error)=>error({code:${code}})`);
+   await clickText('Xác nhận chấm vào');
+   await until(()=>evaluate('!!document.querySelector("[role=dialog] .notice-error")'),'GPS error '+code);
+   assert(await evaluate('!!document.querySelector(".photo-preview img")'),'Photo retained on GPS error');
+   assert.equal(postCount,postsBeforeGps,'GPS failure sends no event');
+ }
+ await screenshot('employee-gps-denied-390');
+ await evaluate(mockGps);
  await send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
  await until(()=>evaluate('!navigator.onLine'),'Offline');
- await clickText('Chấm vào','main button');
+ await clickText('Xác nhận chấm vào');
  await until(()=>evaluate('document.body.innerText.includes("Đã lưu trên thiết bị")'),'Local queue save');
  assert(await evaluate('document.querySelector(".reference-week .today")?.classList.contains("checked")'),'Offline day counted in weekly summary');
- const readQueue=`(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('marixa-attendance-queue',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});const rows=await new Promise((resolve,reject)=>{const r=db.transaction('events','readonly').objectStore('events').getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});db.close();return rows.map(r=>({key:r.idempotency_key,owner:r.employee_id,photoSize:r.photo?.size,status:r.status}));})()`;
- const queued=await evaluate(readQueue);assert.equal(queued.length,1);assert.equal(queued[0].owner,people[0].id);assert(queued[0].photoSize>0&&queued[0].photoSize<=200000);
+ const readQueue=`(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('marixa-attendance-queue',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});const rows=await new Promise((resolve,reject)=>{const r=db.transaction('events','readonly').objectStore('events').getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});db.close();return rows.map(r=>({key:r.idempotency_key,owner:r.employee_id,photoSize:r.photo?.size,latitude:r.latitude,longitude:r.longitude,accuracy:r.accuracy_m,status:r.status}));})()`;
+ const queued=await evaluate(readQueue);assert.equal(queued.length,1);assert.equal(queued[0].owner,people[0].id);assert(queued[0].photoSize>0&&queued[0].photoSize<=200000);assert.equal(queued[0].latitude,10.77);assert.equal(queued[0].accuracy,10);
  failPath='/api/v1/attendance/events';allowAttendance=true;
  await send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
  await navigate('/today');assert.equal((await evaluate(readQueue))[0].key,queued[0].key,'Reload retains idempotency key');

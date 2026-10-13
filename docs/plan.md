@@ -1,6 +1,6 @@
 # Kế hoạch triển khai hệ thống chấm công Marixa V1
 
-Ngày lập: 09/10/2026 (Asia/Ho_Chi_Minh). Cập nhật: 10/10/2026. Trạng thái: **đã triển khai ứng dụng và kiểm thử nghiệp vụ/backup trên Supabase test; đã kiểm chứng phần kỹ thuật Phase 7–8; còn đầu vào vận hành, thiết bị thật và thao tác Vercel**. Đây là checklist thực thi đến bản deploy kỹ thuật hoạt động trên Vercel Hobby và Supabase Free.
+Ngày lập: 09/10/2026 (Asia/Ho_Chi_Minh). Cập nhật: 13/10/2026. Trạng thái: **đã triển khai ứng dụng và kiểm thử nghiệp vụ/backup trên Supabase test; đã kiểm chứng phần kỹ thuật Phase 7–8; còn đầu vào vận hành, thiết bị thật và thao tác Vercel**. Đây là checklist thực thi đến bản deploy kỹ thuật hoạt động trên Vercel Hobby và Supabase Free.
 
 Theo yêu cầu trực tiếp của chủ dự án ngày 10/10/2026, `docs/plan.md` được cập nhật để ghi lộ trình tiếp theo. Tiến độ và bằng chứng chi tiết ghi ở `docs/worklog.md`.
 
@@ -16,19 +16,19 @@ Quyết định mới ngày 10/10/2026: **riêng Codex được toàn quyền ch
 
 ## 2. Quyết định nghiệp vụ đang có hiệu lực
 
-Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `docs/01`–`07`**, theo trả lời mới nhất của chủ dự án ngày 09/10/2026. Quyền sửa file đặc tả thực hiện theo `AGENTS.md`.
+Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `docs/01`–`07`**, theo các quyết định của chủ dự án, gồm cập nhật ảnh/GPS ngày 13/10/2026. Quyền sửa file đặc tả thực hiện theo `AGENTS.md`.
 
 | Chủ đề | Quy tắc phải triển khai |
 | --- | --- |
 | Ngoài văn phòng | Vẫn ghi nhận và **tính công bình thường**. Nếu có GPS thì có thể gắn nhãn vị trí để tham khảo; nhãn này không chặn công, không đòi HR duyệt mới được tính. |
-| Ảnh và GPS | **Tùy chọn, độc lập nhau.** Có cả hai, một trong hai hoặc không có đều chấm công được. Không yêu cầu sửa công chỉ vì thiếu ảnh/GPS. Ảnh có thì lưu private; GPS có thì tính khoảng cách/cờ vị trí. |
+| Ảnh và GPS | **Bắt buộc cho lượt chấm mới** (13/10/2026). Bấm Chấm vào/ra mở camera, cho phép chọn ảnh từ máy trong cửa sổ này, xem lại rồi xác nhận. Tự lấy GPS mới khi xác nhận; từ chối quyền/không lấy được vị trí thì chặn gửi, giữ ảnh để thử lại. Mỗi lượt cần ảnh riêng; ảnh private, GPS dùng gắn cờ vị trí. |
 | Offline | Không giới hạn số ngày đồng bộ muộn. Giữ event local và retry đến khi server xác nhận, trừ khi người dùng tự xóa dữ liệu trình duyệt/thiết bị hỏng. Nếu ngày gốc thuộc kỳ đã khóa, giữ snapshot kỳ cũ; xử lý chênh lệch bằng **điều chỉnh ở kỳ đang mở tiếp theo**, có liên kết ngày/kỳ gốc và audit, không ghi đè kỳ cũ. |
 | Cách tính | Tính theo **từng phút thực tế**, không làm tròn lên/xuống theo block 5/15/30 phút. Giữ timestamp đầy đủ; tính khoảng thời gian bằng giây rồi quy đổi thành số phút nguyên ở kết quả ngày theo một quy tắc duy nhất, có test biên. |
 | Ca làm chung | Admin quản lý **một ca chung áp dụng cho toàn bộ nhân viên**: ngày làm việc trong tuần, giờ bắt đầu/kết thúc, giờ bắt đầu/kết thúc nghỉ trưa, số phút miễn trừ đi trễ và ngày hiệu lực. Thứ 2–thứ 7, 08:00–17:00, nghỉ 12:00–13:00, miễn trừ 0 phút chỉ là **giá trị khởi tạo**, không phải giờ cố định trong phép tính. Thay đổi tạo phiên bản cấu hình mới có audit; ngày công dùng phiên bản có hiệu lực vào ngày đó, kỳ đã khóa giữ nguyên snapshot. V1 không gán ca riêng theo nhân viên. |
 | Chủ nhật/ngày nghỉ | Cho chấm công. Giờ làm thực tế của ngày nghỉ được **tự động tính tăng ca**, không cần đơn tăng ca được duyệt. Trừ phần giao với **khoảng nghỉ trưa của ca chung có hiệu lực trong ngày**; không tính giờ chưa có đủ chấm vào/ra. Ngày làm bù do admin đánh dấu là ngày làm việc thì áp quy tắc ca chung. |
 | Ngày làm việc bình thường | Dùng các khoảng làm việc của **ca chung có hiệu lực** thay cho mốc giờ cố định. Phần ngoài giờ chỉ tính tăng ca trong khoảng đã được duyệt; chấm ra muộn riêng lẻ không tự tạo tăng ca. Đi trễ/về sớm so với ca có hiệu lực, có xét số phút miễn trừ đi trễ do admin đặt. |
 | Phép năm | Mức phép năm là **12 ngày/năm, cộng 1 ngày vào ngày 1 mỗi tháng**, bắt đầu từ tháng nhân viên vào làm; không cấp sẵn cả 12 ngày. Giao dịch cộng tháng phải idempotent. Số dư lịch sử khi chuyển hệ thống, nếu có, do admin nhập có lý do. |
-| Cấu hình bằng chứng | Dùng `logo.png` chính thức; lưu ảnh chấm công private với thời hạn **3 tháng**; dùng GPS nếu có để gắn nhãn vị trí tham khảo. Admin nhập lịch nghỉ/làm bù và tọa độ/bán kính văn phòng trước vận hành. Thiếu ảnh/GPS hoặc chưa có tọa độ vẫn chấm công được. |
+| Cấu hình bằng chứng | Dùng `logo.png` chính thức; lưu ảnh chấm công private với thời hạn **3 tháng**; dùng GPS bắt buộc để gắn nhãn vị trí tham khảo. Admin nhập lịch nghỉ/làm bù và tọa độ/bán kính văn phòng trước vận hành. Thiếu ảnh/GPS thì không tạo lượt mới; chưa cấu hình tọa độ văn phòng vẫn chấm được khi đã có ảnh và GPS thiết bị. |
 | Kiến trúc triển khai | **Next.js Route Handlers trong `react/src/app/api/` là API chính.** Supabase cung cấp PostgreSQL, Auth và Storage; Vercel deploy thư mục `react/`. Không triển khai .NET API hoặc EF migration cho ứng dụng này. Mã .NET cũ trong repository chỉ là tham chiếu lịch sử. Quyết định này thay thế lựa chọn .NET API ghi trong worklog ngày 09/10/2026. |
 
 **Quyết định triển khai đã được chủ dự án xác nhận ở Phase 0 và làm rõ ngày 09/10/2026:** ngày nghỉ trừ khoảng nghỉ trưa của ca chung có hiệu lực (mặc định ban đầu 12:00–13:00); ngày làm bù do admin đánh dấu được xem là ngày làm việc; số phút nguyên được lấy sau khi cộng khoảng thời gian thực tế theo giây trong từng loại công. Admin có chức năng chỉnh ca chung và ngày hiệu lực; không cố định mốc 08:00/12:00/13:00/17:00 trong logic.
@@ -85,7 +85,9 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 
 **Đạt khi:** tài khoản thử của employee, HR, admin xem đúng dữ liệu; gọi API trái quyền bị từ chối; người dùng không thể tự nâng role hoặc tự bỏ qua đổi mật khẩu tạm.
 
-## Phase 4 — Chấm công online và bằng chứng tùy chọn
+## Phase 4 — Chấm công online và bằng chứng
+
+Các dấu kiểm Phase 4 ghi nhận triển khai trước ngày 13/10/2026. Quy tắc tùy chọn bên dưới đã được thay bằng mục 2 và checklist “Ảnh/GPS bắt buộc” cuối tài liệu; không dùng làm tiêu chí hiện hành.
 
 **Mục tiêu:** chấm vào/ra ổn định khi có mạng, kể cả không có ảnh và GPS.
 
@@ -145,7 +147,7 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 
 - [x] 8.1. Chạy lint, build, unit/integration/E2E trên project thử nghiệm; cập nhật ma trận test ở **mã nguồn hoặc worklog**. Nếu cần cập nhật `docs/05-testing-strategy.md`, thực hiện theo quyền Markdown trong `AGENTS.md`.
 - [x] 8.2. Test quyền employee A/B, HR, admin ở UI/API/RLS/Storage; không lộ dữ liệu chéo, `service_role` không có trong client bundle/log, không có secret trong Git.
-- [ ] 8.3. Test trên điện thoại thật và desktop: bốn trạng thái ảnh/GPS, ngoài văn phòng, offline không thời hạn, queue sau refresh, retry cùng khóa, hai thiết bị, server nhận event nhưng ảnh lỗi, ngày nghỉ tự OT.
+- [ ] 8.3. Test trên điện thoại thật và desktop: đủ ảnh/GPS, chặn thiếu ảnh hoặc GPS, hủy/chụp lại, ngoài văn phòng, offline không thời hạn, queue sau refresh, retry cùng khóa, hai thiết bị, server nhận event nhưng ảnh lỗi, ngày nghỉ tự OT.
 - [x] 8.4. Test kỳ tháng: late sync vào kỳ đã khóa, điều chỉnh ở kỳ mở sau, kỳ sau cũng bị khóa, đã có sửa công, mở lại kỳ có audit, export snapshot gốc bất biến.
 - [ ] 8.5. Test responsive 375/768/1024/1440px, bàn phím, screen reader cơ bản, Safari iOS/Chrome Android nếu có thiết bị; test mạng chậm và ngắt giữa upload.
 - [x] 8.6. Sửa toàn bộ lỗi chặn phát hành: mất/nhân đôi công, sai số phút, sai OT, sai quyền, sai kỳ/điều chỉnh, lộ secret, lỗi restore. Ghi bằng chứng test và lỗi còn lại vào worklog.
@@ -161,7 +163,7 @@ Các dòng dưới đây **ưu tiên hơn nội dung cũ mâu thuẫn trong `doc
 - [ ] 9.2. Kết nối Git repository với Vercel Hobby, chọn đúng Root Directory/Framework Next.js/branch production. Cấu hình URL + publishable key và server secret ở **đúng scope Production/Preview**; preview dùng project thử nghiệm, không dùng production.
 - [ ] 9.3. Deploy commit đã qua Phase 8, theo dõi build/log đến trạng thái Ready; mở URL `https://...vercel.app` hoặc domain được cấp, kiểm tra HTTPS, refresh route và lỗi server. Cập nhật Supabase Auth Site URL/Redirect URLs theo domain thật.
 - [ ] 9.4. Thiết lập cron dọn ảnh theo khả năng Hobby hiện hành nếu có dùng ảnh; kiểm tra `CRON_SECRET`, một lần chạy và log. Không dùng cron để quyết định phút công.
-- [ ] 9.5. Smoke test qua URL deploy bằng tài khoản thử được tạo có kiểm soát: login/đổi mật khẩu, role, chấm không ảnh/GPS, chấm có bằng chứng, chấm ngoài văn phòng, offline→sync, Chủ nhật/ngày nghỉ→OT, đơn nghỉ/sửa công, khóa kỳ, điều chỉnh kỳ sau, Excel/PDF và ảnh private.
+- [ ] 9.5. Smoke test qua URL deploy bằng tài khoản thử được tạo có kiểm soát: login/đổi mật khẩu, role, chặn chấm thiếu ảnh/GPS, chấm có đủ bằng chứng, chấm ngoài văn phòng, offline→sync, Chủ nhật/ngày nghỉ→OT, đơn nghỉ/sửa công, khóa kỳ, điều chỉnh kỳ sau, Excel/PDF và ảnh private.
 - [ ] 9.6. Kiểm tra backup production đầu tiên và diễn tập restore trên môi trường thử nghiệm; ghi URL, project reference, commit hash, deployment ID, ngày/giờ, người kiểm tra, kết quả smoke test, hạn mức và rủi ro còn mở vào worklog. Xóa tài khoản/dữ liệu smoke test khỏi production trước khi nhập dữ liệu nhân viên thật.
 
 **Deploy kỹ thuật thành công khi:** deployment ở trạng thái Ready, URL HTTPS truy cập được, server kết nối đúng Supabase production, smoke test nghiệp vụ và quyền đạt, migration/backup/restore có bằng chứng. Chưa đánh dấu phase này chỉ vì build thành công.
@@ -197,6 +199,16 @@ Quyết định mới của chủ dự án: làm đủ employee/HR/admin; Codex 
 - [x] Kiểm chứng production cục bộ bằng fixture: tab không gọi server, một truy vấn cho một đợt gõ, hàng đợi rỗng không tải trùng, chấm thành công không GET lại; guard và cookie refresh vẫn hoạt động.
 - [x] Chủ dự án xác nhận ngày 12/10/2026: Supabase mà bản Vercel hiện dùng đặt tại Singapore; cấu hình function `sin1` phù hợp.
 - [ ] Deploy bản sửa lên Vercel, xác nhận function chuyển sang `sin1` theo cấu hình mới và đo lại thao tác đã đăng nhập trên website thật.
+
+## Ảnh/GPS bắt buộc — 13/10/2026
+
+- [x] Bỏ lựa chọn ảnh/GPS riêng trên trang; Chấm vào/ra mở camera, có chọn ảnh từ máy, xem trước/chụp lại/hủy; không tạo lượt khi hủy hoặc ảnh lỗi.
+- [x] Lấy GPS mới khi xác nhận (`maximumAge: 0`); chặn khi từ chối/quá hạn/không định vị được, giữ ảnh để thử lại theo xác nhận của chủ dự án.
+- [x] API từ chối lượt mới thiếu khai báo ảnh hoặc GPS; vẫn replay lượt đã ghi nhận để hoàn tất ảnh đang chờ. IndexedDB giữ ảnh/GPS/key qua offline và reload.
+- [x] ESLint, TypeScript, 17 unit test, production build và Chromium fixture API/UI/offline đạt. Camera/GPS là giả lập; 9 viewport trang chấm công không tràn ngang.
+- [x] Migration qua PostgreSQL 18 cục bộ: chặn thiếu/sai bằng chứng, retry lịch sử, ảnh pending, chống trùng, GPS ngoài văn phòng, hồ sơ inactive và quyền anon. Server tạm đã dừng.
+- [ ] Áp migration `202610130020_required_attendance_evidence.sql` trên Supabase theo quy trình triển khai, kiểm chứng RPC trực tiếp và Storage; deploy ứng dụng. Migration bổ sung kiểm tra ở DB; API/UI đã kiểm tra độc lập.
+- [ ] Thử camera, thư viện ảnh và quyền GPS trên iOS/Android thật. Queue cũ chưa gửi và thiếu bằng chứng phải giữ để HR đối soát; không tự thêm GPS hiện tại vào lượt cũ.
 
 ## 3. Tài liệu nhà cung cấp để kiểm tra khi thực hiện
 

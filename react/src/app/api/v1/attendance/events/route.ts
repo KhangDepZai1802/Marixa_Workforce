@@ -65,6 +65,10 @@ export async function POST(request: Request) {
     if (existing.employee_id !== actor.employeeId) return jsonError(409, "IDEMPOTENCY_KEY_CONFLICT", "Khóa đồng bộ đã được dùng.", requestId);
     return jsonApiResponse({ data: existing, replayed: true, request_id: requestId });
   }
+  if (!parsed.data.photo_expected)
+    return jsonError(422, "PHOTO_REQUIRED", "Bạn cần chụp hoặc chọn ảnh trước khi chấm công.", requestId);
+  if (parsed.data.latitude == null || parsed.data.longitude == null || parsed.data.accuracy_m == null)
+    return jsonError(422, "LOCATION_REQUIRED", "Bạn cần bật vị trí và lấy GPS hiện tại trước khi chấm công.", requestId);
   const { data, error } = await supabase.rpc("create_attendance_event", {
     p_kind: parsed.data.kind, p_source: parsed.data.source, p_device_occurred_at: parsed.data.device_occurred_at ?? null,
     p_idempotency_key: parsed.data.idempotency_key, p_latitude: parsed.data.latitude ?? null,
@@ -73,6 +77,7 @@ export async function POST(request: Request) {
   });
   if (error?.code === "23505") return jsonError(409, "ATTENDANCE_ALREADY_EXISTS", "Đã có lượt chấm cùng loại trong ngày. Hãy gửi yêu cầu sửa công nếu cần.", requestId);
   if (error?.code === "42501") return jsonError(403, "EMPLOYEE_INACTIVE", "Tài khoản hoặc hồ sơ nhân viên không còn hoạt động.", requestId);
+  if (error?.code === "22023") return jsonError(422, "ATTENDANCE_EVIDENCE_INVALID", "Cần ảnh và vị trí hợp lệ để chấm công. Hãy kiểm tra rồi thử lại.", requestId);
   if (error || !data) return jsonError(500, "ATTENDANCE_CREATE_FAILED", "Không thể ghi nhận lượt chấm. Vui lòng thử lại.", requestId);
   return jsonApiResponse({ data, replayed: false, request_id: requestId }, { status: 201 });
 }

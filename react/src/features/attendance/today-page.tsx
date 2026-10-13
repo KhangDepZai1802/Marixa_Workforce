@@ -1,62 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import type { AttendanceLocation } from "./evidence";
 import { CameraCapture } from "@/components/camera-capture";
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, apiRequest, type ApiEnvelope } from "@/lib/api-client";
 import { BUSINESS_TIME_ZONE, businessDate, formatDate, formatDateTime, formatMinutes, formatTime } from "@/lib/format";
 import { calculateAttendanceDay } from "@/lib/domain/timesheet";
-import { Button, Field, LoadingState, Notice, PageHeader, Panel, StatusBadge } from "@/components/ui";
+import { Button, LoadingState, Notice, PageHeader, Panel, StatusBadge } from "@/components/ui";
 import { countUnassignedQueuedAttendance, listQueuedAttendance, removeQueuedAttendance, saveQueuedAttendance, syncQueuedAttendance, type QueuedAttendance } from "./offline-queue";
 
 type AttendanceEvent = { id: string; kind: "check_in" | "check_out"; occurred_at: string; work_date: string; source: string; evidence_status: string; location_flag: string | null };
 type WorkPolicy = { start_time: string; lunch_start: string; lunch_end: string; end_time: string; working_weekdays: number[]; late_grace_minutes: number };
-
-async function compressPhoto(file: File): Promise<Blob> {
-  let bitmap: ImageBitmap | null = null;
-  let objectUrl: string | null = null;
-  try {
-    let source: CanvasImageSource;
-    let width: number;
-    let height: number;
-    if (typeof createImageBitmap === "function") {
-      try { bitmap = await createImageBitmap(file, { imageOrientation: "from-image" }); } catch { bitmap = null; }
-    }
-    if (bitmap) {
-      source = bitmap; width = bitmap.width; height = bitmap.height;
-    } else {
-      objectUrl = URL.createObjectURL(file);
-      const image = new window.Image();
-      image.src = objectUrl;
-      await image.decode();
-      source = image; width = image.naturalWidth; height = image.naturalHeight;
-    }
-    const scale = Math.min(1, 1280 / Math.max(width, height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(width * scale));
-    canvas.height = Math.max(1, Math.round(height * scale));
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("Không xử lý được ảnh này.");
-    context.drawImage(source, 0, 0, canvas.width, canvas.height);
-    for (const quality of [0.82, 0.72, 0.62, 0.5]) {
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", quality));
-      if (blob && blob.size <= 190_000) return blob;
-    }
-    const finalBlob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.45));
-    if (finalBlob && finalBlob.size <= 200_000) return finalBlob;
-    throw new Error("Ảnh vẫn lớn hơn 200 KB sau khi nén. Hãy chọn ảnh khác.");
-  } finally { bitmap?.close(); if (objectUrl) URL.revokeObjectURL(objectUrl); }
-}
-
-function getLocation(): Promise<{ latitude: number; longitude: number; accuracy_m: number } | null> {
-  if (!navigator.geolocation) return Promise.resolve(null);
-  return new Promise((resolve) => navigator.geolocation.getCurrentPosition(
-    (position) => resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy_m: position.coords.accuracy }),
-    () => resolve(null),
-    { enableHighAccuracy: true, timeout: 8000, maximumAge: 30_000 },
-  ));
-}
 
 export function TodayPage({ employeeId }: { employeeId: string }) {
   const today = businessDate();
@@ -69,11 +24,7 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   const [policyUnavailable, setPolicyUnavailable] = useState(false);
   const [queue, setQueue] = useState<QueuedAttendance[]>([]);
   const [unassignedCount, setUnassignedCount] = useState(0);
-  const [photo, setPhoto] = useState<Blob | null>(null);
-  const [processingPhoto, setProcessingPhoto] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
-  const [photoName, setPhotoName] = useState("");
-  const [includeLocation, setIncludeLocation] = useState(false);
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const syncInFlight = useRef(false);
@@ -82,13 +33,6 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   const [error, setError] = useState("");
   const [conflict, setConflict] = useState(false);
   const [message, setMessage] = useState("");
-  const [photoPreview, setPhotoPreview] = useState("");
-  const previewRef = useRef("");
-  useEffect(() => () => { if (previewRef.current) URL.revokeObjectURL(previewRef.current); }, []);
-  function clearPhoto() {
-    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
-    previewRef.current = ""; setPhotoPreview(""); setPhoto(null); setPhotoName("");
-  }
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     const first = window.setTimeout(() => setNow(new Date()), 0);
@@ -192,32 +136,12 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
     if (date >= weekStart && date <= today) checkedDates.add(date);
   }
 
-  async function preparePhoto(file: File) {
-    setProcessingPhoto(true);
-    try {
-      const blob = await compressPhoto(file);
-      clearPhoto(); setPhoto(blob); setPhotoName(file.name); setError("");
-      previewRef.current = URL.createObjectURL(blob); setPhotoPreview(previewRef.current);
-    } finally { setProcessingPhoto(false); }
-  }
-
-  async function choosePhoto(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    clearPhoto(); setError("");
-    if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { setError("Ảnh cần ở định dạng JPG, PNG hoặc WebP."); return; }
-    try { await preparePhoto(file); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : "Không xử lý được ảnh."); }
-  }
-
-  async function submitAttendance() {
-    if (!nextKind || busy || processingPhoto) return;
+  async function submitAttendance(photo: Blob, location: AttendanceLocation) {
+    if (!nextKind || busy) return;
+    if (!photo.size) throw new Error("Bạn cần chụp hoặc chọn ảnh trước khi chấm công.");
     if (!employeeId) { setError("Không xác định được hồ sơ nhân viên. Hãy đăng nhập lại."); return; }
     setBusy(true); setError(""); setConflict(false); setMessage("");
     try {
-      const location = includeLocation ? await getLocation() : null;
-      const locationNote = includeLocation && !location ? " Không có vị trí; lượt chấm vẫn hợp lệ." : "";
       const key = crypto.randomUUID();
       const occurredAt = new Date().toISOString();
       const item: QueuedAttendance = {
@@ -229,11 +153,12 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
       };
 
       // Persist before any network request so a reload between event creation
-      // and optional photo upload still leaves the same key and photo to retry.
+      // and photo upload still leaves the same key and photo to retry.
       await saveQueuedAttendance(item);
+      setCameraOpen(false);
 
       if (!navigator.onLine) {
-        setMessage(`Đã lưu trên thiết bị. Ứng dụng sẽ đồng bộ khi có mạng.${locationNote}`);
+        setMessage(`Đã lưu trên thiết bị. Ứng dụng sẽ đồng bộ khi có mạng.`);
         await refresh();
         return;
       }
@@ -244,7 +169,7 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
           body: JSON.stringify({
             kind: item.kind, source: "online", device_occurred_at: item.device_occurred_at, idempotency_key: key,
             queue_owner_id: employeeId,
-            latitude: item.latitude, longitude: item.longitude, accuracy_m: item.accuracy_m, photo_expected: Boolean(photo),
+            latitude: item.latitude, longitude: item.longitude, accuracy_m: item.accuracy_m, photo_expected: true,
           }),
         });
         // Render the event confirmed by the server without a second read of
@@ -262,26 +187,26 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
           }
           catch (cause) {
             await saveQueuedAttendance({ ...item, status: "event_synced_photo_pending" });
-            setMessage(`Đã ghi nhận giờ chấm. Ảnh đang chờ đồng bộ${cause instanceof Error ? `: ${cause.message}` : "."}${locationNote}`);
+            setMessage(`Đã ghi nhận giờ chấm. Ảnh đang chờ đồng bộ${cause instanceof Error ? `: ${cause.message}` : "."}`);
             setQueue(await listQueuedAttendance(employeeId));
             return;
           }
         }
         await removeQueuedAttendance(key);
-        setMessage(`Đã ghi nhận ${item.kind === "check_in" ? "giờ vào" : "giờ ra"} lúc ${formatTime(result.data.occurred_at)}.${locationNote}`);
-        clearPhoto();
+        setMessage(`Đã ghi nhận ${item.kind === "check_in" ? "giờ vào" : "giờ ra"} lúc ${formatTime(result.data.occurred_at)}.`);
         setQueue(await listQueuedAttendance(employeeId));
       } catch (cause) {
         if (cause instanceof ApiError && cause.status < 500) {
           await saveQueuedAttendance({ ...item, requires_attention: true, status: "requires_attention", last_error: cause.message });
           throw cause;
         }
-        setMessage(`Chưa kết nối được máy chủ. Lượt chấm đã lưu trên thiết bị và sẽ tự đồng bộ lại.${locationNote}`);
+        setMessage(`Chưa kết nối được máy chủ. Lượt chấm đã lưu trên thiết bị và sẽ tự đồng bộ lại.`);
         await refresh();
       }
     } catch (cause) {
       setConflict(cause instanceof ApiError && cause.code === "ATTENDANCE_ALREADY_EXISTS");
       setError(cause instanceof Error ? cause.message : "Không gửi được lượt chấm.");
+      throw cause;
     } finally { setBusy(false); }
   }
 
@@ -292,8 +217,8 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
   }
 
   return <div className="workspace-home">
-    {cameraOpen && <CameraCapture onCapture={preparePhoto} onClose={() => setCameraOpen(false)} />}
-    <PageHeader title="Chấm công" description={formatDate(today) + " · Giờ Việt Nam"} action={<Button type="button" variant="secondary" disabled={busy || processingPhoto || loading} onClick={() => void refresh()}>Làm mới</Button>} />
+    {cameraOpen && <CameraCapture kind={nextKind ?? "check_in"} onConfirm={submitAttendance} onClose={() => setCameraOpen(false)} />}
+    <PageHeader title="Chấm công" description={formatDate(today) + " · Giờ Việt Nam"} action={<Button type="button" variant="secondary" disabled={busy || cameraOpen || loading} onClick={() => void refresh()}>Làm mới</Button>} />
     {!online && <Notice kind="warning">Bạn đang mất mạng. Lượt chấm được lưu trên thiết bị và sẽ gửi khi kết nối trở lại.</Notice>}
     {unassignedCount > 0 && <Notice kind="warning">Thiết bị còn {unassignedCount} lượt chấm từ phiên bản cũ chưa xác định được tài khoản. Hãy liên hệ HR để đối soát.</Notice>}
     {error && <Notice kind="error">{error}</Notice>}
@@ -308,15 +233,8 @@ export function TodayPage({ employeeId }: { employeeId: string }) {
         </div>}
         {checkOut && <div className="attendance-worked"><span>Tổng giờ đã chấm</span><strong>{totalWorked === null ? "—" : formatMinutes(totalWorked)}</strong><small>Đã trừ khoảng nghỉ theo ca. Công thường và tăng ca xem trong bảng công tháng.{localToday.length > 0 ? " Có lượt chấm đang chờ đồng bộ." : ""}</small></div>}
         <p className="subtle-note">{policy ? `Ca chung: ${policy.start_time.slice(0, 5)}–${policy.end_time.slice(0, 5)} · Nghỉ ${policy.lunch_start.slice(0, 5)}–${policy.lunch_end.slice(0, 5)}` : policyUnavailable ? "Chưa tải được ca chung. Chọn Làm mới để thử lại." : "Chưa có ca chung hiệu lực hôm nay."}</p>
-        {nextKind && <details className="attendance-options"><summary>Thêm ảnh hoặc vị trí (tùy chọn)</summary>
-          <Button type="button" variant="secondary" disabled={busy || processingPhoto} onClick={() => setCameraOpen(true)}>{photo ? "Chụp lại ảnh" : "Chụp ảnh bằng camera"}</Button>
-          <Field label="Chọn ảnh từ thư viện" hint="Ảnh JPG, PNG, WebP được nén trước khi gửi."><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || processingPhoto} onChange={choosePhoto} /></Field>
-          {photoPreview && <div className="photo-preview"><Image src={photoPreview} width={80} height={80} alt="Ảnh chấm công đã chọn" unoptimized /><div><strong>Ảnh sẵn sàng</strong><p className="subtle-note">{photoName}</p><Button type="button" variant="ghost" disabled={busy} onClick={clearPhoto}>Bỏ ảnh đã chọn</Button></div></div>}
-          <label className="check-item"><input type="checkbox" checked={includeLocation} disabled={busy} onChange={event => setIncludeLocation(event.target.checked)} />Ghi vị trí nếu thiết bị cho phép</label>
-        </details>}
-        {processingPhoto && <p role="status">Đang xử lý ảnh…</p>}
-        {nextKind ? <Button type="button" className="button-large attendance-submit" disabled={busy || processingPhoto || loading || !employeeId} onClick={submitAttendance}>{busy ? "Đang ghi nhận…" : nextKind === "check_in" ? "Chấm vào" : "Chấm ra"}</Button> : <Link className="button button-secondary attendance-submit" href="/my-attendance">Xem lịch sử chấm công</Link>}
-        <p className="subtle-note">{nextKind ? `Giờ chấm được ghi nhận khi bấm nút${checkTime ? ` · mốc lịch ${checkTime}` : ""}. Không bắt buộc ảnh hoặc vị trí.` : "Bạn đã có giờ vào và giờ ra hôm nay."}</p>
+        {nextKind ? <Button type="button" className="button-large attendance-submit" disabled={busy || cameraOpen || loading || !employeeId} onClick={() => { setError(""); setMessage(""); setCameraOpen(true); }}>{busy ? "Đang ghi nhận…" : nextKind === "check_in" ? "Chấm vào" : "Chấm ra"}</Button> : <Link className="button button-secondary attendance-submit" href="/my-attendance">Xem lịch sử chấm công</Link>}
+        <p className="subtle-note">{nextKind ? `Bắt buộc chụp hoặc chọn ảnh và lấy vị trí hiện tại. Giờ chấm được ghi nhận khi xác nhận${checkTime ? ` · mốc lịch ${checkTime}` : ""}.` : "Bạn đã có giờ vào và giờ ra hôm nay."}</p>
         {!nextKind && <Link className="text-button" href="/my-requests?tab=correction">Cần sửa giờ chấm?</Link>}
         {!employeeId && <Notice kind="warning">Tài khoản chưa được liên kết hồ sơ nhân viên. Liên hệ quản trị viên để chấm công.</Notice>}
       </Panel>

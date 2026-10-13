@@ -53,7 +53,9 @@ try {
  }
  check('Employee không truy cập hàng đợi HR',(await request(a,'/api/v1/hr/requests')).status===403);
  check('Employee không truy cập quản trị',(await request(a,'/api/v1/admin/accounts')).status===403);
- const payload={kind:'check_in',source:'online',device_occurred_at:new Date().toISOString(),idempotency_key:randomUUID(),queue_owner_id:a.employeeId,photo_expected:true};
+ const payload={kind:'check_in',source:'online',device_occurred_at:new Date().toISOString(),idempotency_key:randomUUID(),queue_owner_id:a.employeeId,photo_expected:true,latitude:10.77,longitude:106.69,accuracy_m:10};
+ check('Thiếu ảnh bị chặn',(await request(a,'/api/v1/attendance/events','POST',{...payload,photo_expected:false})).status===422);
+ check('Thiếu GPS bị chặn',(await request(a,'/api/v1/attendance/events','POST',{...payload,latitude:null,longitude:null,accuracy_m:null})).status===422);
  const first=await request(a,'/api/v1/attendance/events','POST',payload);
  assert.equal(first.status,201,'Create disposable attendance');a.eventId=first.data.data.id;
  check('Chấm vào bằng API thật',true);
@@ -74,7 +76,7 @@ try {
  const direct=createClient(env.NEXT_PUBLIC_SUPABASE_URL,env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
  need(await direct.auth.signInWithPassword({email:b.email,password:b.password}),'direct fixture login');
  const other=await direct.from('attendance_events').select('id').eq('id',a.eventId);check('RLS ẩn event của nhân viên khác',!other.error&&other.data.length===0);
- const out=await request(a,'/api/v1/attendance/events','POST',{kind:'check_out',source:'online',idempotency_key:randomUUID(),queue_owner_id:a.employeeId,photo_expected:false});check('Chấm ra không ảnh/GPS',out.status===201,'HTTP '+out.status);
+ const out=await request(a,'/api/v1/attendance/events','POST',{...payload,kind:'check_out',idempotency_key:randomUUID()});check('Chấm ra có GPS, chờ tải ảnh',out.status===201,'HTTP '+out.status);
  for(const [actor,route] of [[a,'/api/v1/reports/summary?scope=mine&month='+today.slice(0,7)],[hr,'/api/v1/hr/requests'],[hr,'/api/v1/hr/dashboard'],[hr,'/api/v1/hr/timesheet-periods']]){
   const r=await request(actor,route);check(route,r.status===200,'HTTP '+r.status+(r.data?.error?.code?' '+r.data.error.code:''));
  }
